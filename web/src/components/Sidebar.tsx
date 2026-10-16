@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon } from '../lib/format';
 import type { Route } from '../lib/router';
-import { useIndex, useStore, type SyncStatus } from '../lib/store';
+import { setProp, useIndex, useStore, type SyncStatus } from '../lib/store';
 import { relationIds, TYPES, type Note } from '../lib/types';
 import { createCollection } from '../lib/schema';
 import { go } from '../lib/router';
@@ -37,22 +37,32 @@ const loadOpen = (): Set<string> => {
 };
 
 /** Notion tarzı sayfa ağacı: üst sayfalar ve açılıp kapanan alt sayfaları */
+type Zone = 'before' | 'after' | 'into';
+
 function PageTree({ active }: { active: (href: string) => string }) {
   const { alive } = useIndex();
   const [open, setOpen] = useState(loadOpen);
   const [all, setAll] = useState(false);
-  const { roots, kids } = useMemo(() => {
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [hint, setHint] = useState<{ id: string; zone: Zone } | null>(null);
+  const { roots, kids, parentOf } = useMemo(() => {
     const kids = new Map<string, Note[]>();
+    const parentOf = new Map<string, string>();
     const ids = new Set(alive.map((n) => n.id));
     for (const n of alive) {
       const par = relationIds(n.props.parent).find((x) => ids.has(x));
-      if (par) kids.set(par, [...(kids.get(par) ?? []), n]);
+      if (par) {
+        kids.set(par, [...(kids.get(par) ?? []), n]);
+        parentOf.set(n.id, par);
+      }
     }
-    const roots = alive.filter((n) => n.type === 'note' && !relationIds(n.props.parent).some((x) => ids.has(x)));
-    const byTitle = (a: Note, b: Note) => a.title.localeCompare(b.title, 'tr');
-    roots.sort(byTitle);
-    kids.forEach((v) => v.sort(byTitle));
-    return { roots, kids };
+    const roots = alive.filter((n) => n.type === 'note' && !parentOf.has(n.id));
+    // Elle sıralanmış olanlar önce (props.__order), sonra ada göre
+    const ord = (n: Note) => (typeof n.props.__order === 'number' ? (n.props.__order as number) : 1e9);
+    const cmp = (a: Note, b: Note) => ord(a) - ord(b) || a.title.localeCompare(b.title, 'tr');
+    roots.sort(cmp);
+    kids.forEach((v) => v.sort(cmp));
+    return { roots, kids, parentOf };
   }, [alive]);
   const toggle = (id: string) => {
     const s = new Set(open);
@@ -65,14 +75,60 @@ function PageTree({ active }: { active: (href: string) => string }) {
       /* yok say */
     }
   };
+  const isDescendant = (id: string, of: string): boolean => {
+    let cur = parentOf.get(id);
+    for (let i = 0; cur && i < 50; i++) {
+      if (cur === of) return true;
+      cur = parentOf.get(cur);
+    }
+    return false;
+  };
+  const drop = (target: Note, zone: Zone) => {
+    const id = dragId;
+    setDragId(null);
+    setHint(null);
+    if (!id || id === target.id || isDescendant(target.id, id)) return;
+    const moving = alive.find((n) => n.id === id);
+    if (!moving) return;
+    const newParent = zone === 'into' ? target.id : parentOf.get(target.id);
+    if (!newParent && moving.type !== 'note') return; // en üst düzeyde yalnız notlar durur
+    const siblings = (newParent ? kids.get(newParent) ?? [] : roots).filter((n) => n.id !== id);
+    let idx = zone === 'into' ? siblings.length : siblings.findIndex((n) => n.id === target.id) + (zone === 'after' ? 1 : 0);
+    if (idx < 0) idx = siblings.length;
+    siblings.splice(idx, 0, moving);
+    if ((parentOf.get(id) ?? null) !== (newParent ?? null)) setProp(id, 'parent', newParent ? [newParent] : undefined);
+    siblings.forEach((n, i) => {
+      if (n.props.__order !== i * 10) setProp(n.id, '__order', i * 10);
+    });
+    if (zone === 'into' && !open.has(target.id)) toggle(target.id);
+  };
+  const zoneOf = (e: React.DragEvent) => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const y = (e.clientY - r.top) / r.height;
+    return y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'into';
+  };
   const row = (n: Note, depth: number, seen: Set<string>): React.ReactNode => {
     const ch = (kids.get(n.id) ?? []).filter((c) => !seen.has(c.id));
     const isOpen = open.has(n.id);
+    const h = hint?.id === n.id ? hint.zone : null;
     return (
       <div key={n.id}>
-        <div className="tree-row">
+        <div
+          className={`tree-row ${h ? `drop-${h}` : ''} ${dragId === n.id ? 'dragging' : ''}`}
+          draggable
+          onDragStart={(e) => { e.dataTransfer.setData('text/thalamus-page', n.id); e.dataTransfer.effectAllowed = 'move'; setDragId(n.id); }}
+          onDragEnd={() => { setDragId(null); setHint(null); }}
+          onDragOver={(e) => {
+            if (!dragId || dragId === n.id) return;
+            e.preventDefault();
+            const z = zoneOf(e);
+            if (hint?.id !== n.id || hint.zone !== z) setHint({ id: n.id, zone: z });
+          }}
+          onDragLeave={() => hint?.id === n.id && setHint(null)}
+          onDrop={(e) => { e.preventDefault(); drop(n, zoneOf(e)); }}
+        >
           <button type="button" className={`tree-toggle ${ch.length ? '' : 'empty'}`} onClick={() => toggle(n.id)} aria-label="Alt sayfaları aç/kapat">{isOpen ? '▾' : '▸'}</button>
-          <a href={`#/n/${n.id}`} className={active(`#/n/${n.id}`)}>{noteIcon(n)} {displayTitle(n)}</a>
+          <a href={`#/n/${n.id}`} className={active(`#/n/${n.id}`)} draggable={false}>{noteIcon(n)} {displayTitle(n)}</a>
         </div>
         {isOpen && ch.length > 0 && depth < 8 && (
           <div className="tree-kids">{ch.map((c) => row(c, depth + 1, new Set([...seen, c.id])))}</div>
@@ -84,7 +140,7 @@ function PageTree({ active }: { active: (href: string) => string }) {
   const shown = all ? roots : roots.slice(0, 12);
   return (
     <>
-      <div className="side-h">Sayfalar</div>
+      <div className="side-h">Sayfalar <span className="muted" title="Sürükleyerek sırala; bir sayfanın ortasına bırakırsan onun altına girer">⇅</span></div>
       {shown.map((n) => row(n, 0, new Set([n.id])))}
       {roots.length > 12 && (
         <button type="button" className="searchbtn" onClick={() => setAll(!all)}>{all ? 'Daha az göster' : `+ ${roots.length - 12} sayfa daha`}</button>
