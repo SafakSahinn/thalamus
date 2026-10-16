@@ -43,7 +43,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
     <nav className="sidebar" onClick={(e) => (e.target as HTMLElement).closest('a') && onNav()}>
       <div className="brand">
         <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={22} height={22} />
-        <span>Zihin Atlası</span>
+        <span>Thalamus</span>
       </div>
       <button className="searchbtn" onClick={() => { onNav(); openPalette(); }}>
         🔍 Ara / oluştur <kbd>Ctrl K</kbd>

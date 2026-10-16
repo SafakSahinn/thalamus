@@ -1,5 +1,5 @@
 project_id = "ekfemuvjdjvjiuyenawi"
 
 [auth]
-site_url = "https://safaksahinn.github.io/mind-atlas/"
-additional_redirect_urls = ["https://safaksahinn.github.io/mind-atlas/", "http://localhost:5191/"]
+site_url = "https://safaksahinn.github.io/thalamus/"
+additional_redirect_urls = ["https://safaksahinn.github.io/thalamus/", "http://localhost:5191/"]

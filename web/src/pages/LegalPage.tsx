@@ -1,20 +1,20 @@
 const CONTACT = 'safaksahin022@gmail.com';
 const CONTROLLER = 'Şafak Şahin';
 const UPDATED = '16 Ekim 2026';
-const REPO = 'https://github.com/SafakSahinn/mind-atlas';
+const REPO = 'https://github.com/SafakSahinn/thalamus';
 
 const Mail = () => <a href={`mailto:${CONTACT}`}>{CONTACT}</a>;
 
 export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   return (
     <div className="page legal">
-      <p><a href="#/">← Zihin Atlası</a></p>
+      <p><a href="#/">← Thalamus</a></p>
       {kind === 'privacy' ? (
         <>
           <h1>Gizlilik ve KVKK Aydınlatma Metni</h1>
           <p className="muted small">Son güncelleme: {UPDATED}</p>
           <p>
-            Bu metin, Zihin Atlası’nın hangi kişisel verileri neden ve nasıl işlediğini 6698 sayılı Kişisel Verilerin
+            Bu metin, Thalamus’un hangi kişisel verileri neden ve nasıl işlediğini 6698 sayılı Kişisel Verilerin
             Korunması Kanunu (“KVKK”) kapsamında açıklar. Veri sorumlusu: <strong>{CONTROLLER}</strong>, iletişim: <Mail />.
           </p>
           <h2>Hangi verileri tutuyoruz?</h2>
@@ -47,7 +47,7 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
           <h1>Kullanım Koşulları</h1>
           <p className="muted small">Son güncelleme: {UPDATED}</p>
           <ul>
-            <li>Zihin Atlası, kişisel not tutmak için ücretsiz sunulan bir hizmettir. Açık kaynaklıdır: <a href={REPO}>{REPO.replace('https://', '')}</a>.</li>
+            <li>Thalamus, kişisel not tutmak için ücretsiz sunulan bir hizmettir. Açık kaynaklıdır: <a href={REPO}>{REPO.replace('https://', '')}</a>.</li>
             <li>Hizmet “olduğu gibi” sunulur; kesintisiz çalışacağı ya da veri kaybı yaşanmayacağı garanti edilmez. Önemli notlarının düzenli olarak yedeğini (Ayarlar → Yedeği indir) almanı öneririz.</li>
             <li>Yazdığın içerik sana aittir ve sorumluluğu sendedir. Hukuka aykırı içerik, başkalarının haklarını ihlal eden dosyalar ya da sistemi kötüye kullanmaya yönelik yüklemeler yasaktır.</li>
             <li>Sistemi aşırı yükleyen ya da kötüye kullanan hesaplar uyarı yapılarak kapatılabilir.</li>

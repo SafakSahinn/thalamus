@@ -94,8 +94,8 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState('');
 
   const exportJson = () => {
-    const data = { app: 'mind-atlas', version: 1, exported_at: new Date().toISOString(), settings, notes: Object.values(notes) };
-    download(`zihin-atlasi-yedek-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data));
+    const data = { app: 'thalamus', version: 1, exported_at: new Date().toISOString(), settings, notes: Object.values(notes) };
+    download(`thalamus-yedek-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data));
   };
 
   const importJson = () => {
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       if (!f) return;
       try {
         const data = JSON.parse(await f.text()) as { app?: string; notes?: Note[] };
-        if (data.app !== 'mind-atlas' || !Array.isArray(data.notes)) throw new Error('Bu dosya bir Zihin Atlası yedeği değil.');
+        if (!['thalamus', 'mind-atlas'].includes(data.app ?? '') || !Array.isArray(data.notes)) throw new Error('Bu dosya bir Thalamus yedeği değil.');
         const cur = useStore.getState().notes;
         const fresh = data.notes.filter((n) => !cur[n.id] || cur[n.id].updated_at < n.updated_at);
         insertNotes(fresh);

@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Zihin Atlası',
-        short_name: 'Zihin Atlası',
+        name: 'Thalamus',
+        short_name: 'Thalamus',
         description: 'Notlar, kitaplar, makaleler ve sözlük; birbirine bağlı tek bir bilgi haritası.',
         lang: 'tr',
         display: 'standalone',

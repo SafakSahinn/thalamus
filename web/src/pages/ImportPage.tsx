@@ -109,7 +109,7 @@ export default function ImportPage() {
                   </select>
                 </div>
                 <table className="maptable">
-                  <thead><tr><th>Notion sütunu</th><th>Örnek</th><th>Zihin Atlası alanı</th></tr></thead>
+                  <thead><tr><th>Notion sütunu</th><th>Örnek</th><th>Thalamus alanı</th></tr></thead>
                   <tbody>
                     <tr><td>{db.titleColumn}</td><td className="muted clip">{db.rows[0]?.[db.titleColumn]}</td><td><b>Başlık</b></td></tr>
                     {Object.entries(m.columns).map(([col, target]) => (

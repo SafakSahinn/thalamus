@@ -13,7 +13,7 @@ interface Schema {
 let dbp: Promise<IDBPDatabase<Schema>> | null = null;
 
 export function db() {
-  dbp ??= openDB<Schema>('mind-atlas', 1, {
+  dbp ??= openDB<Schema>('thalamus', 1, {
     upgrade(d) {
       d.createObjectStore('notes', { keyPath: 'id' });
       d.createObjectStore('outbox', { keyPath: 'id' });

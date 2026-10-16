@@ -59,7 +59,7 @@ export default function Login() {
     <div className="login">
       <form className="login-card" onSubmit={submit}>
         <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={56} height={56} />
-        <h1>Zihin Atlası</h1>
+        <h1>Thalamus</h1>
         <p className="muted">Notların, kitapların, makalelerin ve sözlüğün tek yerde ve birbirine bağlı.</p>
         <input type="email" required value={email} placeholder="E-posta" autoComplete="email" onChange={(e) => setEmail(e.target.value)} />
         {mode !== 'reset' && (

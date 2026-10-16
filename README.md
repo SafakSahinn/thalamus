@@ -1,4 +1,4 @@
-# Zihin Atlası
+# Thalamus
 
 Notion'daki koleksiyonları ve Obsidian'daki bağlantı haritasını tek uygulamada birleştiren kişisel not uygulaması. Telefona ve bilgisayara uygulama olarak yüklenebilir (PWA), çevrimdışı çalışır, Supabase ile cihazlar arasında eşitlenir.
 
