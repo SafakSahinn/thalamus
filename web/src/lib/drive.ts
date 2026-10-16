@@ -32,6 +32,8 @@ export interface DriveApi {
   uploadBlob(parent: string, name: string, blob: Blob): Promise<string>;
   readBlob(id: string): Promise<Blob>;
   remove(id: string): Promise<void>;
+  /** Herkese açık paylaşım: "bağlantıya sahip olan görebilir" */
+  setPublic?(id: string, on: boolean): Promise<void>;
   /** Dosyanın Drive'da tutulan eski sürümleri */
   revisions?(id: string): Promise<{ id: string; modifiedTime: string }[]>;
   readRevision?<T>(id: string, rev: string): Promise<T>;
@@ -171,6 +173,18 @@ export const drive: DriveApi = {
 
   async remove(id) {
     await req(`${API}/files/${id}`, { method: 'DELETE' });
+  },
+
+  async setPublic(id, on) {
+    if (on) {
+      await req(`${API}/files/${id}/permissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'anyone', role: 'reader' }),
+      });
+    } else {
+      await req(`${API}/files/${id}/permissions/anyoneWithLink`, { method: 'DELETE' });
+    }
   },
 
   async revisions(id) {

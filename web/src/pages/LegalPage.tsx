@@ -32,6 +32,13 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
             diğer dosyaları göremez.
           </p>
 
+          <h2>Herkese açık paylaştığın notlar</h2>
+          <p>
+            Bir notu “Paylaş” ile bağlantıyla yayınlarsan, o notun bir kopyası (başlık, alanlar ve içerik) bağlantıyı açanlara
+            gösterilebilmesi için sunucumuzda tutulur ve bağlantıyı bilen herkes tarafından görülebilir. Paylaşımı kaldırdığında bu
+            kopya silinir. Paylaşmadığın notlar sunucumuza hiç gelmez.
+          </p>
+
           <h2>Bizde tutulan bilgiler</h2>
           <ul>
             <li>Google hesabının e-posta adresi, adı ve Google hesap kimliği,</li>

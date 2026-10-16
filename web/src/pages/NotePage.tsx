@@ -1,5 +1,7 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import HistoryDialog from '../components/HistoryDialog';
+import ShareDialog from '../components/ShareDialog';
+import { publishShare } from '../lib/share';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
@@ -126,6 +128,15 @@ export default function NotePage({ id }: { id: string }) {
   const ready = useStore((s) => s.ready);
   const [menu, setMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  // Paylaşılan not düzenlenince herkese açık kopya da (birkaç saniye sonra) güncellensin
+  const shareId = note?.props.__share as string | undefined;
+  useEffect(() => {
+    if (!shareId || !note) return;
+    const t = setTimeout(() => void publishShare(useStore.getState().notes[note.id]).catch(() => undefined), 4000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareId, note?.updated_at]);
   const [graphOpen, setGraphOpen] = useState(() => localStorage.getItem('localGraph') !== '0');
 
   if (!note) return <div className="page"><p className="muted">{ready ? 'Not bulunamadı.' : 'Yükleniyor…'}</p></div>;
@@ -134,6 +145,7 @@ export default function NotePage({ id }: { id: string }) {
   return (
     <div className="page note-page">
       {showHistory && <HistoryDialog note={note} onClose={() => setShowHistory(false)} />}
+      {showShare && <ShareDialog note={note} onClose={() => setShowShare(false)} />}
       <PageDecor note={note} />
       {isTemplate(note) && (
         <div className="banner">
@@ -159,6 +171,7 @@ export default function NotePage({ id }: { id: string }) {
               <select value={note.type} onChange={(e) => { updateNote(note.id, { type: e.target.value as TypeId }); setMenu(false); }}>
                 {TYPES.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.label}</option>)}
               </select>
+              <button className="btn small" onClick={() => { setShowShare(true); setMenu(false); }}>🌐 {note.props.__share ? 'Paylaşılıyor' : 'Paylaş'}</button>
               <button className="btn small" onClick={() => { setShowHistory(true); setMenu(false); }}>🕓 Sayfa geçmişi</button>
               <button className="btn small" onClick={() => { exportNoteMd(note); setMenu(false); }}>⬇ Markdown olarak indir</button>
               <button className="btn small" onClick={() => { setMenu(false); setTimeout(printNote, 50); }}>🖨 Yazdır / PDF</button>

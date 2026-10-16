@@ -379,6 +379,16 @@ export async function purgeNote(id: string) {
   }
 }
 
+export async function publicFile(fileId: string) {
+  if (cloud && api.setPublic) await api.setPublic(fileId, true);
+}
+
+export async function unpublicFile(fileId: string) {
+  if (cloud && api.setPublic) await api.setPublic(fileId, false).catch((e) => {
+    if (!isNotFound(e)) throw e;
+  });
+}
+
 /** Notun sürümleri (yeniden eskiye): bu cihaz + Drive */
 export async function noteVersions(id: string): Promise<Version[]> {
   const out = await deviceVersions(id);

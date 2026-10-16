@@ -20,6 +20,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const TrashPage = lazy(() => import('./pages/TrashPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
+const SharedPage = lazy(() => import('./pages/SharedPage'));
 
 export default function App() {
   const account = useStore((s) => s.account);
@@ -38,6 +39,10 @@ export default function App() {
     if (cloud && account) void initLocal().then(startSync);
   }, [account]);
 
+  // Herkese açık paylaşılan sayfa: giriş gerekmez
+  if (route.name === 'shared') {
+    return <Suspense fallback={null}><SharedPage id={route.id} /></Suspense>;
+  }
   // Yasal sayfalar girişsiz de açılır
   if (route.name === 'legal' && (!cloud || !account)) {
     return <Suspense fallback={null}><LegalPage kind={route.kind} /></Suspense>;

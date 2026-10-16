@@ -161,6 +161,30 @@ Deno.serve(async (req) => {
         if (error) throw error;
         return json({ ok: true });
       }
+      case 'share': {
+        // Notun herkese açık kopyasını yayınla / güncelle
+        const who = await verifyAccess(body.access_token);
+        if (!who) return json({ error: 'unauthorized' }, 401);
+        const noteId = String(body.note_id ?? '');
+        if (!noteId) return json({ error: 'note_id' }, 400);
+        const content = body.content ?? null;
+        if (JSON.stringify(content).length > 1_500_000) return json({ error: 'too_large' }, 413);
+        const { data: existing } = await db.from('shares').select('id').eq('owner_sub', who.sub).eq('note_id', noteId).maybeSingle();
+        const id = existing?.id ?? crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+        const { error } = await db.from('shares').upsert({
+          id, owner_sub: who.sub, note_id: noteId,
+          title: String(body.title ?? '').slice(0, 500), icon: body.icon ? String(body.icon).slice(0, 16) : null,
+          props: Array.isArray(body.props) ? body.props.slice(0, 50) : [], content, updated_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+        return json({ id });
+      }
+      case 'unshare': {
+        const who = await verifyAccess(body.access_token);
+        if (!who) return json({ error: 'unauthorized' }, 401);
+        await db.from('shares').delete().eq('owner_sub', who.sub).eq('note_id', String(body.note_id ?? ''));
+        return json({ ok: true });
+      }
       case 'delete': {
         const who = await verifyAccess(body.access_token);
         if (!who) return json({ error: 'unauthorized' }, 401);
