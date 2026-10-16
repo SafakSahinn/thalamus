@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon, parseDay, relTime } from '../../lib/format';
 import { go } from '../../lib/router';
-import { createNote, setProp, todayStr, updateNote, useStore } from '../../lib/store';
+import { setProp, todayStr, updateNote, useStore } from '../../lib/store';
+import { createDefault } from '../../lib/templates';
 import type { Note, PropDef, SavedView, TypeDef } from '../../lib/types';
 import { groupNotes, type Group } from '../../lib/views';
 import { Cell, Cover, EditCell } from './Cells';
@@ -57,7 +58,7 @@ export function TableView({ t, rows, view, newProps }: ViewProps) {
   const add = (g?: Group) => {
     const props = newProps();
     if (gdef && g && g.key) props[gdef.key] = gdef.kind === 'multiselect' || gdef.kind === 'relation' ? [g.key] : gdef.kind === 'checkbox' ? g.key === 'true' : g.key;
-    createNote(t.id, '', props);
+    createDefault(t.id, props);
   };
   return (
     <div className="tablewrap">
@@ -167,7 +168,7 @@ export function BoardView({ t, rows, view, newProps }: ViewProps) {
               </select>
             </a>
           ))}
-          <button type="button" className="linkbtn muted small board-add" onClick={() => open(createNote(t.id, '', { ...newProps(), [gdef.key]: valueFor(g) }).id)}>＋ Yeni</button>
+          <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(t.id, { ...newProps(), [gdef.key]: valueFor(g) }).id)}>＋ Yeni</button>
         </div>
       ))}
     </div>
@@ -242,7 +243,7 @@ export function CalendarView({ t, rows, view, newProps }: ViewProps) {
             >
               <div className="cal-num">
                 {parseDay(k).getDate()}
-                {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createNote(t.id, '', { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
+                {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(t.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
               </div>
               {items.slice(0, 4).map((n) => (
                 <a key={n.id} href={`#/n/${n.id}`} className="cal-item" draggable={editable}

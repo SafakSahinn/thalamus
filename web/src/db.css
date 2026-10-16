@@ -123,3 +123,13 @@ tr:hover .open-btn, .open-btn:focus { opacity: 1; }
 
 .board-move { display: none; align-self: flex-end; font-size: 12px; border: 1px solid var(--border); }
 @media (hover: none) { .board-move { display: block; } .board-card { cursor: pointer; } }
+
+/* ---------- şablonlar ---------- */
+.split-btn { display: inline-flex; position: relative; }
+.split-btn > .btn.primary:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split-btn > .btn.caret { border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 5px 8px; border-left: 1px solid rgba(255, 255, 255, 0.35); }
+.tpl-menu { left: auto; right: 0; min-width: 280px; padding: 6px; }
+.tpl-row { display: flex; align-items: center; }
+.tpl-row .iconbtn.on { color: #e6a23c; }
+.tpl-starter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -4px 0 12px; }
+.tpl-starter .btn { border: 1px solid var(--border); }

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
-import { createNote, todayStr, useIndex } from '../lib/store';
+import { todayStr, useIndex } from '../lib/store';
+import { createDefault } from '../lib/templates';
 import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
 
@@ -49,7 +50,7 @@ export default function Home() {
         <h3>Hızlı ekle</h3>
         <div className="quick">
           {QUICK.map((t) => (
-            <button key={t} className="quickbtn" style={{ '--c': typeOf(t).color } as React.CSSProperties} onClick={() => go(`/n/${createNote(t).id}`)}>
+            <button key={t} className="quickbtn" style={{ '--c': typeOf(t).color } as React.CSSProperties} onClick={() => go(`/n/${createDefault(t).id}`)}>
               <span>{typeOf(t).icon}</span>{typeOf(t).label}
             </button>
           ))}

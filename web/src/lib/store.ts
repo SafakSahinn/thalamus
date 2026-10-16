@@ -146,6 +146,12 @@ export function setProp(id: string, key: string, value: unknown) {
   updateNote(id, { props });
 }
 
+/** Açık editörün içeriği dışarıdan değiştiğinde (şablon, geçmişten geri yükleme) yeniden yüklensin */
+export function refreshEditor(id: string) {
+  const rev = get().remoteRev;
+  set({ remoteRev: { ...rev, [id]: (rev[id] ?? 0) + 1 } });
+}
+
 export const deleteNote = (id: string) => updateNote(id, { deleted_at: now() });
 export const restoreNote = (id: string) => updateNote(id, { deleted_at: null });
 
@@ -174,7 +180,8 @@ let idx: { alive: Note[]; backlinks: Map<string, string[]> } = { alive: [], back
 
 export function indexOf(notes: Record<string, Note>) {
   if (idxFor !== notes) {
-    const alive = Object.values(notes).filter((n) => !n.deleted_at);
+    // Şablonlar listelerde, aramada ve haritada görünmez
+    const alive = Object.values(notes).filter((n) => !n.deleted_at && !n.props.__template);
     idx = { alive, backlinks: buildBacklinks(alive) };
     idxFor = notes;
   }

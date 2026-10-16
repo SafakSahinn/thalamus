@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import NewButton from '../components/NewButton';
 import { promptText } from '../components/Prompt';
 import TypeEditor from '../components/TypeEditor';
 import { go } from '../lib/router';
-import { createNote, saveSettings, useIndex, useStore } from '../lib/store';
+import { saveSettings, useIndex, useStore } from '../lib/store';
+import { createDefault } from '../lib/templates';
 import { typeOf, type SavedView, type ViewKind } from '../lib/types';
 import { applyView, defaultViews, newViewId, VIEW_KINDS } from '../lib/views';
 import { FilterMenu, SortMenu, ViewOptions } from './collection/Toolbar';
@@ -135,7 +137,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
     }
     return props;
   };
-  const newNote = () => go(`/n/${createNote(t.id, '', newProps()).id}`);
+  const newNote = () => go(`/n/${createDefault(t.id, newProps()).id}`);
   const Render = RENDER[view.kind];
   const total = alive.filter((n) => n.type === t.id).length;
 
@@ -146,7 +148,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
         <h1>{t.icon} {t.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
-        <button className="btn primary" onClick={newNote}>+ Yeni {t.label.toLocaleLowerCase('tr')}</button>
+        <NewButton t={t} extraProps={newProps} />
       </div>
       <div className="view-tabs">
         {views.map((v) => (

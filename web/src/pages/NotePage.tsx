@@ -6,6 +6,7 @@ import { displayTitle, relTime } from '../lib/format';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
 import { createNote, deleteNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
+import { applyTemplate, isTemplate, saveAsTemplate, templatesFor } from '../lib/templates';
 import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 
 /** Üst sayfa zinciri (en üstten başlayarak) */
@@ -20,6 +21,21 @@ function useAncestors(note: Note) {
     cur = relationIds(notes[cur].props.parent)[0];
   }
   return out;
+}
+
+/** Boş notta "Şablondan başla" seçenekleri */
+function TemplateStarter({ note }: { note: Note }) {
+  const notes = useStore((s) => s.notes);
+  const tpls = templatesFor(note.type, notes).filter((x) => x.noteId !== note.id);
+  if (!tpls.length) return null;
+  return (
+    <div className="tpl-starter">
+      <span className="muted small">Şablondan başla:</span>
+      {tpls.map((tp) => (
+        <button key={tp.id} type="button" className="btn small ghost" onClick={() => applyTemplate(note, tp)}>{tp.icon} {tp.name}</button>
+      ))}
+    </div>
+  );
 }
 
 function SubPages({ note }: { note: Note }) {
@@ -115,6 +131,11 @@ export default function NotePage({ id }: { id: string }) {
   return (
     <div className="page note-page">
       <PageDecor note={note} />
+      {isTemplate(note) && (
+        <div className="banner">
+          🧩 Bu bir <b>şablon</b>. {typeOf(note.type).plural} koleksiyonunda “+ Yeni ▾” menüsünden kullanılır; başlığı şablonun adıdır.
+        </div>
+      )}
       {note.deleted_at && (
         <div className="banner warn">
           Bu not çöp kutusunda. <button className="btn small" onClick={() => restoreNote(note.id)}>Geri yükle</button>
@@ -134,6 +155,9 @@ export default function NotePage({ id }: { id: string }) {
               <select value={note.type} onChange={(e) => { updateNote(note.id, { type: e.target.value as TypeId }); setMenu(false); }}>
                 {TYPES.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.label}</option>)}
               </select>
+              {!isTemplate(note) && note.type !== 'daily' && (
+                <button className="btn small" onClick={() => { const tpl = saveAsTemplate(note); setMenu(false); go(`/n/${tpl.id}`); }}>🧩 Şablon olarak kaydet</button>
+              )}
               {!note.deleted_at && (
                 <button className="btn danger small" onClick={() => { deleteNote(note.id); setMenu(false); history.back(); }}>Çöp kutusuna taşı</button>
               )}
@@ -156,6 +180,7 @@ export default function NotePage({ id }: { id: string }) {
       )}
 
       <PropertyPanel note={note} />
+      {!note.content && !isTemplate(note) && note.type !== 'daily' && <TemplateStarter note={note} />}
 
       <NoteEditor
         docKey={note.id}

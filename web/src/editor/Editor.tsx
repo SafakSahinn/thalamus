@@ -35,7 +35,8 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
       content: (content as JSONContent) ?? '',
       immediatelyRender: true,
       editorProps: {
-        attributes: { class: 'prose' },
+        // Grammarly gibi yazım eklentileri büyük içerik değişikliklerinde sayfayı kilitleyebiliyor (ve Türkçe desteklemiyor)
+        attributes: { class: 'prose', 'data-gramm': 'false', 'data-gramm_editor': 'false', 'data-enable-grammarly': 'false' },
         handlePaste: (view, event) => {
           const files = [...(event.clipboardData?.files ?? [])];
           if (!files.length) return false;

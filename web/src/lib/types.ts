@@ -296,6 +296,8 @@ export interface Settings {
   types?: TypeSettings;
   /** Koleksiyon başına kayıtlı görünümler */
   views?: Record<string, SavedView[]>;
+  /** Koleksiyon başına varsayılan şablon kimliği */
+  defaultTemplates?: Record<string, string>;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
