@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { propValue, showValue } from '../lib/compute';
 import { relTime } from '../lib/format';
+import { googleCalendarUrl, icsFile } from '../lib/upcoming';
 import { fetchImageBlob, getCoverMode, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
 
 /** Kapak görselini indirip Drive'a (ya da cihaza) kaydeder; dönen değer gd:// veya local:// adresidir. */
@@ -321,6 +322,38 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   );
 }
 
+/** Tarihi Google Takvim'e ya da .ics ile Apple/Outlook takvimine ekle */
+export function AddToCalendar({ note, def, date }: { note: Note; def: PropDef; date: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const out = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    document.addEventListener('mousedown', out);
+    return () => document.removeEventListener('mousedown', out);
+  }, [open]);
+  const ics = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([icsFile(note, def, date)], { type: 'text/calendar;charset=utf-8' }));
+    a.download = `${(note.title || 'etkinlik').replace(/[\\/:*?"<>|]+/g, '-')} - ${def.label}.ics`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setOpen(false);
+  };
+  return (
+    <span className="cal-btn" ref={ref}>
+      <button type="button" className="iconbtn" title="Takvime ekle (hatırlatma için)" onClick={() => setOpen(!open)}>📅</button>
+      {open && (
+        <div className="tb-pop cal-pop">
+          <a className="bm-row" href={googleCalendarUrl(note, def, date)} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>Google Takvim’e ekle ↗</a>
+          <button type="button" className="bm-row" onClick={ics}>Apple / Outlook takvimine ekle (.ics)</button>
+          <p className="muted small">Takvim uygulaman tarihten önce sana hatırlatır.</p>
+        </div>
+      )}
+    </span>
+  );
+}
+
 /** Hesaplanan alan (formül, toplama, oluşturulma/düzenlenme zamanı) */
 export function ComputedValue({ note, def }: { note: Note; def: PropDef }) {
   const notes = useStore((s) => s.notes);
@@ -367,7 +400,12 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
     case 'number':
       return <input key={k} type="number" defaultValue={(v as number) ?? ''} placeholder="Boş" onBlur={(e) => setProp(note.id, def.key, e.target.value === '' ? undefined : Number(e.target.value))} />;
     case 'date':
-      return <input type="date" value={(v as string) ?? ''} onChange={(e) => setProp(note.id, def.key, e.target.value)} />;
+      return (
+        <div className="urlinput">
+          <input type="date" value={(v as string) ?? ''} onChange={(e) => setProp(note.id, def.key, e.target.value)} />
+          {typeof v === 'string' && v && note.type !== 'daily' && <AddToCalendar note={note} def={def} date={v} />}
+        </div>
+      );
     case 'url':
       return <UrlInput note={note} def={def} />;
     case 'checkbox':

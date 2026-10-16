@@ -4,6 +4,7 @@ import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
 import { todayStr, useIndex } from '../lib/store';
 import { createDefault } from '../lib/templates';
+import { upcoming, whenText } from '../lib/upcoming';
 import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
 
@@ -17,6 +18,7 @@ export default function Home() {
     [alive],
   );
   const active = useMemo(() => alive.filter((n) => ACTIVE.has(n.props.status as string)), [alive]);
+  const soon = useMemo(() => upcoming(alive), [alive]);
   const word = useMemo(() => {
     const words = alive.filter((n) => n.type === 'word' && !n.props.learned && n.props.meaning);
     if (!words.length) return null;
@@ -56,6 +58,21 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {soon.length > 0 && (
+        <section>
+          <h3>Yaklaşanlar</h3>
+          <div className="list upcoming">
+            {soon.map((u) => (
+              <a key={u.note.id + u.def.key} className={`rowlink ${u.days < 0 ? 'overdue' : u.days <= 2 ? 'near' : ''}`} href={`#/n/${u.note.id}`}>
+                <span>{noteIcon(u.note)}</span>
+                <span className="grow">{displayTitle(u.note)} <span className="muted small">· {u.def.label}</span></span>
+                <span className="when small">{whenText(u.days)}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="home-grid">
         {active.length > 0 && (

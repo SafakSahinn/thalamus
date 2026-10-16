@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import CommandPalette, { openPalette } from './components/CommandPalette';
 import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
+import Shortcuts from './components/Shortcuts';
 import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
 import { cloud } from './lib/google';
@@ -76,6 +77,7 @@ export default function App() {
       <CommandPalette />
       <PromptHost />
       <Welcome />
+      <Shortcuts />
     </div>
   );
 }

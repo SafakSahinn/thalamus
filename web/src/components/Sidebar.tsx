@@ -6,6 +6,7 @@ import { relationIds, TYPES, type Note } from '../lib/types';
 import { createCollection } from '../lib/schema';
 import { go } from '../lib/router';
 import { openPalette } from './CommandPalette';
+import { openShortcuts } from './Shortcuts';
 import { newCollectionFlow } from './TypeEditor';
 
 const SYNC_LABEL: Record<SyncStatus, string> = {
@@ -150,6 +151,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
         <a href="#/import" className={active('#/import')}>⬇ Notion’dan aktar</a>
         <a href="#/trash" className={active('#/trash')}>🗑 Çöp kutusu</a>
         <a href="#/settings" className={active('#/settings')}>⚙ Ayarlar</a>
+        <button type="button" className="searchbtn" onClick={() => { onNav(); openShortcuts(); }}>⌨ Kısayollar <kbd>Ctrl /</kbd></button>
         <SyncBadge />
       </div>
     </nav>
