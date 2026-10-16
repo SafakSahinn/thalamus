@@ -23,7 +23,8 @@ export interface DriveApi {
   /** Klasördeki dosyaların meta verisi (içerik yok) */
   list(parent: string): Promise<DFile[]>;
   startPageToken(): Promise<string>;
-  changes(token: string): Promise<{ files: DFile[]; next: string }>;
+  /** removed: silinmiş (ya da çöpe atılmış) dosya kimlikleri */
+  changes(token: string): Promise<{ files: DFile[]; removed: string[]; next: string }>;
   readJson<T>(id: string): Promise<T>;
   createJson(parent: string, name: string, data: unknown, props: Record<string, string>): Promise<string>;
   /** Dosya yoksa (kullanıcı silmişse) NotFoundError fırlatır */
@@ -124,12 +125,16 @@ export const drive: DriveApi = {
 
   async changes(token) {
     const files: DFile[] = [];
+    const removed: string[] = [];
     let page = token;
     for (;;) {
       const r = await req(`${API}/changes?pageToken=${q(page)}&pageSize=1000&spaces=drive&fields=nextPageToken,newStartPageToken,changes(fileId,removed,file(id,trashed,appProperties))`);
       const d = (await r.json()) as { changes: { fileId: string; removed?: boolean; file?: DFile }[]; nextPageToken?: string; newStartPageToken?: string };
-      for (const c of d.changes) if (c.file && !c.removed) files.push(c.file);
-      if (d.newStartPageToken) return { files, next: d.newStartPageToken };
+      for (const c of d.changes) {
+        if (c.removed || c.file?.trashed) removed.push(c.fileId);
+        else if (c.file) files.push(c.file);
+      }
+      if (d.newStartPageToken) return { files, removed, next: d.newStartPageToken };
       page = d.nextPageToken!;
     }
   },

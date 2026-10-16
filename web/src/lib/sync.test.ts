@@ -39,6 +39,7 @@ class FakeDrive implements DriveApi {
     const ids = [...new Set(this.log.slice(Number(token)))];
     return {
       files: ids.filter((id) => this.files.has(id)).map((id) => ({ id, appProperties: { ...this.files.get(id)!.props } })),
+      removed: ids.filter((id) => !this.files.has(id)),
       next: String(this.log.length),
     };
   }
@@ -77,6 +78,7 @@ class FakeDrive implements DriveApi {
     const drop = (x: string) => {
       for (const [cid, c] of this.files) if (c.parent === x) drop(cid);
       this.files.delete(x);
+      this.touch(x);
     };
     drop(id);
   }
@@ -201,6 +203,21 @@ describe('Drive eşitlemesi (iki cihaz, sahte Drive)', () => {
     expect(Object.keys(notesOf(C))).toHaveLength(total);
     // 1 özet + 1 ayar + yalnızca özetten sonra değişen not(lar)
     expect(drive.reads - before).toBeLessThanOrEqual(4);
+  });
+
+  it('Kalıcı silme diğer cihaza geçer ve yeni cihazda özet dosyasından dirilmez', async () => {
+    const victim = A.createNote('note', 'Silinecek not');
+    await A.writePending();
+    await A.syncNow();
+    await B.syncNow();
+    expect(notesOf(B)[victim.id]).toBeTruthy();
+    await A.purgeNote(victim.id);
+    expect(notesOf(A)[victim.id]).toBeUndefined();
+    await B.syncNow();
+    expect(notesOf(B)[victim.id]).toBeUndefined();
+    const D = await device();
+    await D.syncNow();
+    expect(notesOf(D)[victim.id]).toBeUndefined();
   });
 
   it('Kullanıcı Drive’daki klasörü silerse bir sonraki eşitlemede baştan kurulur', async () => {

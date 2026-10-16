@@ -305,22 +305,73 @@ async function fullPull() {
   const start = await api.startPageToken();
   const f = await getFolders();
   const rootFiles = await api.list(f.root);
+  const noteFiles = await api.list(f.notes);
+  const present = new Set(noteFiles.map((x) => x.appProperties?.noteId).filter(Boolean));
   const snap = rootFiles.find((x) => x.appProperties?.thalamus === 'snapshot');
   if (snap) {
     await setMeta('snapshotId', snap.id);
     const data = await api.readJson<{ notes: Note[] }>(snap.id).catch(() => ({ notes: [] as Note[] }));
-    await applyRemote(data.notes ?? []);
+    await applyRemote((data.notes ?? []).filter((n) => present.has(n.id)));
   }
-  await applyFiles([...rootFiles.filter((x) => x.appProperties?.thalamus === 'settings'), ...(await api.list(f.notes))]);
+  await applyFiles([...rootFiles.filter((x) => x.appProperties?.thalamus === 'settings'), ...noteFiles]);
   await setMeta('changesToken', start);
 }
 
 async function pull() {
   const token = await getMeta<string>('changesToken');
   if (!token) return fullPull();
-  const { files, next } = await api.changes(token);
+  const { files, removed, next } = await api.changes(token);
   await applyFiles(files);
+  if (removed.length) await purgeRemoved(removed);
   await setMeta('changesToken', next);
+}
+
+/** Başka cihazda kalıcı silinen notları bu cihazdan da kaldır */
+async function purgeRemoved(fileIds: string[]) {
+  const d = await db();
+  const gone = new Set(fileIds);
+  const ids: string[] = [];
+  let cur = await d.transaction('driveIds').store.openCursor();
+  while (cur) {
+    if (gone.has(cur.value)) ids.push(cur.key as string);
+    cur = await cur.continue();
+  }
+  for (const id of ids) await purgeLocal(id);
+}
+
+async function purgeLocal(id: string) {
+  const d = await db();
+  memQueue.delete(id);
+  await Promise.all([d.delete('notes', id), d.delete('outbox', id), d.delete('driveIds', id)]);
+  if (get().notes[id]) {
+    const notes = { ...get().notes };
+    delete notes[id];
+    set({ notes });
+  }
+}
+
+/** Notu kalıcı olarak siler (bu cihazdan, Drive'dan ve diğer cihazlardan). */
+export async function purgeNote(id: string) {
+  const d = await db();
+  const fileId = await d.get('driveIds', id);
+  await purgeLocal(id);
+  if (cloud && get().account && fileId) {
+    try {
+      await api.remove(fileId);
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
+    }
+    // Özet dosyası hemen yenilensin ki yeni cihazlarda geri gelmesin
+    await maybeSnapshot(await getFolders(), true).catch(() => undefined);
+  }
+}
+
+/** Çöp kutusunu boşalt; olderThanDays verilirse yalnızca o kadar günden eski olanlar */
+export async function emptyTrash(olderThanDays = 0) {
+  const limit = Date.now() - olderThanDays * 864e5;
+  const ids = Object.values(get().notes).filter((n) => n.deleted_at && Date.parse(n.deleted_at) <= limit).map((n) => n.id);
+  for (const id of ids) await purgeNote(id);
+  return ids.length;
 }
 
 let flushing = false;
@@ -464,6 +515,7 @@ export function startSync() {
       if (local.length) await putNotes(local, true);
     }
     await syncNow();
+    await emptyTrash(30).catch(() => undefined);
   })();
   let last = 0;
   const soon = () => {
