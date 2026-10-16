@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { propValue, showValue } from '../lib/compute';
+import { relTime } from '../lib/format';
 import { fetchImageBlob, getCoverMode, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
 
 /** Kapak görselini indirip Drive'a (ya da cihaza) kaydeder; dönen değer gd:// veya local:// adresidir. */
@@ -319,10 +321,33 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   );
 }
 
+/** Hesaplanan alan (formül, toplama, oluşturulma/düzenlenme zamanı) */
+export function ComputedValue({ note, def }: { note: Note; def: PropDef }) {
+  const notes = useStore((s) => s.notes);
+  const v = propValue(note, def, notes);
+  if (def.kind === 'created' || def.kind === 'updated') return <span className="muted computed" title={String(v)}>{relTime(String(v))}</span>;
+  const text = showValue(v);
+  const err = text.startsWith('⚠');
+  return <span className={`computed ${err ? 'err' : ''}`}>{text || <span className="muted">—</span>}</span>;
+}
+
 export function PropValue({ note, def }: { note: Note; def: PropDef }) {
   const v = note.props[def.key];
   const k = note.id + def.key;
   switch (def.kind) {
+    case 'formula':
+    case 'rollup':
+    case 'created':
+    case 'updated':
+      return <ComputedValue note={note} def={def} />;
+    case 'email':
+    case 'phone':
+      return (
+        <div className="urlinput">
+          <input key={k} type={def.kind === 'email' ? 'email' : 'tel'} defaultValue={(v as string) ?? ''} placeholder="Boş" onBlur={(e) => e.target.value.trim() !== (v ?? '') && setProp(note.id, def.key, e.target.value.trim())} />
+          {typeof v === 'string' && v && <a className="btn small ghost" href={`${def.kind === 'email' ? 'mailto' : 'tel'}:${v}`}>{def.kind === 'email' ? '✉' : '📞'}</a>}
+        </div>
+      );
     case 'text':
       return <input key={k} defaultValue={(v as string) ?? ''} placeholder="Boş" onBlur={(e) => e.target.value !== (v ?? '') && setProp(note.id, def.key, e.target.value)} />;
     case 'longtext':
@@ -401,6 +426,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
   const t = typeOf(note.type);
   const [showEmpty, setShowEmpty] = useState(false);
   const isEmpty = (d: PropDef) => {
+    if (['formula', 'rollup', 'created', 'updated'].includes(d.kind)) return false;
     const v = note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };

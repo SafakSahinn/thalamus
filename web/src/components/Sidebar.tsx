@@ -3,7 +3,10 @@ import { displayTitle, noteIcon } from '../lib/format';
 import type { Route } from '../lib/router';
 import { useIndex, useStore, type SyncStatus } from '../lib/store';
 import { relationIds, TYPES, type Note } from '../lib/types';
+import { createCollection } from '../lib/schema';
+import { go } from '../lib/router';
 import { openPalette } from './CommandPalette';
+import { newCollectionFlow } from './TypeEditor';
 
 const SYNC_LABEL: Record<SyncStatus, string> = {
   local: 'Yalnızca bu cihazda',
@@ -138,6 +141,10 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
           <span className="cnt">{counts.get(t.id) ?? ''}</span>
         </a>
       ))}
+      <button type="button" className="searchbtn" onClick={async () => {
+        const id = await newCollectionFlow((label) => createCollection(label));
+        if (id) { onNav(); go(`/c/${id}/edit`); }
+      }}>＋ Yeni koleksiyon</button>
 
       <div className="side-foot">
         <a href="#/import" className={active('#/import')}>⬇ Notion’dan aktar</a>

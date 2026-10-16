@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Chip, NoteChip, Stars } from '../components/PropertyPanel';
+import { Chip, ComputedValue, NoteChip, Stars } from '../components/PropertyPanel';
+import TypeEditor from '../components/TypeEditor';
 import { displayTitle, fmtDate, relTime } from '../lib/format';
 import { norm } from '../lib/links';
 import { go } from '../lib/router';
@@ -8,9 +9,12 @@ import { relationIds, typeOf, type Note, type PropDef } from '../lib/types';
 
 export function Cell({ note, def }: { note: Note; def: PropDef }) {
   const notes = useStore((s) => s.notes);
+  if (['formula', 'rollup', 'created', 'updated'].includes(def.kind)) return <ComputedValue note={note} def={def} />;
   const v = note.props[def.key];
   if (v === undefined || v === null || v === '') return null;
   switch (def.kind) {
+    case 'email': return <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
+    case 'phone': return <a href={`tel:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
     case 'select': return <Chip text={String(v)} />;
     case 'multiselect': return <>{(v as string[]).map((x) => <Chip key={x} text={x} />)}</>;
     case 'rating': return <Stars value={Number(v)} />;
@@ -36,8 +40,9 @@ function Cover({ src, icon }: { src?: string; icon: string }) {
 
 type SortKey = 'updated' | 'title' | string;
 
-export default function CollectionPage({ type }: { type: string }) {
+export default function CollectionPage({ type, edit }: { type: string; edit?: boolean }) {
   const t = typeOf(type);
+  const [editing, setEditing] = useState(Boolean(edit));
   const { alive } = useIndex();
   const pref = `view:${t.id}`;
   const [view, setView] = useState<'table' | 'cards'>(() => (localStorage.getItem(pref) as 'table' | 'cards') ?? (t.cover ? 'cards' : 'table'));
@@ -83,9 +88,11 @@ export default function CollectionPage({ type }: { type: string }) {
 
   return (
     <div className="page wide">
+      {editing && <TypeEditor typeId={t.id} onClose={() => { setEditing(false); if (edit) history.replaceState(null, '', `#/c/${t.id}`); }} />}
       <div className="coll-head">
         <h1>{t.icon} {t.plural} <span className="count">{list.length}</span></h1>
         <span className="spacer" />
+        <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
         <button className="btn primary" onClick={newNote}>+ Yeni {t.label.toLocaleLowerCase('tr')}</button>
       </div>
       <div className="toolbar">

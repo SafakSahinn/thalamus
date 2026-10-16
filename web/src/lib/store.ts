@@ -3,7 +3,7 @@ import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db
 import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, type AuthState, type Profile } from './google';
 import { buildBacklinks, computeLinks, plainText } from './links';
-import { DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
+import { applyTypeSettings, DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
 
@@ -40,6 +40,11 @@ export const useStore = create<State>(() => ({
   sync: { status: cloud ? 'idle' : 'local', pending: 0 },
   remoteRev: {},
 }));
+
+// Koleksiyon tanımları ayarlarla değişir (bu cihazda ya da başka cihazdan gelince)
+useStore.subscribe((s, prev) => {
+  if (s.settings.types !== prev.settings.types) applyTypeSettings(s.settings.types);
+});
 
 const set = useStore.setState;
 const get = useStore.getState;

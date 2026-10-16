@@ -1,14 +1,20 @@
-// Not tipleri (Notion'daki "veritabanları"). Tipler kodda tanımlıdır; her not
-// bir tipe aittir, özellikleri (props) tipin alanlarına göre düzenlenir.
+// Not tipleri (Notion'daki "veritabanları"). Hazır tipler aşağıda tanımlıdır; kullanıcı yeni
+// koleksiyon ekleyebilir, hazır olanlara alan ekleyip çıkarabilir (ayarlarda saklanır, Drive ile eşitlenir).
 // "relation" alanları diğer notlara bağlantıdır ve grafikte kenar olarak görünür.
 
-export type TypeId =
+export type BuiltinTypeId =
   | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'note'
   | 'word' | 'person' | 'concept' | 'daily';
 
+/** Hazır tipler ya da kullanıcı koleksiyonları ("c_…") */
+export type TypeId = BuiltinTypeId | (string & {});
+
 export type PropKind =
-  | 'text' | 'longtext' | 'number' | 'date' | 'url'
-  | 'select' | 'multiselect' | 'rating' | 'relation' | 'checkbox';
+  | 'text' | 'longtext' | 'number' | 'date' | 'url' | 'email' | 'phone'
+  | 'select' | 'multiselect' | 'rating' | 'relation' | 'checkbox'
+  | 'formula' | 'rollup' | 'created' | 'updated';
+
+export type RollupFn = 'count' | 'sum' | 'avg' | 'min' | 'max' | 'list' | 'checked' | 'percent_checked' | 'earliest' | 'latest';
 
 export interface PropDef {
   key: string;
@@ -19,6 +25,12 @@ export interface PropDef {
   target?: TypeId[];
   /** Koleksiyon tablosunda sütun olarak gösterilsin mi? */
   table?: boolean;
+  /** formula: ifade, ör. prop("Sayfa") / 30 */
+  formula?: string;
+  /** rollup: bağlantı alanındaki notların bir alanı üzerinde toplama */
+  rollup?: { relation: string; prop: string; fn: RollupFn };
+  /** Kullanıcının eklediği alan (silinebilir) */
+  custom?: boolean;
 }
 
 export interface TypeDef {
@@ -37,7 +49,7 @@ export interface TypeDef {
 const topics: PropDef = { key: 'topics', label: 'Konular', kind: 'relation', target: ['concept'], table: true };
 const words: PropDef = { key: 'words', label: 'Kelimeler', kind: 'relation', target: ['word'] };
 
-export const TYPES: TypeDef[] = [
+export const BUILTIN_TYPES: TypeDef[] = [
   {
     id: 'book', label: 'Kitap', plural: 'Kitaplar', icon: '📚', color: '#d9822b', cover: 'cover',
     props: [
@@ -144,9 +156,65 @@ export const TYPES: TypeDef[] = [
   },
 ];
 
-export const TYPE_MAP = Object.fromEntries(TYPES.map((t) => [t.id, t])) as Record<TypeId, TypeDef>;
+// ---------- kullanıcı ayarlarıyla birleştirilmiş tip kayıt defteri ----------
 
-export const typeOf = (id: string): TypeDef => TYPE_MAP[id as TypeId] ?? TYPE_MAP.note;
+export interface PropOverride {
+  label?: string;
+  options?: string[];
+  table?: boolean;
+  hidden?: boolean;
+}
+
+export interface TypeSettings {
+  /** Kullanıcının oluşturduğu koleksiyonlar */
+  custom: TypeDef[];
+  /** Hazır tiplere eklenen alanlar */
+  extra: Record<string, PropDef[]>;
+  /** Hazır tiplerde ad/simge/alan değişiklikleri */
+  overrides: Record<string, { label?: string; plural?: string; icon?: string; color?: string; props?: Record<string, PropOverride>; order?: string[] }>;
+}
+
+export const EMPTY_TYPE_SETTINGS: TypeSettings = { custom: [], extra: {}, overrides: {} };
+
+function applyOverrides(t: TypeDef, ts: TypeSettings, keepHidden: boolean): TypeDef {
+  const o = ts.overrides[t.id] ?? {};
+  let props = [...t.props, ...(ts.extra[t.id] ?? [])].map((p) => {
+    const po = o.props?.[p.key];
+    return po ? { ...p, ...po, options: po.options ?? p.options } : p;
+  });
+  if (!keepHidden) props = props.filter((p) => !(o.props?.[p.key]?.hidden));
+  if (o.order) {
+    const idx = (k: string) => {
+      const i = o.order!.indexOf(k);
+      return i < 0 ? 1e6 : i;
+    };
+    props = [...props].sort((a, b) => idx(a.key) - idx(b.key));
+  }
+  return { ...t, label: o.label ?? t.label, plural: o.plural ?? t.plural, icon: o.icon ?? t.icon, color: o.color ?? t.color, props };
+}
+
+/** Güncel tip listesi (hazır + kullanıcı). ES modül canlı bağlaması sayesinde her yerde güncel kalır. */
+export let TYPES: TypeDef[] = BUILTIN_TYPES;
+export let TYPE_MAP: Record<string, TypeDef> = Object.fromEntries(TYPES.map((t) => [t.id, t]));
+let typeSettings: TypeSettings = EMPTY_TYPE_SETTINGS;
+
+export function applyTypeSettings(ts: TypeSettings | undefined) {
+  typeSettings = ts ?? EMPTY_TYPE_SETTINGS;
+  TYPES = [...BUILTIN_TYPES.map((t) => applyOverrides(t, typeSettings, false)), ...typeSettings.custom.map((t) => applyOverrides(t, typeSettings, false))];
+  TYPE_MAP = Object.fromEntries(TYPES.map((t) => [t.id, t]));
+}
+
+/** Düzenleme ekranı için: gizlenmiş alanlar dahil */
+export function editableType(id: string): TypeDef | undefined {
+  const base = BUILTIN_TYPES.find((t) => t.id === id) ?? typeSettings.custom.find((t) => t.id === id);
+  return base && applyOverrides(base, typeSettings, true);
+}
+
+export const isBuiltinType = (id: string) => BUILTIN_TYPES.some((t) => t.id === id);
+export const isBuiltinProp = (typeId: string, key: string) =>
+  Boolean(BUILTIN_TYPES.find((t) => t.id === typeId)?.props.some((p) => p.key === key));
+
+export const typeOf = (id: string): TypeDef => TYPE_MAP[id] ?? TYPE_MAP.note;
 
 export interface Note {
   id: string;
@@ -172,8 +240,33 @@ export interface Routine {
   icon: string;
 }
 
+export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list';
+
+export interface ViewFilter {
+  key: string;
+  op: string;
+  value?: unknown;
+}
+
+export interface SavedView {
+  id: string;
+  name: string;
+  kind: ViewKind;
+  filters: ViewFilter[];
+  sort: { key: string; dir: 'asc' | 'desc' }[];
+  /** board: gruplanacak seçim alanı · table/list: gruplama alanı */
+  groupBy?: string;
+  /** calendar: tarih alanı */
+  dateKey?: string;
+  /** table: gizli sütunlar */
+  hidden?: string[];
+}
+
 export interface Settings {
   routines: Routine[];
+  types?: TypeSettings;
+  /** Koleksiyon başına kayıtlı görünümler */
+  views?: Record<string, SavedView[]>;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

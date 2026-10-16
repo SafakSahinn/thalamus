@@ -23,6 +23,8 @@ const LegalPage = lazy(() => import('./pages/LegalPage'));
 export default function App() {
   const account = useStore((s) => s.account);
   const ready = useStore((s) => s.ready);
+  // Koleksiyon/alan tanımları değişince bütün ağaç yeniden çizilsin (sayfa durumu korunur)
+  useStore((s) => s.settings.types);
   const route = parse(useHash());
   const [drawer, setDrawer] = useState(false);
 
@@ -46,7 +48,7 @@ export default function App() {
   switch (route.name) {
     case 'home': page = <Home />; break;
     case 'note': page = <NotePage id={route.id} />; break;
-    case 'collection': page = <CollectionPage type={route.type} />; break;
+    case 'collection': page = <CollectionPage type={route.type} edit={route.edit} />; break;
     case 'graph': page = <GraphPage />; break;
     case 'daily': page = <DailyPage date={route.date} />; break;
     case 'dictionary': page = <DictionaryPage />; break;
