@@ -11,6 +11,8 @@ import Suggestion from '@tiptap/suggestion';
 import { promptText } from '../components/Prompt';
 import { norm } from '../lib/links';
 import { resolveFileUrl, uploadFile } from '../lib/store';
+import { CodeBlock } from './CodeBlock';
+import { FindReplace } from './FindReplace';
 import { suggestConfig, type Entry } from './suggest';
 import { WikiLink } from './WikiLink';
 
@@ -70,7 +72,7 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: '1.', label: 'Numaralı liste', keys: 'liste ordered', action: (e, r) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
   { icon: '☑', label: 'Yapılacaklar', keys: 'todo gorev checkbox', action: (e, r) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
   { icon: '❝', label: 'Alıntı', keys: 'quote', action: (e, r) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
-  { icon: '{}', label: 'Kod bloğu', keys: 'code', action: (e, r) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
+  { icon: '{}', label: 'Kod bloğu', keys: 'code c cpp python matlab verilog program', action: (e, r) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
   { icon: '∑', label: 'Formül (blok)', keys: 'math latex denklem', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
     void promptText('Blok formül (LaTeX)', '', { multiline: true, hint: 'Örnek: H(s) = \\frac{1}{1 + sRC}' }).then((v) => {
@@ -112,7 +114,8 @@ const SlashCommand = Extension.create({
 /** Editörde ve içe aktarmada (şema için) kullanılan ortak eklentiler. */
 export function baseExtensions(): AnyExtension[] {
   return [
-    StarterKit.configure({ link: { openOnClick: false, autolink: true } }),
+    StarterKit.configure({ link: { openOnClick: false, autolink: true }, codeBlock: false }),
+    CodeBlock,
     Highlight,
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -133,6 +136,7 @@ export function editorExtensions(placeholder: string): AnyExtension[] {
     }),
     Placeholder.configure({ placeholder }),
     SlashCommand,
+    FindReplace,
     Extension.create({
       name: 'editorRef',
       onCreate() {

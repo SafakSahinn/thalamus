@@ -2,9 +2,10 @@ import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import 'katex/dist/katex.min.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { promptText } from '../components/Prompt';
 import { editorExtensions, insertImageFile } from './extensions';
+import FindBar from './FindBar';
 
 interface Props {
   /** Değiştiğinde editör yeniden kurulur */
@@ -98,9 +99,24 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
     if (text) editor.chain().focus().deleteRange({ from, to }).insertInlineMath({ latex: text }).run();
   };
 
+  const [find, setFind] = useState<string | null>(null);
+  // Ctrl+F: tarayıcının araması yerine not içi bul/değiştir
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f' && editor) {
+        e.preventDefault();
+        const { from, to } = editor.state.selection;
+        setFind(from !== to ? editor.state.doc.textBetween(from, to).slice(0, 100) : find ?? '');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editor, find]);
+
   return (
     <div className="editor">
-      <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to }) => from !== to && !e.isActive('codeBlock') && !e.isActive('image')}>
+      {find !== null && <FindBar key={find} editor={editor} initial={find} onClose={() => setFind(null)} />}
+      <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to }) => e.isFocused && from !== to && !e.isActive('codeBlock') && !e.isActive('image')}>
         <button className={state.bold ? 'on' : ''} onClick={() => editor.chain().focus().toggleBold().run()} title="Kalın (Ctrl+B)"><b>B</b></button>
         <button className={state.italic ? 'on' : ''} onClick={() => editor.chain().focus().toggleItalic().run()} title="İtalik (Ctrl+I)"><i>I</i></button>
         <button className={state.underline ? 'on' : ''} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Altı çizili (Ctrl+U)"><u>U</u></button>

@@ -1,35 +1,63 @@
 import { useState } from 'react';
 import { setAnnouncements, useStore } from '../lib/store';
 
-/** Yeni kayıt olan kullanıcıya bir kez: duyuru e-postası tercihi. */
+const POINTS = [
+  { icon: '📚', title: 'Her şey tek yerde', text: 'Kitaplar, makaleler, dersler, filmler, söyleşiler ve günlüğün.' },
+  { icon: '🕸', title: 'Birbirine bağlı', text: 'Metinde [[ yaz, notlarını bağla; haritada nasıl birleştiklerini gör.' },
+  { icon: '🔤', title: 'Ortak sözlük', text: 'Okurken eklediğin kelimeler, geçtikleri bütün kaynaklarla birlikte toplanır.' },
+  { icon: '🔒', title: 'Notların senin', text: 'Hepsi Google Drive’ındaki Thalamus klasöründe; biz göremeyiz.' },
+];
+
+/** Yeni kayıt olan kullanıcıya bir kez: kısa tanıtım ve duyuru e-postası tercihi. */
 export default function Welcome() {
   const welcome = useStore((s) => s.welcome);
   const name = useStore((s) => s.account?.name);
+  const [news, setNews] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   if (!welcome) return null;
-  const close = () => useStore.setState({ welcome: false });
-  const yes = async () => {
+
+  const start = async () => {
     setBusy(true);
     try {
-      await setAnnouncements(true);
-      close();
+      if (news) await setAnnouncements(true);
+      useStore.setState({ welcome: false });
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(false);
     }
   };
+
   return (
     <div className="modal-back">
-      <div className="modal prompt welcome" role="dialog" aria-label="Hoş geldin">
-        <h3>Hoş geldin{name ? `, ${name.split(' ')[0]}` : ''}!</h3>
-        <p>Notların Google Drive’ındaki <b>Thalamus</b> klasöründe saklanacak.</p>
-        <p>Thalamus’a yeni özellikler geldiğinde ara sıra e-posta almak ister misin? İstediğin zaman Ayarlar’dan kapatabilirsin.</p>
-        {err && <p className="err small">{err}</p>}
-        <div className="row end">
-          <button className="btn ghost" onClick={close} disabled={busy}>Hayır, teşekkürler</button>
-          <button className="btn primary" onClick={() => void yes()} disabled={busy}>Evet, haber ver</button>
+      <div className="modal welcome" role="dialog" aria-label="Thalamus’a hoş geldin">
+        <div className="welcome-hero">
+          <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={76} height={76} />
+          <h2>Hoş geldin{name ? `, ${name.split(' ')[0]}` : ''}!</h2>
+          <p>Thalamus, beynin bilgileri birbirine bağlayan merkezi gibi, okuduğun ve öğrendiğin her şeyi birbirine bağlar.</p>
         </div>
+        <div className="welcome-points">
+          {POINTS.map((p) => (
+            <div key={p.title} className="wpoint">
+              <span className="wicon">{p.icon}</span>
+              <div>
+                <b>{p.title}</b>
+                <div className="muted small">{p.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <label className="welcome-news">
+          <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
+          <span>
+            Yeni özellikler geldiğinde ara sıra e-posta almak istiyorum
+            <span className="muted small"> · İstediğin zaman Ayarlar’dan kapatabilirsin.</span>
+          </span>
+        </label>
+        {err && <p className="err small">{err}</p>}
+        <button className="btn primary welcome-go" onClick={() => void start()} disabled={busy}>
+          {busy ? 'Kaydediliyor…' : 'Başlayalım →'}
+        </button>
       </div>
     </div>
   );
