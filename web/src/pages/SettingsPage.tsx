@@ -95,7 +95,8 @@ function DeleteAccount({ email }: { email: string }) {
         <div className="danger-box">
           <p>Thalamus hesap kaydın silinir, uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır.</p>
           <label className="small">
-            <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} /> Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil
+            <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} />
+            <span>Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil</span>
           </label>
           {!drive && <p className="muted small">Notların Drive’ında kalır; istediğin zaman tekrar giriş yapıp kaldığın yerden devam edebilirsin.</p>}
           <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
@@ -180,7 +181,12 @@ export default function SettingsPage() {
             </div>
             {sync.error && <p className="err small">{sync.error}</p>}
             <p className="muted small">Notlar önce bu cihaza kaydedilir, internet varken birkaç saniye içinde Google Drive’ındaki <b>Thalamus</b> klasörüne gider. Diğer cihazların uygulamayı açtığında ya da yarım dakika içinde güncellenir. Çevrimdışıyken de yazabilirsin.</p>
-            <div><button className="btn ghost" onClick={() => void signOut()}>Bu cihazda çıkış yap</button></div>
+            <div className="row">
+              <button className="btn signout" onClick={() => void signOut()}>
+                <span aria-hidden="true">⎋</span> Bu cihazda çıkış yap
+              </button>
+              <span className="muted small">Notların Drive’ında kalır; tekrar giriş yapınca geri gelir.</span>
+            </div>
           </>
         ) : (
           <p className="muted">Bulut ayarlanmadı: notlar yalnızca bu tarayıcıda tutuluyor. Düzenli olarak yedek almayı unutma.</p>
@@ -192,7 +198,7 @@ export default function SettingsPage() {
           <h3>E-posta bildirimleri</h3>
           <label className="small">
             <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x) => setAnnErr(String(x))); }} />
-            Yenilikler hakkında ara sıra e-posta al
+            <span>Yenilikler hakkında ara sıra e-posta al</span>
           </label>
           <p className="muted small">{announcements ? 'Açık: yeni özellikler duyurulduğunda e-posta alırsın. Her e-postada abonelikten çıkma bağlantısı da olur.' : 'Kapalı: Thalamus sana duyuru e-postası göndermez.'}</p>
           {annErr && <p className="err small">{annErr}</p>}

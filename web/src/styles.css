@@ -556,3 +556,6 @@ a.rowlink:hover { background: var(--hover); }
 .welcome-news input { margin-top: 3px; accent-color: var(--accent); width: auto; flex: none; }
 .modal.welcome .err { margin: 8px 24px 0; }
 .welcome-go { margin: 16px 24px 0; justify-content: center; padding: 10px; font-weight: 600; }
+.btn.signout { padding: 6px 14px; font-weight: 500; }
+.btn.signout span { font-size: 15px; color: var(--muted); }
+.danger-box label { margin: 2px 0; }
