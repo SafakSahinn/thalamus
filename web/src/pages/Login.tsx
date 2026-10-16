@@ -77,6 +77,8 @@ export default function Login() {
           {mode !== 'up' && <button type="button" className="linkbtn" onClick={() => setMode('up')}>Hesap oluştur</button>}
           {mode !== 'reset' && <button type="button" className="linkbtn" onClick={() => setMode('reset')}>Şifremi unuttum</button>}
         </div>
+        {mode === 'up' && <p className="muted small">Hesap oluşturarak <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş ve <a href="#/gizlilik">Gizlilik ve KVKK Aydınlatma Metni</a>’ni okumuş olursun.</p>}
+        <p className="muted small legal-links"><a href="#/gizlilik">Gizlilik</a> · <a href="#/kosullar">Koşullar</a></p>
       </form>
     </div>
   );

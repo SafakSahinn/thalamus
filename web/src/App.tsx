@@ -17,6 +17,7 @@ const DictionaryPage = lazy(() => import('./pages/DictionaryPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const TrashPage = lazy(() => import('./pages/TrashPage'));
+const LegalPage = lazy(() => import('./pages/LegalPage'));
 
 export default function App() {
   const session = useStore((s) => s.session);
@@ -44,6 +45,10 @@ export default function App() {
     }
   }, [session]);
 
+  // Yasal sayfalar girişsiz de açılır
+  if (route.name === 'legal' && (!cloud || !session)) {
+    return <Suspense fallback={null}><LegalPage kind={route.kind} /></Suspense>;
+  }
   if (recovery) return <NewPassword onDone={() => setRecovery(false)} />;
   if (cloud && session === undefined) return <div className="splash" />;
   if (cloud && !session) return <Login />;
@@ -59,6 +64,7 @@ export default function App() {
     case 'settings': page = <SettingsPage />; break;
     case 'import': page = <ImportPage />; break;
     case 'trash': page = <TrashPage />; break;
+    case 'legal': page = <LegalPage kind={route.kind} />; break;
   }
 
   return (

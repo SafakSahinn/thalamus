@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
-import { insertNotes, saveSettings, signOut, syncNow, uid, useStore } from '../lib/store';
+import { deleteAccount, insertNotes, saveSettings, signOut, syncNow, uid, useStore } from '../lib/store';
 import { cloud } from '../lib/supabase';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import type { Note, Routine } from '../lib/types';
@@ -36,6 +36,44 @@ function Routines() {
         <button className="btn small" disabled={!label.trim()} onClick={() => { save([...list, { id: uid(), label: label.trim(), icon }]); setLabel(''); }}>Ekle</button>
       </div>
     </div>
+  );
+}
+
+function DeleteAccount({ email }: { email: string }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const run = async () => {
+    setBusy(true);
+    setErr('');
+    try {
+      await deleteAccount();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+  return (
+    <section>
+      <h3>Hesabı sil</h3>
+      {!open ? (
+        <button className="btn danger" onClick={() => setOpen(true)}>Hesabımı sil…</button>
+      ) : (
+        <div className="danger-box">
+          <p>Hesabın, bütün notların, yüklediğin dosyalar ve ayarların <b>kalıcı olarak</b> silinir. Bu geri alınamaz. İstersen önce yukarıdan yedeğini indir.</p>
+          <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
+          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={email} />
+          <div className="row">
+            <button className="btn ghost" onClick={() => { setOpen(false); setTyped(''); }} disabled={busy}>Vazgeç</button>
+            <button className="btn danger" disabled={busy || typed.trim().toLowerCase() !== email.toLowerCase()} onClick={() => void run()}>
+              {busy ? 'Siliniyor…' : 'Kalıcı olarak sil'}
+            </button>
+          </div>
+          {err && <p className="err small">{err}</p>}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -131,6 +169,10 @@ export default function SettingsPage() {
         </div>
         {msg && <p className="small">{msg}</p>}
       </section>
+
+      {cloud && session && <DeleteAccount email={session.user.email ?? ''} />}
+
+      <p className="muted small"><a href="#/gizlilik">Gizlilik ve KVKK</a> · <a href="#/kosullar">Kullanım Koşulları</a></p>
 
       <section>
         <h3>Uygulama olarak yükle</h3>

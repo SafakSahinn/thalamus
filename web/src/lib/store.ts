@@ -350,6 +350,26 @@ export async function signOut() {
   location.reload();
 }
 
+/** Hesabı kalıcı olarak siler: önce dosyalar, sonra hesap (notlar ve ayarlar onunla birlikte gider). */
+export async function deleteAccount() {
+  const user = get().session?.user;
+  if (!cloud || !user) throw new Error('Oturum yok.');
+  for (;;) {
+    const { data, error } = await supabase.storage.from('files').list(user.id, { limit: 100 });
+    if (error) throw error;
+    if (!data.length) break;
+    const { error: e2 } = await supabase.storage.from('files').remove(data.map((f) => `${user.id}/${f.name}`));
+    if (e2) throw e2;
+  }
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) throw error;
+  if (channel) await supabase.removeChannel(channel);
+  await supabase.auth.signOut({ scope: 'local' });
+  await clearAll();
+  location.hash = '#/';
+  location.reload();
+}
+
 // ---------- dosyalar (görsel, PDF) ----------
 
 export async function uploadFile(file: File | Blob, name: string): Promise<string> {
