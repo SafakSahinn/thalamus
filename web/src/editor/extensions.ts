@@ -121,7 +121,7 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
     e.chain().focus().deleteRange(r).run();
     pickFile(e, 'image/*');
   } },
-  { icon: '📎', label: 'Dosya / PDF', keys: 'file pdf ek belge dosya yukle', action: (e, r) => {
+  { icon: '📎', label: 'Dosya / PDF / ses / video', keys: 'file pdf ek belge dosya yukle ses video audio mp3 mp4 kayit', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
     pickFile(e);
   } },

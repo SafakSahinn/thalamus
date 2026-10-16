@@ -206,6 +206,12 @@ function FileView({ node }: ReactNodeViewProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [err, setErr] = useState('');
   const isPdf = mime === 'application/pdf' || /\.pdf$/i.test(name);
+  const media = mime.startsWith('audio/') || /\.(mp3|m4a|wav|ogg|oga|aac|flac|opus)$/i.test(name) ? 'audio'
+    : mime.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv)$/i.test(name) ? 'video' : null;
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (media) resolveFileUrl(src).then(setMediaUrl, (e) => setErr(e instanceof Error ? e.message : String(e)));
+  }, [media, src]);
   const open = async () => {
     try {
       window.open(await resolveFileUrl(src), '_blank', 'noopener');
@@ -224,7 +230,7 @@ function FileView({ node }: ReactNodeViewProps) {
   return (
     <NodeViewWrapper className="fileblock" contentEditable={false}>
       <div className="file-row">
-        <span className="file-ic">{isPdf ? '📕' : '📎'}</span>
+        <span className="file-ic">{isPdf ? '📕' : media === 'audio' ? '🎧' : media === 'video' ? '🎞' : '📎'}</span>
         <span className="file-name">{name}</span>
         {size ? <span className="muted small">{fmtSize(size)}</span> : null}
         <span className="spacer" />
@@ -232,6 +238,8 @@ function FileView({ node }: ReactNodeViewProps) {
         <button type="button" className="btn small ghost" onClick={() => void open()}>Aç ↗</button>
       </div>
       {err && <div className="err small">{err}</div>}
+      {media === 'audio' && mediaUrl && <audio className="media-player" controls preload="metadata" src={mediaUrl} />}
+      {media === 'video' && mediaUrl && <video className="media-player" controls preload="metadata" src={mediaUrl} />}
       {preview && <iframe className="pdf-frame" src={preview} title={name} />}
     </NodeViewWrapper>
   );

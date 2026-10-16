@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import HistoryDialog from '../components/HistoryDialog';
+import MoveDialog from '../components/MoveDialog';
 import ShareDialog from '../components/ShareDialog';
 import { publishShare } from '../lib/share';
 import PageDecor, { noteIcon } from '../components/PageDecor';
@@ -8,7 +9,7 @@ import NoteEditor from '../editor/Editor';
 import { displayTitle, relTime } from '../lib/format';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
-import { createNote, deleteNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
+import { createNote, deleteNote, duplicateNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
 import { exportNoteMd, printNote } from '../lib/exporter';
 import { applyTemplate, isTemplate, saveAsTemplate, templatesFor } from '../lib/templates';
 import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
@@ -129,6 +130,7 @@ export default function NotePage({ id }: { id: string }) {
   const [menu, setMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showMove, setShowMove] = useState(false);
   // Paylaşılan not düzenlenince herkese açık kopya da (birkaç saniye sonra) güncellensin
   const shareId = note?.props.__share as string | undefined;
   useEffect(() => {
@@ -146,6 +148,7 @@ export default function NotePage({ id }: { id: string }) {
     <div className="page note-page">
       {showHistory && <HistoryDialog note={note} onClose={() => setShowHistory(false)} />}
       {showShare && <ShareDialog note={note} onClose={() => setShowShare(false)} />}
+      {showMove && <MoveDialog note={note} onClose={() => setShowMove(false)} />}
       <PageDecor note={note} />
       {isTemplate(note) && (
         <div className="banner">
@@ -173,6 +176,8 @@ export default function NotePage({ id }: { id: string }) {
               </select>
               <button className="btn small" onClick={() => { setShowShare(true); setMenu(false); }}>🌐 {note.props.__share ? 'Paylaşılıyor' : 'Paylaş'}</button>
               <button className="btn small" onClick={() => { setShowHistory(true); setMenu(false); }}>🕓 Sayfa geçmişi</button>
+              <button className="btn small" onClick={() => { const c = duplicateNote(note.id); setMenu(false); if (c) go(`/n/${c.id}`); }}>⧉ Çoğalt</button>
+              {note.type !== 'daily' && <button className="btn small" onClick={() => { setShowMove(true); setMenu(false); }}>↪ Başka sayfanın altına taşı</button>}
               <button className="btn small" onClick={() => { exportNoteMd(note); setMenu(false); }}>⬇ Markdown olarak indir</button>
               <button className="btn small" onClick={() => { setMenu(false); setTimeout(printNote, 50); }}>🖨 Yazdır / PDF</button>
               {!isTemplate(note) && note.type !== 'daily' && (

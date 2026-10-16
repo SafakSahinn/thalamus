@@ -154,6 +154,14 @@ export function refreshEditor(id: string) {
   set({ remoteRev: { ...rev, [id]: (rev[id] ?? 0) + 1 } });
 }
 
+/** Notu kopyala (paylaşım bilgisi kopyalanmaz) */
+export function duplicateNote(id: string): Note | undefined {
+  const old = get().notes[id];
+  if (!old) return undefined;
+  const { __share: _s, __shareFiles: _f, ...props } = old.props;
+  return createNote(old.type, old.title ? `${old.title} (kopya)` : '', structuredClone(props), old.content ? structuredClone(old.content) : null);
+}
+
 export const deleteNote = (id: string) => updateNote(id, { deleted_at: now() });
 export const restoreNote = (id: string) => updateNote(id, { deleted_at: null });
 
