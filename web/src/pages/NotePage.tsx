@@ -6,6 +6,7 @@ import { displayTitle, relTime } from '../lib/format';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
 import { createNote, deleteNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
+import { exportNoteMd, printNote } from '../lib/exporter';
 import { applyTemplate, isTemplate, saveAsTemplate, templatesFor } from '../lib/templates';
 import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 
@@ -155,6 +156,8 @@ export default function NotePage({ id }: { id: string }) {
               <select value={note.type} onChange={(e) => { updateNote(note.id, { type: e.target.value as TypeId }); setMenu(false); }}>
                 {TYPES.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.label}</option>)}
               </select>
+              <button className="btn small" onClick={() => { exportNoteMd(note); setMenu(false); }}>⬇ Markdown olarak indir</button>
+              <button className="btn small" onClick={() => { setMenu(false); setTimeout(printNote, 50); }}>🖨 Yazdır / PDF</button>
               {!isTemplate(note) && note.type !== 'daily' && (
                 <button className="btn small" onClick={() => { const tpl = saveAsTemplate(note); setMenu(false); go(`/n/${tpl.id}`); }}>🧩 Şablon olarak kaydet</button>
               )}

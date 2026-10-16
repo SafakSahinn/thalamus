@@ -559,3 +559,19 @@ a.rowlink:hover { background: var(--hover); }
 .btn.signout { padding: 6px 14px; font-weight: 500; }
 .btn.signout span { font-size: 15px; color: var(--muted); }
 .danger-box label { margin: 2px 0; }
+
+/* ---------- yazdırma / PDF ---------- */
+@media print {
+  .sidebar, .topbar, .scrim, .block-handle, .bubble, .decor-actions, .note-head .iconbtn, .menuwrap, .backlinks, .localgraph,
+  .subpages, .tpl-starter, .findbar, .props .more, .note-foot, .banner-change, .codeblock-head button, .block-edit, .embed-bar, .cal-add { display: none !important; }
+  html, body, #root, .app, main { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; color: #000 !important; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-decor { margin: 0 !important; padding: 0 !important; }
+  .page-banner { margin: 0 0 12px !important; height: 120px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .title { font-size: 24pt !important; }
+  .props { border-bottom: 1px solid #ccc; }
+  .prop input, .prop select, .prop textarea { border: none !important; appearance: none; background: none !important; }
+  .prose { font-size: 11pt; }
+  .prose pre, .codeblock, .callout, table, img, .mermaid-block { break-inside: avoid; }
+  a { color: inherit !important; }
+}

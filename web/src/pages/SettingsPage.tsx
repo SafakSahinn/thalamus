@@ -7,6 +7,7 @@ import {
   type AttachMode,
 } from '../lib/store';
 import { getCoverMode, type CoverMode } from '../lib/covers';
+import { exportAllZip } from '../lib/exporter';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import type { Note, Routine } from '../lib/types';
 
@@ -134,6 +135,18 @@ export default function SettingsPage() {
   const settings = useStore((s) => s.settings);
   const [theme, setTheme] = useState<Theme>(getTheme());
   const [msg, setMsg] = useState('');
+  const [zipBusy, setZipBusy] = useState<string | null>(null);
+  const exportZip = async () => {
+    setZipBusy('Hazırlanıyor…');
+    try {
+      const r = await exportAllZip((d, t) => setZipBusy(`Hazırlanıyor… ${d}/${t}`));
+      setMsg(`${r.notes} not ve ${r.assets} ek indirildi${r.missing ? ` (${r.missing} ek alınamadı)` : ''}.`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setZipBusy(null);
+    }
+  };
 
   const exportJson = () => {
     const data = { app: 'thalamus', version: 1, exported_at: new Date().toISOString(), settings, notes: Object.values(notes) };
@@ -261,9 +274,13 @@ export default function SettingsPage() {
 
       <section>
         <h3>Yedek</h3>
-        <p className="muted small">Tüm notların tek bir JSON dosyası olarak. Bulut eşitlemesine ek güvence.</p>
+        <p className="muted small">
+          <b>Markdown (.zip):</b> her koleksiyon bir klasör, her not bir .md dosyası, ekler “ekler” klasöründe. Obsidian ya da başka bir uygulamada doğrudan açılabilir.
+          <br /><b>Yedek (.json):</b> Thalamus’a geri yüklemek için tek dosya.
+        </p>
         <div className="row">
-          <button className="btn" onClick={exportJson}>Yedeği indir</button>
+          <button className="btn" onClick={() => void exportZip()} disabled={Boolean(zipBusy)}>{zipBusy ?? 'Markdown olarak indir (.zip)'}</button>
+          <button className="btn" onClick={exportJson}>Yedeği indir (.json)</button>
           <button className="btn ghost" onClick={importJson}>Yedekten geri yükle</button>
           <a className="btn ghost" href="#/import">Notion’dan aktar</a>
         </div>
