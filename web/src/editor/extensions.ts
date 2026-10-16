@@ -1,18 +1,23 @@
 import { Extension, type AnyExtension, type Editor } from '@tiptap/core';
+import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Mathematics from '@tiptap/extension-mathematics';
 import { TableKit } from '@tiptap/extension-table';
+import { Color, TextStyle } from '@tiptap/extension-text-style';
+import Youtube from '@tiptap/extension-youtube';
 import { Placeholder } from '@tiptap/extensions';
 import { PluginKey } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Suggestion from '@tiptap/suggestion';
 import { promptText } from '../components/Prompt';
 import { norm } from '../lib/links';
-import { resolveFileUrl, uploadFile } from '../lib/store';
+import { createNote, resolveFileUrl, uploadFile } from '../lib/store';
+import { Bookmark, Callout, Column, Columns, columnsContent, DateChip, Embed, FileBlock, Mermaid, Toc } from './blocks';
 import { CodeBlock } from './CodeBlock';
 import { FindReplace } from './FindReplace';
+import { Mention } from './Mention';
 import { suggestConfig, type Entry } from './suggest';
 import { WikiLink } from './WikiLink';
 
@@ -30,6 +35,30 @@ const editMath = async (editor: Editor, kind: 'inline' | 'block', latex: string,
   }
 };
 
+/** Görsel olmayan dosyalar (PDF, Word, veri…) dosya bloğu olarak eklenir. */
+export async function insertFile(editor: Editor, file: File, pos?: number) {
+  if (file.type.startsWith('image/')) return insertImageFile(editor, file, pos);
+  try {
+    const src = await uploadFile(file, file.name || 'dosya');
+    const node = { type: 'fileBlock', attrs: { src, name: file.name || 'dosya', size: file.size, mime: file.type } };
+    const chain = editor.chain().focus();
+    (pos !== undefined ? chain.insertContentAt(pos, node) : chain.insertContent(node)).run();
+  } catch (e) {
+    alert(e instanceof Error ? e.message : String(e));
+  }
+}
+
+function pickFile(editor: Editor, accept = '*/*') {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  input.onchange = () => {
+    const f = input.files?.[0];
+    if (f) void insertFile(editor, f);
+  };
+  input.click();
+}
+
 export async function insertImageFile(editor: Editor, file: File, pos?: number) {
   try {
     const src = await uploadFile(file, file.name || 'gorsel.png');
@@ -40,16 +69,6 @@ export async function insertImageFile(editor: Editor, file: File, pos?: number) 
   }
 }
 
-function pickImage(editor: Editor) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.onchange = () => {
-    const f = input.files?.[0];
-    if (f) void insertImageFile(editor, f);
-  };
-  input.click();
-}
 
 /** Ekler gd:// (Drive) veya local:// (yalnızca bu cihaz) olarak saklanır, gösterirken yerel adrese çevrilir. */
 const StoredImage = Image.extend({
@@ -63,6 +82,17 @@ const StoredImage = Image.extend({
     };
   },
 });
+
+/** Sütunları ekler ve imleci ilk sütuna koyar */
+function insertColumns(e: Editor, r: { from: number; to: number }, n: number) {
+  e.chain().focus().deleteRange(r).insertContent(columnsContent(n)).run();
+  let target = -1;
+  e.state.doc.descendants((node, pos) => {
+    if (target < 0 && node.type.name === 'columns' && pos >= r.from - 2) target = pos;
+    return target < 0;
+  });
+  if (target >= 0) e.commands.setTextSelection(target + 3);
+}
 
 const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: 'H1', label: 'Başlık 1', action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 1 }).run() },
@@ -89,7 +119,50 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: '―', label: 'Ayırıcı çizgi', keys: 'hr divider', action: (e, r) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
   { icon: '🖼', label: 'Görsel yükle', keys: 'image resim foto', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    pickImage(e);
+    pickFile(e, 'image/*');
+  } },
+  { icon: '📎', label: 'Dosya / PDF', keys: 'file pdf ek belge dosya yukle', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    pickFile(e);
+  } },
+  { icon: '▸', label: 'Açılır bölüm (toggle)', keys: 'toggle details katla gizle', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().run() },
+  { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
+  { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
+  { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
+  { icon: '☰', label: 'İçindekiler', keys: 'toc icindekiler basliklar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'toc' }).run() },
+  { icon: '🔀', label: 'Diyagram (Mermaid)', keys: 'mermaid diyagram akis sema flowchart graph', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    void promptText('Diyagram (Mermaid)', 'graph LR\n  A[Giriş] --> B[Filtre] --> C[Çıkış]', { multiline: true, hint: 'Akış şeması, sıralama diyagramı, durum makinesi… Ayrıntı: mermaid.js.org' }).then((v) => {
+      if (v?.trim()) e.chain().focus().insertContent({ type: 'mermaid', attrs: { code: v } }).run();
+    });
+  } },
+  { icon: '▶', label: 'YouTube videosu', keys: 'youtube video', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    void promptText('YouTube bağlantısı', '', { hint: 'https://www.youtube.com/watch?v=…' }).then((v) => {
+      if (v?.trim() && !e.commands.setYoutubeVideo({ src: v.trim() })) alert('Geçerli bir YouTube bağlantısı değil.');
+    });
+  } },
+  { icon: '🌐', label: 'Sayfa göm', keys: 'embed iframe harita maps figma spotify desmos', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    void promptText('Gömülecek sayfanın adresi', 'https://', { hint: 'Google Haritalar "Haritayı yerleştir" adresi, Figma, Desmos, Spotify, Google Slaytlar yayın bağlantısı…' }).then((v) => {
+      if (v?.trim()?.startsWith('http')) e.chain().focus().insertContent({ type: 'embed', attrs: { src: v.trim() } }).run();
+    });
+  } },
+  { icon: '🔖', label: 'Yer imi (bağlantı kartı)', keys: 'bookmark link url web', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    void promptText('Bağlantı adresi', 'https://').then((v) => {
+      if (v?.trim()?.startsWith('http')) e.chain().focus().insertContent({ type: 'bookmark', attrs: { url: v.trim() } }).run();
+    });
+  } },
+  { icon: '📅', label: 'Tarih', keys: 'date tarih bugun yarin gun', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('@').run() },
+  { icon: '📄', label: 'Alt sayfa', keys: 'sayfa page subpage alt', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    void promptText('Alt sayfanın adı', '').then((v) => {
+      if (!v?.trim()) return;
+      const parent = (e.storage as unknown as { noteCtx?: { noteId: string | null } }).noteCtx?.noteId ?? undefined;
+      const n = createNote('note', v.trim(), parent ? { parent: [parent] } : {});
+      e.chain().focus().insertContent([{ type: 'wikiLink', attrs: { id: n.id, label: n.title } }, { type: 'text', text: ' ' }]).run();
+    });
   } },
   { icon: '🔗', label: 'Not bağlantısı [[ ]]', keys: 'link wiki baglanti', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('[[').run() },
 ];
@@ -102,9 +175,20 @@ const SlashCommand = Extension.create({
         editor: this.editor,
         pluginKey: new PluginKey('slashSuggest'),
         char: '/',
+        allowSpaces: true,
         ...suggestConfig((q) => {
           const nq = norm(q);
-          return SLASH.filter((s) => !nq || norm(`${s.label} ${s.keys ?? ''}`).includes(nq)).map((s) => ({ ...s, key: s.label }));
+          // Önce kelime başında eşleşenler, sonra herhangi bir yerde geçenler
+          const score = (x: (typeof SLASH)[number]) => {
+            const all = norm(`${x.label} ${x.keys ?? ''}`);
+            if (norm(x.label).startsWith(nq)) return 3;
+            if (all.split(/[^a-z0-9]+/).some((w) => w.startsWith(nq))) return 2;
+            return all.includes(nq) ? 1 : 0;
+          };
+          return SLASH.map((x) => ({ x, sc: nq ? score(x) : 1 }))
+            .filter((r) => r.sc > 0)
+            .sort((p, q) => q.sc - p.sc)
+            .map(({ x }) => ({ ...x, key: x.label }));
         }),
       }),
     ];
@@ -116,7 +200,22 @@ export function baseExtensions(): AnyExtension[] {
   return [
     StarterKit.configure({ link: { openOnClick: false, autolink: true }, codeBlock: false }),
     CodeBlock,
-    Highlight,
+    TextStyle,
+    Color,
+    Highlight.configure({ multicolor: true }),
+    Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
+    DetailsSummary,
+    DetailsContent,
+    Callout,
+    Column,
+    Columns,
+    Toc,
+    Mermaid,
+    FileBlock,
+    Bookmark,
+    Embed,
+    DateChip,
+    Youtube.configure({ nocookie: true, modestBranding: true, HTMLAttributes: { class: 'yt' } }),
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: false } }),
@@ -125,9 +224,10 @@ export function baseExtensions(): AnyExtension[] {
   ];
 }
 
-export function editorExtensions(placeholder: string): AnyExtension[] {
+export function editorExtensions(placeholder: string, noteId: string | null = null): AnyExtension[] {
   let editorRef: Editor | null = null;
   return [
+    Extension.create({ name: 'noteCtx', addStorage: () => ({ noteId }) }),
     ...baseExtensions(),
     Mathematics.configure({
       katexOptions: { throwOnError: false },
@@ -136,6 +236,7 @@ export function editorExtensions(placeholder: string): AnyExtension[] {
     }),
     Placeholder.configure({ placeholder }),
     SlashCommand,
+    Mention,
     FindReplace,
     Extension.create({
       name: 'editorRef',

@@ -126,6 +126,7 @@ export default function NotePage({ id }: { id: string }) {
 
       <NoteEditor
         docKey={note.id}
+        noteId={note.id}
         content={note.content}
         rev={rev}
         onChange={(doc) => updateNote(note.id, { content: doc })}

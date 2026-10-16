@@ -34,5 +34,7 @@ export default defineConfig({
       },
     }),
   ],
+  // Mermaid geliştirme sunucusunda parça parça yüklenince tarayıcıyı kilitliyor; önceden paketlensin
+  optimizeDeps: { include: ['mermaid'] },
   test: { environment: 'jsdom' },
 });

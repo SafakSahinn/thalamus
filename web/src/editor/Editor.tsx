@@ -4,7 +4,9 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import 'katex/dist/katex.min.css';
 import { useEffect, useRef, useState } from 'react';
 import { promptText } from '../components/Prompt';
-import { editorExtensions, insertImageFile } from './extensions';
+import BlockHandle from './BlockHandle';
+import { BG_COLORS, TEXT_COLORS } from './colors';
+import { editorExtensions, insertFile } from './extensions';
 import FindBar from './FindBar';
 
 interface Props {
@@ -15,9 +17,13 @@ interface Props {
   placeholder?: string;
   /** Başka cihazdan gelen güncelleme sayacı */
   rev?: number;
+  /** Alt sayfa oluştururken üst sayfa */
+  noteId?: string | null;
 }
 
-export default function NoteEditor({ docKey, content, onChange, placeholder, rev }: Props) {
+export default function NoteEditor({ docKey, content, onChange, placeholder, rev, noteId = null }: Props) {
+  const box = useRef<HTMLDivElement>(null);
+  const [colors, setColors] = useState(false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -25,22 +31,22 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
 
   const editor = useEditor(
     {
-      extensions: editorExtensions(placeholder ?? "Yazmaya başla…  ‘/’ ile komutlar, ‘[[’ ile not bağlantısı"),
+      extensions: editorExtensions(placeholder ?? "Yazmaya başla…  ‘/’ ile komutlar, ‘[[’ ile not bağlantısı, ‘@’ ile tarih", noteId),
       content: (content as JSONContent) ?? '',
       immediatelyRender: true,
       editorProps: {
         attributes: { class: 'prose' },
         handlePaste: (view, event) => {
-          const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'));
+          const files = [...(event.clipboardData?.files ?? [])];
           if (!files.length) return false;
-          files.forEach((f) => void insertImageFile(editorRef.current!, f));
+          files.forEach((f) => void insertFile(editorRef.current!, f));
           return true;
         },
         handleDrop: (view, event) => {
-          const files = [...(event.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'));
+          const files = [...(event.dataTransfer?.files ?? [])];
           if (!files.length) return false;
           const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
-          files.forEach((f) => void insertImageFile(editorRef.current!, f, pos));
+          files.forEach((f) => void insertFile(editorRef.current!, f, pos));
           return true;
         },
       },
@@ -114,9 +120,10 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
   }, [editor, find]);
 
   return (
-    <div className="editor">
+    <div className="editor" ref={box}>
+      <BlockHandle editor={editor} container={box} />
       {find !== null && <FindBar key={find} editor={editor} initial={find} onClose={() => setFind(null)} />}
-      <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to }) => e.isFocused && from !== to && !e.isActive('codeBlock') && !e.isActive('image')}>
+      <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to, state }) => e.isFocused && from !== to && !(state.selection as { node?: unknown }).node && !e.isActive('codeBlock') && !e.isActive('image')}>
         <button className={state.bold ? 'on' : ''} onClick={() => editor.chain().focus().toggleBold().run()} title="Kalın (Ctrl+B)"><b>B</b></button>
         <button className={state.italic ? 'on' : ''} onClick={() => editor.chain().focus().toggleItalic().run()} title="İtalik (Ctrl+I)"><i>I</i></button>
         <button className={state.underline ? 'on' : ''} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Altı çizili (Ctrl+U)"><u>U</u></button>
@@ -125,6 +132,31 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
         <button className={state.code ? 'on' : ''} onClick={() => editor.chain().focus().toggleCode().run()} title="Kod">{'</>'}</button>
         <button className={state.link ? 'on' : ''} onClick={() => void setLink()} title="Bağlantı">🔗</button>
         <button onClick={toMath} title="Seçimi formüle çevir">∑</button>
+        <span className="bubble-colors">
+          <button className={colors ? 'on' : ''} onClick={() => setColors(!colors)} title="Renk">A<small>▾</small></button>
+          {colors && (
+            <div className="color-pop" onMouseLeave={() => setColors(false)}>
+              <div className="bm-h">Yazı rengi</div>
+              <div className="swatches">
+                {TEXT_COLORS.map((c) => (
+                  <button key={c.id} title={c.label} className={`sw tc-${c.id}`} onClick={() => {
+                    (c.id === 'default' ? editor.chain().focus().unsetColor() : editor.chain().focus().setColor(`var(--tc-${c.id})`)).run();
+                    setColors(false);
+                  }}>A</button>
+                ))}
+              </div>
+              <div className="bm-h">Arka plan</div>
+              <div className="swatches">
+                {BG_COLORS.map((c) => (
+                  <button key={c.id} title={c.label} className={`sw bgsw-${c.id}`} onClick={() => {
+                    (c.id === 'default' ? editor.chain().focus().unsetHighlight() : editor.chain().focus().setHighlight({ color: `var(--bc-${c.id})` })).run();
+                    setColors(false);
+                  }}>A</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </span>
       </BubbleMenu>
       <EditorContent editor={editor} />
     </div>

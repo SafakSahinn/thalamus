@@ -47,6 +47,8 @@ export function computeLinks(note: Pick<Note, 'id' | 'type' | 'props' | 'content
   for (const p of typeOf(note.type).props) {
     if (p.kind === 'relation') relationIds(note.props[p.key]).forEach((id) => set.add(id));
   }
+  // Alt sayfa → üst sayfa
+  relationIds(note.props.parent).forEach((id) => set.add(id));
   set.delete(note.id);
   return [...set];
 }

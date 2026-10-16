@@ -42,6 +42,8 @@ export const SuggestMenu = forwardRef<SuggestMenuHandle, { items: MenuItem[]; em
       },
     }), [items, sel]);
 
+    // Eşleşme yoksa ve özel bir mesaj verilmemişse menüyü gösterme
+    if (!items.length && !empty) return <div ref={listRef} hidden />;
     return (
       <div className="suggest" ref={listRef}>
         {items.length === 0 && <div className="suggest-empty">{empty ?? 'Sonuç yok'}</div>}

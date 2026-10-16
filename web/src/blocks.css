@@ -1,0 +1,143 @@
+/* Editör blokları, renk paleti, blok tutamağı ve emoji seçici */
+
+/* ---------- Notion renk paleti ---------- */
+:root {
+  --tc-gray: #787774; --tc-brown: #9f6b53; --tc-orange: #d9730d; --tc-yellow: #cb912f; --tc-green: #448361;
+  --tc-blue: #337ea9; --tc-purple: #9065b0; --tc-pink: #c14c8a; --tc-red: #d44c47;
+  --bc-gray: #f1f1ef; --bc-brown: #f4eeee; --bc-orange: #fbecdd; --bc-yellow: #fbf3db; --bc-green: #edf3ec;
+  --bc-blue: #e7f3f8; --bc-purple: #f6f3f9; --bc-pink: #faf1f5; --bc-red: #fdebec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --tc-gray: #9b9b9b; --tc-brown: #ba856f; --tc-orange: #c77d48; --tc-yellow: #ca9849; --tc-green: #529e72;
+    --tc-blue: #5e87c9; --tc-purple: #9d68d3; --tc-pink: #d15796; --tc-red: #df5452;
+    --bc-gray: #2f2f2f; --bc-brown: #4a3228; --bc-orange: #5c3b23; --bc-yellow: #564328; --bc-green: #243d30;
+    --bc-blue: #143a4e; --bc-purple: #3c2d49; --bc-pink: #4e2c3c; --bc-red: #522e2a;
+  }
+}
+:root[data-theme='dark'] {
+  --tc-gray: #9b9b9b; --tc-brown: #ba856f; --tc-orange: #c77d48; --tc-yellow: #ca9849; --tc-green: #529e72;
+  --tc-blue: #5e87c9; --tc-purple: #9d68d3; --tc-pink: #d15796; --tc-red: #df5452;
+  --bc-gray: #2f2f2f; --bc-brown: #4a3228; --bc-orange: #5c3b23; --bc-yellow: #564328; --bc-green: #243d30;
+  --bc-blue: #143a4e; --bc-purple: #3c2d49; --bc-pink: #4e2c3c; --bc-red: #522e2a;
+}
+.prose mark[data-color] { color: inherit; padding: 0 2px; }
+.tc-default { color: var(--text); }
+.tc-gray { color: var(--tc-gray); }
+.tc-brown { color: var(--tc-brown); }
+.tc-orange { color: var(--tc-orange); }
+.tc-yellow { color: var(--tc-yellow); }
+.tc-green { color: var(--tc-green); }
+.tc-blue { color: var(--tc-blue); }
+.tc-purple { color: var(--tc-purple); }
+.tc-pink { color: var(--tc-pink); }
+.tc-red { color: var(--tc-red); }
+.bgsw-default { background: var(--bg); }
+.bgsw-gray, .bg-gray { background: var(--bc-gray); }
+.bgsw-brown, .bg-brown { background: var(--bc-brown); }
+.bgsw-orange, .bg-orange { background: var(--bc-orange); }
+.bgsw-yellow, .bg-yellow { background: var(--bc-yellow); }
+.bgsw-green, .bg-green { background: var(--bc-green); }
+.bgsw-blue, .bg-blue { background: var(--bc-blue); }
+.bgsw-purple, .bg-purple { background: var(--bc-purple); }
+.bgsw-pink, .bg-pink { background: var(--bc-pink); }
+.bgsw-red, .bg-red { background: var(--bc-red); }
+.swatches { display: grid; grid-template-columns: repeat(5, 28px); gap: 4px; }
+.sw { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; font-weight: 600; background: var(--bg); }
+.sw:hover { outline: 2px solid var(--accent); }
+.bubble-colors { position: relative; }
+.bubble-colors small { font-size: 9px; margin-left: 1px; }
+.color-pop, .block-menu { position: absolute; z-index: 40; background: var(--bg); box-shadow: var(--shadow); border-radius: 8px; padding: 8px; }
+.color-pop { top: 36px; right: 0; }
+.bm-h { font-size: 11px; font-weight: 600; color: var(--muted); margin: 6px 2px 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* ---------- blok tutamağı ---------- */
+.editor { position: relative; }
+.block-handle { position: absolute; left: -54px; z-index: 4; display: flex; height: 26px; align-items: center; }
+.bh-btn { border: none; background: none; color: var(--muted); cursor: pointer; width: 24px; height: 24px; border-radius: 4px; font-size: 15px; line-height: 1; padding: 0; opacity: 0.55; }
+.bh-btn:hover { background: var(--hover); opacity: 1; }
+.bh-btn.grip { cursor: grab; letter-spacing: -3px; font-size: 13px; }
+.block-menu { top: 28px; left: 24px; width: 290px; max-height: 70vh; overflow-y: auto; }
+.bm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.bm-grid button, .bm-row { border: none; background: none; text-align: left; padding: 5px 8px; border-radius: 5px; cursor: pointer; display: flex; gap: 8px; align-items: center; font-size: 13px; width: 100%; }
+.bm-grid button:hover, .bm-row:hover { background: var(--hover); }
+.bm-grid .ic { width: 20px; text-align: center; color: var(--muted); font-weight: 600; font-size: 12px; }
+.bm-sep { border-top: 1px solid var(--border); margin: 8px 0 4px; }
+.bm-row.danger { color: var(--danger); }
+@media (max-width: 860px) {
+  .editor { padding-left: 28px; }
+  .block-handle { left: -4px; flex-direction: column; height: auto; }
+  .bh-btn.grip { display: none; }
+  .block-menu { left: 20px; }
+}
+@media (hover: none) { .bh-btn { opacity: 0.8; } }
+
+/* ---------- bilgi kutusu, sütunlar, açılır bölüm ---------- */
+.callout { display: flex; gap: 10px; padding: 12px 14px 12px 10px; border-radius: 6px; margin: 0.5em 0; position: relative; }
+.callout-emoji { position: relative; flex: none; }
+.callout-emoji > button { border: none; background: none; font-size: 20px; cursor: pointer; padding: 0 2px; border-radius: 4px; line-height: 1.3; }
+.callout-emoji > button:hover { background: var(--hover); }
+.callout-body { flex: 1; min-width: 0; }
+.callout-body > * + * { margin-top: 0.4em; }
+.columns { display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 24px; margin: 0.4em 0; }
+.column { min-width: 0; padding: 2px 0; border-radius: 4px; }
+.column > * + * { margin-top: 0.45em; }
+.editor .column:hover { box-shadow: inset 0 0 0 1px var(--border); }
+@media (max-width: 600px) { .columns { grid-auto-flow: row; } }
+.details { display: flex; gap: 4px; margin: 0.3em 0; }
+.details > button { border: none; background: none; cursor: pointer; color: var(--muted); width: 22px; height: 24px; flex: none; padding: 0; transition: transform 0.15s; }
+.details > button::before { content: '▸'; font-size: 14px; }
+.details.is-open > button { transform: rotate(90deg); }
+.details > div { flex: 1; min-width: 0; }
+.details summary { list-style: none; font-weight: 500; }
+.details summary::-webkit-details-marker { display: none; }
+.details:not(.is-open) [data-type='detailsContent'] { display: none; }
+.details [data-type='detailsContent'] > * + * { margin-top: 0.4em; }
+
+/* ---------- içindekiler, diyagram, dosya, yer imi, gömme ---------- */
+.toc { border-left: 2px solid var(--border); padding: 4px 0 4px 12px; margin: 0.6em 0; user-select: none; }
+.toc-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.toc-item { display: block; border: none; background: none; text-align: left; cursor: pointer; padding: 2px 0; color: var(--muted); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; font-size: 14px; }
+.toc-item:hover { color: var(--text); }
+.toc-item.l2 { padding-left: 16px; }
+.toc-item.l3 { padding-left: 32px; }
+.mermaid-block, .fileblock, .embed { position: relative; margin: 0.6em 0; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+.mermaid-block { padding: 14px; text-align: center; overflow-x: auto; }
+.mermaid-svg svg { max-width: 100%; height: auto; }
+.block-edit { position: absolute; top: 6px; right: 6px; border: 1px solid var(--border); background: var(--bg); border-radius: 5px; font-size: 12px; padding: 2px 8px; cursor: pointer; opacity: 0; }
+.mermaid-block:hover .block-edit { opacity: 1; }
+@media (hover: none) { .block-edit { opacity: 1; } }
+.fileblock { padding: 8px 12px; }
+.file-row { display: flex; align-items: center; gap: 10px; }
+.file-ic { font-size: 20px; }
+.file-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pdf-frame { width: 100%; height: 70vh; border: none; border-radius: 6px; margin-top: 8px; background: #fff; }
+.bookmark { margin: 0.5em 0; }
+.bookmark a { display: flex; gap: 12px; align-items: center; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; text-decoration: none !important; color: var(--text) !important; }
+.bookmark a:hover { background: var(--hover); }
+.bm-text { display: flex; flex-direction: column; min-width: 0; }
+.bm-title { font-weight: 500; }
+.bm-url { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.embed iframe { width: 100%; border: none; border-radius: 8px 8px 0 0; display: block; background: #fff; }
+.embed-bar { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-top: 1px solid var(--border); }
+.embed-bar a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.prose div[data-youtube-video] { margin: 0.6em 0; }
+.prose div[data-youtube-video] iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; border: none; border-radius: 8px; }
+.datechip { color: var(--muted); background: var(--hover); border-radius: 4px; padding: 0 4px; cursor: pointer; white-space: nowrap; }
+.datechip:hover { color: var(--text); }
+
+/* ---------- emoji seçici ---------- */
+.emoji-picker {
+  position: absolute; z-index: 45; top: 30px; left: 0; width: 300px; background: var(--bg); box-shadow: var(--shadow);
+  border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: normal;
+}
+.ep-colors { display: flex; gap: 4px; flex-wrap: wrap; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.ep-color { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border); cursor: pointer; }
+.ep-color.on { outline: 2px solid var(--accent); }
+.ep-scroll { max-height: 240px; overflow-y: auto; }
+.ep-group { font-size: 11px; color: var(--muted); margin: 6px 2px 2px; font-weight: 600; }
+.ep-grid { display: grid; grid-template-columns: repeat(8, 1fr); }
+.ep-grid button { border: none; background: none; font-size: 20px; padding: 3px 0; cursor: pointer; border-radius: 6px; }
+.ep-grid button:hover { background: var(--hover); }
+.ep-foot { display: flex; gap: 4px; }
+.ep-foot input { flex: 1; border: 1px solid var(--border); }
