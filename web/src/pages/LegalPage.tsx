@@ -19,12 +19,11 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
             Korunması Kanunu (“KVKK”) kapsamında açıklar. Veri sorumlusu: <strong>{CONTROLLER}</strong>, iletişim: <Mail />.
           </p>
 
-          <h2>Notların bizde değil, senin Google Drive’ında</h2>
+          <h2>Notların senin Google Drive’ında</h2>
           <p>
             Yazdığın notlar, kelimeler, günlükler ve yüklediğin dosyalar <b>yalnızca</b> iki yerde durur: kullandığın cihazın
             tarayıcısında (çevrimdışı çalışabilmek için) ve kendi Google Drive’ındaki <b>Thalamus</b> klasöründe. Uygulama
-            bunları tarayıcından doğrudan Google’a gönderir; içerik hiçbir zaman bizim sunucumuzdan geçmez ve tarafımızca
-            görüntülenemez. Bu veriler üzerindeki tasarruf tamamen sana aittir; Drive’ındaki klasörü istediğin zaman
+            bunları tarayıcından doğrudan Google’a gönderir; içerik sunucumuzdan geçmez ve sunucumuzda saklanmaz. Bu veriler üzerindeki tasarruf tamamen sana aittir; Drive’ındaki klasörü istediğin zaman
             indirebilir, taşıyabilir ya da silebilirsin.
           </p>
           <p>
@@ -60,8 +59,10 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
 
           <h2>Google oturumu</h2>
           <p>
-            Google ile giriş yaptığında Google’ın verdiği oturum anahtarı yalnızca senin cihazında saklanır. Bu anahtarın süresi
-            dolduğunda yenilenmesi için sunucumuzdaki bir işlevden geçer; işlev anahtarı kaydetmez, yalnızca Google’a iletir.
+            Google ile giriş yaptığında Google’ın verdiği kalıcı oturum anahtarı, yeni cihazlarda izin ekranını tekrar göstermemek
+            için sunucumuzda <b>şifrelenmiş</b> olarak saklanır. Bu anahtar yalnızca Thalamus’un kendi oluşturduğu Drive dosyalarına
+            (ve takvim eşitlemesini açtıysan “Thalamus” takvimine) erişebilir; Drive’ındaki diğer dosyalara ve diğer takvimlerine
+            erişemez. Hesabını sildiğinde ya da Google hesabından Thalamus’un erişimini kaldırdığında anahtar da silinir.
           </p>
           <p>
             Thalamus’un Google API’lerinden aldığı bilgileri kullanımı ve başka uygulamalara aktarımı, Sınırlı Kullanım (Limited

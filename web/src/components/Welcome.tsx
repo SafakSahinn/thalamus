@@ -5,7 +5,7 @@ const POINTS = [
   { icon: '📚', title: 'Her şey tek yerde', text: 'Kitaplar, makaleler, dersler, filmler, söyleşiler ve günlüğün.' },
   { icon: '🕸', title: 'Birbirine bağlı', text: 'Metinde [[ yaz, notlarını bağla; haritada nasıl birleştiklerini gör.' },
   { icon: '🔤', title: 'Ortak sözlük', text: 'Okurken eklediğin kelimeler, geçtikleri bütün kaynaklarla birlikte toplanır.' },
-  { icon: '🔒', title: 'Notların senin', text: 'Hepsi Google Drive’ındaki Thalamus klasöründe; biz göremeyiz.' },
+  { icon: '🔒', title: 'Notların senin', text: 'Hepsi Google Drive’ındaki Thalamus klasöründe; sunucumuza gelmez.' },
 ];
 
 /** Yeni kayıt olan kullanıcıya bir kez: kısa tanıtım ve duyuru e-postası tercihi. */

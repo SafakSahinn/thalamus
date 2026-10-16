@@ -121,6 +121,7 @@ export async function callFn<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 interface ExchangeResp {
+  scope?: string;
   access_token: string;
   expires_in: number;
   refresh_token: string | null;
@@ -133,6 +134,7 @@ const ERRORS: Record<string, string> = {
   popup_closed: 'Google penceresi kapatıldı.',
   drive_scope_missing: 'Notlarını saklayabilmek için Google Drive iznini de onaylaman gerekiyor.',
   calendar_scope_missing: 'Takvim eşitlemesi için Google Takvim iznini onaylaman gerekiyor.',
+  need_consent: 'Bu cihazda devam etmek için Google iznini bir kez onaylaman gerekiyor.',
   access_denied: 'Google izni verilmedi.',
 };
 export const authErrorText = (e: unknown) => {
@@ -144,9 +146,16 @@ export const authErrorText = (e: unknown) => {
  * Google ile giriş. Google kalıcı oturum (yenileme) token'ını yalnızca onay ekranı gösterildiğinde verdiği için
  * hesap seçimi ve onay tek pencerede istenir (art arda ikinci pencere tarayıcıda engellenebilir).
  */
-export async function signInWithGoogle(): Promise<AuthState> {
+export async function signInWithGoogle(consent = false): Promise<AuthState> {
   await loadGis();
-  const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('select_account consent') });
+  // İzin ekranı yalnızca gerektiğinde: sunucuda saklı kalıcı anahtar varsa Google yalnızca hesap seçtirir
+  let r: ExchangeResp;
+  try {
+    r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode(consent ? 'select_account consent' : 'select_account') });
+  } catch (e) {
+    if ((e as { code?: string }).code === 'need_consent') throw new Error('need_consent');
+    throw e;
+  }
   if (!r.refresh_token) throw new Error('Google kalıcı oturum izni vermedi, lütfen tekrar dene.');
   const state: AuthState = {
     profile: r.profile,
@@ -155,6 +164,7 @@ export async function signInWithGoogle(): Promise<AuthState> {
     expires_at: Date.now() + r.expires_in * 1000,
     announcements: r.announcements,
     is_new: r.is_new,
+    calendar: (r.scope ?? '').includes(CALENDAR_SCOPE),
   };
   await setMeta('auth', state);
   return state;

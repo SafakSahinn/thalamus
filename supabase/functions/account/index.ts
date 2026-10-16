@@ -8,7 +8,7 @@
 // POST { action: "delete", access_token }             → hesap kaydını siler ve Google iznini geri alır
 // GET  ?unsubscribe=<token>                           → duyuru aboneliğinden çıkar
 //
-// Yenileme token'ı sunucuda SAKLANMAZ; yalnızca istemcinin cihazında durur.
+// Yenileme token'ı AES-GCM ile şifrelenip saklanır; böylece yeni cihazda Google izin ekranı tekrar çıkmaz.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
@@ -68,6 +68,24 @@ async function tokenRequest(params: Record<string, string>) {
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
+// ---------- yenileme token'ı şifreleme (AES-GCM, anahtar TOKEN_ENC_KEY) ----------
+const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+let keyP: Promise<CryptoKey> | null = null;
+const encKey = () => (keyP ??= crypto.subtle.importKey('raw', unb64(env('TOKEN_ENC_KEY')), 'AES-GCM', false, ['encrypt', 'decrypt']));
+
+async function seal(text: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await encKey(), new TextEncoder().encode(text)));
+  return `${b64(iv)}.${b64(ct)}`;
+}
+
+async function open(sealed: string) {
+  const [iv, ct] = sealed.split('.');
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await encKey(), unb64(ct));
+  return new TextDecoder().decode(pt);
+}
+
 // Kapak/afiş görselini indirme aracısı: tarayıcı Google Books görsellerini (CORS izni yok) doğrudan
 // indiremediği için. Açık vekil olmasın diye yalnızca kapak servislerine izin verilir.
 const IMAGE_HOSTS = ['books.google.com', 'books.googleusercontent.com', 'covers.openlibrary.org', 'archive.org', 'upload.wikimedia.org'];
@@ -120,16 +138,28 @@ Deno.serve(async (req) => {
         const id = decodeIdToken(t.body.id_token);
         if (!id?.sub || !id.email) return json({ error: 'no_identity' }, 400);
         const now = new Date().toISOString();
-        const { data: existing } = await db.from('users').select('announcements').eq('google_sub', id.sub).maybeSingle();
+        const { data: existing } = await db.from('users').select('announcements, refresh_token_enc').eq('google_sub', id.sub).maybeSingle();
+        // Google yeni yenileme token'ı verdiyse sakla; vermediyse (izin ekranı atlandıysa) saklı olanı kullan
+        let refresh: string | null = t.body.refresh_token ?? null;
+        const sealed = refresh ? await seal(refresh) : null;
+        if (!refresh && existing?.refresh_token_enc) {
+          try {
+            refresh = await open(existing.refresh_token_enc);
+          } catch {
+            refresh = null;
+          }
+        }
+        if (!refresh) return json({ error: 'need_consent' }, 409);
         if (existing) {
-          await db.from('users').update({ email: id.email, name: id.name ?? null, last_active_at: now }).eq('google_sub', id.sub);
+          await db.from('users').update({ email: id.email, name: id.name ?? null, last_active_at: now, ...(sealed ? { refresh_token_enc: sealed } : {}) }).eq('google_sub', id.sub);
         } else {
-          await db.from('users').insert({ google_sub: id.sub, email: id.email, name: id.name ?? null, announcements: body.announcements === true });
+          await db.from('users').insert({ google_sub: id.sub, email: id.email, name: id.name ?? null, announcements: body.announcements === true, refresh_token_enc: sealed });
         }
         return json({
           access_token: t.body.access_token,
           expires_in: t.body.expires_in,
-          refresh_token: t.body.refresh_token ?? null,
+          refresh_token: refresh,
+          scope: t.body.scope ?? '',
           profile: { sub: id.sub, email: id.email, name: id.name ?? null, picture: id.picture ?? null },
           announcements: existing ? existing.announcements : body.announcements === true,
           is_new: !existing,
@@ -138,7 +168,14 @@ Deno.serve(async (req) => {
       case 'refresh': {
         if (typeof body.refresh_token !== 'string') return json({ error: 'refresh_token' }, 400);
         const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: body.refresh_token });
-        if (!t.ok) return json({ error: t.body.error === 'invalid_grant' ? 'revoked' : 'refresh_failed' }, t.body.error === 'invalid_grant' ? 401 : 400);
+        if (!t.ok) {
+          if (t.body.error === 'invalid_grant') {
+            // Google izni geri alınmış: saklı token'ı da temizle
+            const id0 = decodeIdToken(t.body.id_token);
+            if (id0?.sub) await db.from('users').update({ refresh_token_enc: null }).eq('google_sub', id0.sub);
+          }
+          return json({ error: t.body.error === 'invalid_grant' ? 'revoked' : 'refresh_failed' }, t.body.error === 'invalid_grant' ? 401 : 400);
+        }
         const id = decodeIdToken(t.body.id_token);
         if (id?.sub) await db.from('users').update({ last_active_at: new Date().toISOString() }).eq('google_sub', id.sub);
         return json({ access_token: t.body.access_token, expires_in: t.body.expires_in });

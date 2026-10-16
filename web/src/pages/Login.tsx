@@ -14,16 +14,18 @@ const GoogleLogo = () => (
 export default function Login() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [needConsent, setNeedConsent] = useState(false);
   const syncError = useStore((s) => s.sync.error);
 
   useEffect(preloadGoogle, []);
 
-  const go = async () => {
+  const go = async (consent = false) => {
     setBusy(true);
     setErr(null);
     try {
-      await onSignedIn(await signInWithGoogle());
+      await onSignedIn(await signInWithGoogle(consent));
     } catch (e) {
+      if (e instanceof Error && e.message === 'need_consent') setNeedConsent(true);
       setErr(authErrorText(e));
     } finally {
       setBusy(false);
@@ -37,14 +39,20 @@ export default function Login() {
         <h1>Thalamus</h1>
         <p className="muted">Kitapların, makalelerin, derslerin ve kelimelerin; tek yerde ve birbirine bağlı.</p>
         <ul className="login-points">
-          <li>Notların <b>kendi Google Drive’ında</b> saklanır; biz göremeyiz.</li>
+          <li>Notların <b>kendi Google Drive’ında</b> saklanır; sunucumuza gelmez.</li>
           <li>Telefonda ve bilgisayarda aynı notlar, internetsiz de çalışır.</li>
           <li>Ücretsiz.</li>
         </ul>
         {syncError && <p className="err small">{syncError}</p>}
-        <button className="btn google" onClick={() => void go()} disabled={busy}>
-          <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google ile devam et'}
-        </button>
+        {needConsent ? (
+          <button className="btn google" onClick={() => void go(true)} disabled={busy}>
+            <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google iznini onayla'}
+          </button>
+        ) : (
+          <button className="btn google" onClick={() => void go()} disabled={busy}>
+            <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google ile devam et'}
+          </button>
+        )}
         {err && <p className="err small">{err}</p>}
         <p className="muted small">
           Devam ederek <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş olursun. Hesabın için yalnızca e-posta adresin,
