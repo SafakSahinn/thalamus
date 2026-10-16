@@ -1,16 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#2b2f6b"/>
-  <g stroke="#c9cdf7" stroke-width="14" stroke-linecap="round" opacity="0.9">
-    <line x1="176" y1="178" x2="336" y2="150"/>
-    <line x1="176" y1="178" x2="232" y2="330"/>
-    <line x1="336" y1="150" x2="232" y2="330"/>
-    <line x1="232" y1="330" x2="372" y2="364"/>
-    <line x1="336" y1="150" x2="372" y2="364"/>
-    <line x1="176" y1="178" x2="120" y2="300"/>
+  <!-- beyin sapı -->
+  <path d="M276 292 C283 336 284 378 276 428 Q292 440 310 428 C318 380 322 334 318 292 Z" fill="#c3c9f5"/>
+  <!-- beyincik -->
+  <path d="M316 302 C340 286 398 288 410 318 C420 346 384 368 350 362 C322 357 304 334 316 302 Z" fill="#d6dbfa"/>
+  <g fill="none" stroke="#a9b1ea" stroke-width="6" stroke-linecap="round">
+    <path d="M330 320 C352 312 382 312 400 324"/>
+    <path d="M330 338 C354 334 380 336 398 344"/>
   </g>
-  <circle cx="176" cy="178" r="40" fill="#f2a03d"/>
-  <circle cx="336" cy="150" r="32" fill="#5ec4c4"/>
-  <circle cx="232" cy="330" r="46" fill="#ffffff"/>
-  <circle cx="372" cy="364" r="28" fill="#e86a9a"/>
-  <circle cx="120" cy="300" r="22" fill="#8fa3ff"/>
+  <!-- beyin (yandan, ön taraf solda) -->
+  <path d="M150 304 C98 296 78 236 96 188 C112 140 166 104 232 98 C304 90 384 114 414 172 C440 220 428 276 390 298 C362 314 334 304 312 298 C282 292 256 314 224 320 C194 326 170 320 150 304 Z" fill="#eef0ff"/>
+  <!-- girinti ve oluklar -->
+  <g fill="none" stroke="#b6bdf0" stroke-width="7" stroke-linecap="round">
+    <path d="M168 282 C206 262 248 252 296 236"/>
+    <path d="M258 104 C250 140 262 170 248 206"/>
+    <path d="M150 170 C176 160 196 176 222 166"/>
+    <path d="M120 236 C140 222 162 232 182 222"/>
+    <path d="M318 132 C336 160 362 160 376 186"/>
+    <path d="M330 222 C350 214 376 228 400 220"/>
+  </g>
+  <!-- talamus: bağlantıların merkezi -->
+  <g stroke="#f2a03d" stroke-width="7" stroke-linecap="round" opacity="0.95">
+    <line x1="278" y1="228" x2="186" y2="150"/>
+    <line x1="278" y1="228" x2="352" y2="146"/>
+    <line x1="278" y1="228" x2="146" y2="252"/>
+    <line x1="278" y1="228" x2="384" y2="262"/>
+  </g>
+  <circle cx="186" cy="150" r="15" fill="#5ec4c4"/>
+  <circle cx="352" cy="146" r="15" fill="#e86a9a"/>
+  <circle cx="146" cy="252" r="13" fill="#8fa3ff"/>
+  <circle cx="384" cy="262" r="13" fill="#5ec4c4"/>
+  <circle cx="278" cy="228" r="30" fill="#f2a03d" opacity="0.3"/>
+  <circle cx="278" cy="228" r="20" fill="#f2a03d"/>
 </svg>
