@@ -6,7 +6,7 @@ import { createNote, todayStr, useIndex } from '../lib/store';
 import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
 
-const QUICK: TypeId[] = ['note', 'book', 'paper', 'talk', 'movie', 'word', 'concept'];
+const QUICK: TypeId[] = ['note', 'book', 'paper', 'lab', 'conference', 'talk', 'movie', 'word', 'concept'];
 const ACTIVE = new Set(['Okunuyor', 'İzleniyor', 'Devam ediyor']);
 
 export default function Home() {

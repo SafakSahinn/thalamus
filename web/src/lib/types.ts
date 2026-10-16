@@ -3,7 +3,7 @@
 // "relation" alanları diğer notlara bağlantıdır ve grafikte kenar olarak görünür.
 
 export type BuiltinTypeId =
-  | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'note'
+  | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'lab' | 'conference' | 'note'
   | 'word' | 'person' | 'concept' | 'daily';
 
 /** Hazır tipler ya da kullanıcı koleksiyonları ("c_…") */
@@ -111,6 +111,35 @@ export const BUILTIN_TYPES: TypeDef[] = [
       { key: 'instructor', label: 'Öğretim üyesi', kind: 'relation', target: ['person'], table: true },
       { key: 'term', label: 'Dönem', kind: 'text', table: true },
       { key: 'status', label: 'Durum', kind: 'select', options: ['Devam ediyor', 'Tamamlandı', 'Planlanan'], table: true },
+      topics,
+    ],
+  },
+  {
+    id: 'lab', label: 'Deney', plural: 'Laboratuvar deneyleri', icon: '🧪', color: '#0f8a7e', sort: 'date',
+    props: [
+      { key: 'course', label: 'Ders', kind: 'relation', target: ['course'], table: true },
+      { key: 'date', label: 'Deney tarihi', kind: 'date', table: true },
+      { key: 'status', label: 'Durum', kind: 'select', options: ['Hazırlanıyor', 'Yapıldı', 'Rapor yazılıyor', 'Teslim edildi'], table: true },
+      { key: 'due', label: 'Rapor teslimi', kind: 'date', table: true },
+      { key: 'partners', label: 'Grup arkadaşları', kind: 'relation', target: ['person'] },
+      { key: 'equipment', label: 'Kullanılan cihazlar', kind: 'multiselect', options: ['Osiloskop', 'Multimetre', 'Sinyal üreteci', 'DC güç kaynağı', 'Breadboard', 'Mikrodenetleyici', 'FPGA', 'Spektrum analizörü', 'LCR metre', 'MATLAB/Simulink', 'LTspice'], table: true },
+      { key: 'grade', label: 'Not', kind: 'number' },
+      { key: 'report', label: 'Rapor (PDF)', kind: 'url' },
+      topics,
+    ],
+  },
+  {
+    id: 'conference', label: 'Konferans', plural: 'Konferanslar', icon: '🎤', color: '#b5462f', sort: 'start',
+    props: [
+      { key: 'acronym', label: 'Kısaltma', kind: 'text', table: true },
+      { key: 'status', label: 'Durum', kind: 'select', options: ['İlgileniyorum', 'Başvuracağım', 'Başvurdum', 'Kabul edildi', 'Reddedildi', 'Katıldım'], table: true },
+      { key: 'deadline', label: 'Son başvuru', kind: 'date', table: true },
+      { key: 'start', label: 'Başlangıç', kind: 'date', table: true },
+      { key: 'end', label: 'Bitiş', kind: 'date' },
+      { key: 'location', label: 'Yer', kind: 'text', table: true },
+      { key: 'role', label: 'Katılım', kind: 'select', options: ['Dinleyici', 'Sözlü sunum', 'Poster', 'Hakem', 'Oturum başkanı'] },
+      { key: 'papers', label: 'Bildirilerim', kind: 'relation', target: ['paper'] },
+      { key: 'url', label: 'Web sitesi', kind: 'url' },
       topics,
     ],
   },

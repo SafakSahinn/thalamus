@@ -143,6 +143,8 @@ export async function readNotionZip(data: Blob | ArrayBuffer | Uint8Array): Prom
 // ---------- eşleme ----------
 
 const TYPE_GUESS: [RegExp, TypeId][] = [
+  [/deney|lab|experiment/, 'lab'],
+  [/konferans|conference|kongre|congress|sempozyum|symposium|cfp/, 'conference'],
   [/kitap|book|okuma|reading/, 'book'],
   [/makale|paper|article|bildiri|yayin|publication|literatur|literature/, 'paper'],
   [/film|movie|dizi|series|sinema|cinema/, 'movie'],
