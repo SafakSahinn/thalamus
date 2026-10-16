@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
+import { fetchImageBlob, getCoverMode, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
+
+/** Kapak görselini indirip Drive'a (ya da cihaza) kaydeder; dönen değer gd:// veya local:// adresidir. */
+async function saveCover(url: string, title: string): Promise<string> {
+  const blob = await fetchImageBlob(url);
+  const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+  const safe = title.normalize('NFD').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'kapak';
+  return uploadFile(blob, `kapak-${safe}.${ext}`);
+}
 import { displayTitle, optionHue, noteIcon } from '../lib/format';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
@@ -173,6 +181,7 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
   const [q, setQ] = useState([note.title, ...(isBook ? people : [])].join(' ').trim());
   const [hits, setHits] = useState<CoverHit[] | null>(null);
   const [err, setErr] = useState('');
+  const [saving, setSaving] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const run = async (query: string) => {
     if (!query.trim()) return;
@@ -192,8 +201,19 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
     return () => document.removeEventListener('mousedown', out);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const pick = (h: CoverHit) => {
-    setProp(note.id, 'cover', h.url);
+  const pick = async (h: CoverHit) => {
+    let cover = h.url;
+    if (getCoverMode() === 'save') {
+      setSaving(true);
+      try {
+        cover = await saveCover(h.url, note.title || h.title);
+      } catch {
+        // indirilemezse bağlantı olarak kalsın
+      } finally {
+        setSaving(false);
+      }
+    }
+    setProp(note.id, 'cover', cover);
     // Boş alanları da doldur
     const cur = useStore.getState().notes[note.id];
     if (isBook && h.pages && !cur.props.pages) setProp(note.id, 'pages', h.pages);
@@ -211,7 +231,7 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
         <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? 'Kitap adı ve yazar' : 'Film adı'} />
         <button type="button" className="btn small" onClick={() => void run(q)}>Ara</button>
       </div>
-      <p className="muted small">{isBook ? 'Google Books ve Open Library’den.' : 'Wikipedia’dan.'} Seçtiğin görsel kapak olur{isBook ? '; yazar ve sayfa sayısı boşsa onlar da doldurulur' : ''}.</p>
+      <p className="muted small">{isBook ? 'Google Books, Open Library ve Wikipedia’dan.' : 'Wikipedia’dan.'} {saving ? 'Görsel indirilip kaydediliyor…' : 'Seçtiğin görsel kapak olur'}{isBook ? '; yazar ve sayfa sayısı boşsa onlar da doldurulur' : ''}.</p>
       {err && <p className="err small">{err}</p>}
       {hits === null ? (
         <p className="muted small">Aranıyor…</p>
@@ -220,7 +240,7 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
       ) : (
         <div className="cf-grid">
           {hits.map((h) => (
-            <button key={h.url} type="button" className="cf-item" onClick={() => pick(h)} title={[h.title, h.sub].filter(Boolean).join(' · ')}>
+            <button key={h.url} type="button" className="cf-item" onClick={() => void pick(h)} disabled={saving} title={[h.title, h.sub].filter(Boolean).join(' · ')}>
               <img src={h.url} alt="" loading="lazy" referrerPolicy="no-referrer" onLoad={(e) => { if (e.currentTarget.naturalWidth < 10) (e.currentTarget.closest('.cf-item') as HTMLElement).style.display = 'none'; }} onError={(e) => ((e.currentTarget.closest('.cf-item') as HTMLElement).style.display = 'none')} />
               <span>{h.title}{h.year ? ` (${h.year})` : ''}</span>
             </button>
@@ -242,6 +262,18 @@ function CoverThumb({ src }: { src: string }) {
 function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   const [finder, setFinder] = useState(false);
   const canFind = def.key === 'cover' && (note.type === 'book' || note.type === 'movie');
+  const [saveErr, setSaveErr] = useState('');
+  const keep = async () => {
+    setBusy(true);
+    setSaveErr('');
+    try {
+      setProp(note.id, def.key, await saveCover(v, note.title));
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const v = (note.props[def.key] as string) ?? '';
   const [busy, setBusy] = useState(false);
   const open = async () => window.open(await resolveFileUrl(v), '_blank', 'noopener');
@@ -274,9 +306,13 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
       )}
       {v && <button className="btn small ghost" onClick={() => void open()}>Aç ↗</button>}
       {isFile && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>Kaldır</button>}
-      {!v && (def.key === 'pdf' || def.key === 'cover') && (
-        <button className="btn small ghost" disabled={busy} onClick={upload}>{busy ? 'Yükleniyor…' : 'Dosya yükle'}</button>
+      {(def.key === 'cover' || (!v && def.key === 'pdf')) && (
+        <button className="btn small ghost" disabled={busy} onClick={upload}>{busy ? 'Yükleniyor…' : v ? 'Değiştir' : 'Dosya yükle'}</button>
       )}
+      {def.key === 'cover' && /^https?:/.test(v) && (
+        <button className="btn small ghost" disabled={busy} onClick={() => void keep()} title="Görseli indirip Drive’ına kaydeder; site kaldırsa bile kapak kaybolmaz">💾 Drive’a kaydet</button>
+      )}
+      {saveErr && <span className="err small">{saveErr}</span>}
       {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? 'Kapak bul' : 'Afiş bul'}</button>}
       {finder && <CoverFinder note={note} onClose={() => setFinder(false)} />}
     </div>

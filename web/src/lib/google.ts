@@ -8,7 +8,7 @@ export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const SCOPE = `openid email profile ${DRIVE_SCOPE}`;
 
 export const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || '';
-const fnUrl = `${(import.meta.env.VITE_SUPABASE_URL as string | undefined) || ''}/functions/v1/account`;
+export const fnUrl = `${(import.meta.env.VITE_SUPABASE_URL as string | undefined) || ''}/functions/v1/account`;
 const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || '';
 
 /** Google girişi ayarlı değilse uygulama yalnızca bu cihazda (yerel modda) çalışır. */

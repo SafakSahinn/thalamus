@@ -68,9 +68,35 @@ async function tokenRequest(params: Record<string, string>) {
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
+// Kapak/afiş görselini indirme aracısı: tarayıcı Google Books görsellerini (CORS izni yok) doğrudan
+// indiremediği için. Açık vekil olmasın diye yalnızca kapak servislerine izin verilir.
+const IMAGE_HOSTS = ['books.google.com', 'books.googleusercontent.com', 'covers.openlibrary.org', 'archive.org', 'upload.wikimedia.org'];
+const MAX_IMAGE = 10 * 1024 * 1024;
+
+async function proxyImage(raw: string): Promise<Response> {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return json({ error: 'url' }, 400);
+  }
+  const allowed = (h: string) => IMAGE_HOSTS.some((a) => h === a || h.endsWith(`.${a}`));
+  if (!/^https?:$/.test(url.protocol) || !allowed(url.hostname)) return json({ error: 'host' }, 400);
+  url.protocol = 'https:';
+  const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': 'Thalamus/1.0 (kapak indirme)' } });
+  if (!r.ok || !allowed(new URL(r.url).hostname)) return json({ error: 'fetch', status: r.status }, 502);
+  const type = r.headers.get('content-type') ?? '';
+  if (!type.startsWith('image/')) return json({ error: 'type' }, 415);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  if (buf.byteLength > MAX_IMAGE) return json({ error: 'size' }, 413);
+  return new Response(buf, { headers: { ...cors, 'Content-Type': type, 'Cache-Control': 'public, max-age=86400' } });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const db = admin();
+
+  if (req.method === 'GET' && new URL(req.url).searchParams.has('image')) return proxyImage(new URL(req.url).searchParams.get('image')!);
 
   if (req.method === 'GET') {
     const t = new URL(req.url).searchParams.get('unsubscribe');

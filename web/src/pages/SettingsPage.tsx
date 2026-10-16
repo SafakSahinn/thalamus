@@ -6,6 +6,7 @@ import {
   deleteAccount, getAttachMode, insertNotes, saveSettings, sendFeedback, setAnnouncements, signOut, syncNow, uid, useStore,
   type AttachMode,
 } from '../lib/store';
+import { getCoverMode, type CoverMode } from '../lib/covers';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import type { Note, Routine } from '../lib/types';
 
@@ -126,6 +127,7 @@ export default function SettingsPage() {
   const account = useStore((s) => s.account);
   const announcements = useStore((s) => s.announcements);
   const [attach, setAttach] = useState<AttachMode>(getAttachMode());
+  const [coverMode, setCoverMode] = useState<CoverMode>(getCoverMode());
   const [annErr, setAnnErr] = useState('');
   const sync = useStore((s) => s.sync);
   const notes = useStore((s) => s.notes);
@@ -223,6 +225,22 @@ export default function SettingsPage() {
           </p>
         </section>
       )}
+
+      <section>
+        <h3>Kitap kapakları ve film afişleri</h3>
+        <div className="seg">
+          {(['save', 'link'] as CoverMode[]).map((m) => (
+            <button key={m} className={coverMode === m ? 'on' : ''} onClick={() => { localStorage.setItem('coverMode', m); setCoverMode(m); }}>
+              {m === 'save' ? 'Görseli kaydet' : 'Bağlantı olarak bırak'}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">
+          {coverMode === 'save'
+            ? 'Kapak bulucuda seçtiğin görsel indirilir ve eklerinle aynı yere (Drive’ına ya da bu cihaza) kaydedilir; kaynak site kaldırsa bile kapak kaybolmaz.'
+            : 'Seçtiğin görselin yalnızca bağlantısı saklanır: yer kaplamaz ama kaynak site görseli kaldırırsa kapak görünmez.'}
+        </p>
+      </section>
 
       <section>
         <h3>Günlük rutinler</h3>

@@ -1,4 +1,6 @@
-// Kitap kapağı ve film afişi arama (anahtar gerektirmeyen açık servisler).
+// Kitap kapağı ve film afişi arama (anahtar gerektirmeyen açık servisler) ve görseli indirme.
+
+import { cloud, fnUrl } from './google';
 
 export interface CoverHit {
   url: string;
@@ -46,13 +48,18 @@ async function openLibrary(q: string): Promise<CoverHit[]> {
 }
 
 export async function searchBookCovers(q: string): Promise<CoverHit[]> {
-  const [a, b] = await Promise.all([googleBooks(q).catch(() => []), openLibrary(q).catch(() => [])]);
+  const [a, b, c, d] = await Promise.all([
+    googleBooks(q).catch(() => []),
+    openLibrary(q).catch(() => []),
+    wiki('tr', `${q} kitap`).catch(() => []),
+    wiki('en', `${q} book`).catch(() => []),
+  ]);
   const seen = new Set<string>();
-  return [...a, ...b].filter((h) => !seen.has(h.url) && seen.add(h.url));
+  return [...a, ...b, ...c, ...d].filter((h) => !seen.has(h.url) && seen.add(h.url));
 }
 
 async function wiki(lang: string, q: string): Promise<CoverHit[]> {
-  const u = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=10&prop=pageimages|description&piprop=thumbnail&pithumbsize=500&format=json&origin=*`;
+  const u = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=10&prop=pageimages|description&piprop=thumbnail&pithumbsize=600&pilicense=any&format=json&origin=*`;
   const r = await fetch(u);
   if (!r.ok) return [];
   const d = (await r.json()) as { query?: { pages?: Record<string, { title: string; index: number; description?: string; thumbnail?: { source: string } }> } };
@@ -67,3 +74,31 @@ export async function searchPosters(q: string): Promise<CoverHit[]> {
   const seen = new Set<string>();
   return [...en, ...tr].filter((h) => !seen.has(h.url) && seen.add(h.url));
 }
+
+/** Görseli indirir: önce doğrudan, izin yoksa (Google Books) sunucudaki kapak aracısı üzerinden. */
+export async function fetchImageBlob(url: string): Promise<Blob> {
+  try {
+    const r = await fetch(url, { mode: 'cors', referrerPolicy: 'no-referrer' });
+    if (r.ok) {
+      const b = await r.blob();
+      if (b.type.startsWith('image/') && b.size > 200) return b;
+    }
+  } catch {
+    /* CORS izni yok: aracıyı dene */
+  }
+  if (!cloud) throw new Error('Bu görsel doğrudan indirilemiyor.');
+  const r = await fetch(`${fnUrl}?image=${encodeURIComponent(url)}`, {
+    headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string },
+  });
+  if (!r.ok) throw new Error('Görsel indirilemedi.');
+  return r.blob();
+}
+
+export type CoverMode = 'save' | 'link';
+export const getCoverMode = (): CoverMode => {
+  try {
+    return (localStorage.getItem('coverMode') as CoverMode) || 'save';
+  } catch {
+    return 'save';
+  }
+};
