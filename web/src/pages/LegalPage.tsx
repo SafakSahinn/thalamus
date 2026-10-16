@@ -50,7 +50,7 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
             <li>Zihin Atlası, kişisel not tutmak için ücretsiz sunulan bir hizmettir. Açık kaynaklıdır: <a href={REPO}>{REPO.replace('https://', '')}</a>.</li>
             <li>Hizmet “olduğu gibi” sunulur; kesintisiz çalışacağı ya da veri kaybı yaşanmayacağı garanti edilmez. Önemli notlarının düzenli olarak yedeğini (Ayarlar → Yedeği indir) almanı öneririz.</li>
             <li>Yazdığın içerik sana aittir ve sorumluluğu sendedir. Hukuka aykırı içerik, başkalarının haklarını ihlal eden dosyalar ya da sistemi kötüye kullanmaya yönelik yüklemeler yasaktır.</li>
-            <li>Ücretsiz altyapı paylaşıldığı için dosya başına 10 MB sınırı vardır. Sistemi aşırı yükleyen ya da kötüye kullanan hesaplar uyarı yapılarak kapatılabilir.</li>
+            <li>Sistemi aşırı yükleyen ya da kötüye kullanan hesaplar uyarı yapılarak kapatılabilir.</li>
             <li>Koşullar değişirse bu sayfa güncellenir. İletişim: <Mail />.</li>
           </ul>
         </>
