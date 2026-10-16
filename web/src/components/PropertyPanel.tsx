@@ -3,7 +3,6 @@ import { displayTitle, optionHue } from '../lib/format';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
 import { createNote, resolveFileUrl, setProp, uploadFile, useIndex, useStore } from '../lib/store';
-import { cloud } from '../lib/supabase';
 import { relationIds, typeOf, TYPE_MAP, type Note, type PropDef } from '../lib/types';
 
 export function Chip({ text }: { text: string }) {
@@ -187,16 +186,17 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
     };
     input.click();
   };
+  const isFile = v.startsWith('gd://') || v.startsWith('local://');
   return (
     <div className="urlinput">
-      {v.startsWith('sb://') ? (
-        <span className="muted">📎 {decodeURIComponent(v.split('/').pop()!.replace(/^[0-9a-f-]{36}-/, ''))}</span>
+      {isFile ? (
+        <span className="muted">📎 {decodeURIComponent(v.split('#')[1] ?? 'Dosya')}</span>
       ) : (
         <input key={note.id + def.key} defaultValue={v} placeholder="https://…" onBlur={(e) => e.target.value.trim() !== v && setProp(note.id, def.key, e.target.value.trim())} />
       )}
       {v && <button className="btn small ghost" onClick={() => void open()}>Aç ↗</button>}
-      {v.startsWith('sb://') && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>Kaldır</button>}
-      {cloud && !v && (def.key === 'pdf' || def.key === 'cover') && (
+      {isFile && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>Kaldır</button>}
+      {!v && (def.key === 'pdf' || def.key === 'cover') && (
         <button className="btn small ghost" disabled={busy} onClick={upload}>{busy ? 'Yükleniyor…' : 'Dosya yükle'}</button>
       )}
     </div>

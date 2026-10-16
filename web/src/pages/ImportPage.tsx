@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { norm } from '../lib/links';
 import { buildNotes, guessColumn, guessType, readNotionZip, type DbMapping, type Parsed } from '../lib/notionImport';
 import { insertNotes, saveSettings, syncNow, uploadFile, useIndex, useStore } from '../lib/store';
-import { cloud } from '../lib/supabase';
 import { TYPES, TYPE_MAP, type TypeId } from '../lib/types';
 
 export default function ImportPage() {
@@ -50,7 +49,7 @@ export default function ImportPage() {
         mappings: maps,
         pageType,
         existing: alive,
-        upload: cloud && useStore.getState().session ? uploadFile : undefined,
+        upload: uploadFile,
         onProgress: (d, t) => setBusy(`Dönüştürülüyor… ${d}/${t}`),
       });
       insertNotes(res.notes);
@@ -86,7 +85,7 @@ export default function ImportPage() {
             <input type="file" accept=".zip,application/zip" onChange={(e) => void pick(e.target.files?.[0])} hidden />
             {busy ?? 'Notion .zip dosyasını seç'}
           </label>
-          <p className="muted small">Aynı dışa aktarımı tekrar yüklersen daha önce aktarılan sayfalar atlanır. Görseller {cloud ? 'buluta yüklenir' : 'not içine gömülür (400 KB’den büyükler atlanır)'}.</p>
+          <p className="muted small">Aynı dışa aktarımı tekrar yüklersen daha önce aktarılan sayfalar atlanır. Görseller ayarlarındaki ek seçeneğine göre Drive’ına ya da yalnızca bu cihaza kaydedilir.</p>
         </>
       )}
       {result && <div className="banner ok">{result} <a href="#/graph">Haritada gör →</a></div>}

@@ -1,23 +1,34 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { Note } from './types';
 
-// Yerel önbellek: uygulama açılırken notlar ağdan beklenmeden buradan gelir.
-// outbox: henüz sunucuya gönderilmemiş değişiklikler (çevrimdışı düzenleme).
+// Yerel veritabanı: uygulama açılırken notlar ağı beklemeden buradan gelir.
+// outbox: henüz Drive'a gönderilmemiş değişiklikler (çevrimdışı düzenleme).
+// driveIds: not kimliği → Drive dosya kimliği.  blobs: görsel/PDF ekleri (yerel ya da Drive önbelleği).
 
 interface Schema {
   notes: { key: string; value: Note };
   outbox: { key: string; value: Note };
   meta: { key: string; value: unknown };
+  driveIds: { key: string; value: string };
+  blobs: { key: string; value: Blob };
 }
+
+const STORES = ['notes', 'outbox', 'meta', 'driveIds', 'blobs'] as const;
 
 let dbp: Promise<IDBPDatabase<Schema>> | null = null;
 
 export function db() {
-  dbp ??= openDB<Schema>('thalamus', 1, {
-    upgrade(d) {
-      d.createObjectStore('notes', { keyPath: 'id' });
-      d.createObjectStore('outbox', { keyPath: 'id' });
-      d.createObjectStore('meta');
+  dbp ??= openDB<Schema>('thalamus', 2, {
+    upgrade(d, old) {
+      if (old < 1) {
+        d.createObjectStore('notes', { keyPath: 'id' });
+        d.createObjectStore('outbox', { keyPath: 'id' });
+        d.createObjectStore('meta');
+      }
+      if (old < 2) {
+        d.createObjectStore('driveIds');
+        d.createObjectStore('blobs');
+      }
     },
   });
   return dbp;
@@ -45,7 +56,11 @@ export async function setMeta(key: string, value: unknown) {
   await (await db()).put('meta', value, key);
 }
 
+export async function delMeta(key: string) {
+  await (await db()).delete('meta', key);
+}
+
 export async function clearAll() {
   const d = await db();
-  await Promise.all([d.clear('notes'), d.clear('outbox'), d.clear('meta')]);
+  await Promise.all(STORES.map((s) => d.clear(s)));
 }

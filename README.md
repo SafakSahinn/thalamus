@@ -1,6 +1,6 @@
 # Thalamus
 
-Notion'daki koleksiyonları ve Obsidian'daki bağlantı haritasını tek uygulamada birleştiren kişisel not uygulaması. Telefona ve bilgisayara uygulama olarak yüklenebilir (PWA), çevrimdışı çalışır, Supabase ile cihazlar arasında eşitlenir.
+Notion'daki koleksiyonları ve Obsidian'daki bağlantı haritasını tek uygulamada birleştiren kişisel not uygulaması. Telefona ve bilgisayara uygulama olarak yüklenebilir (PWA), çevrimdışı çalışır. Google ile giriş yapılır; notlar ve dosyalar kullanıcının **kendi Google Drive’ında** saklanır, sunucuda yalnızca hesap kaydı (e-posta, kayıt ve son kullanım zamanı) tutulur.
 
 - **Koleksiyonlar:** kitap, makale/bildiri, film, söyleşi, ders, not, kişi, kavram, günlük
 - **Bağlantılar:** metinde `[[` ile not bağlantısı; yazar, konu ve kelime alanları da bağlantıdır. Her notta geri bağlantılar ve yerel harita, ayrıca tüm notların grafiği

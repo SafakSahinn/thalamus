@@ -3,12 +3,12 @@ import CommandPalette, { openPalette } from './components/CommandPalette';
 import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
 import { parse, useHash } from './lib/router';
-import { createNote, initLocal, startSync, useStore } from './lib/store';
-import { cloud, supabase } from './lib/supabase';
+import { cloud } from './lib/google';
+import { createNote, initAuth, initLocal, startSync, useStore } from './lib/store';
 import CollectionPage from './pages/CollectionPage';
 import DailyPage from './pages/DailyPage';
 import Home from './pages/Home';
-import Login, { NewPassword } from './pages/Login';
+import Login from './pages/Login';
 import NotePage from './pages/NotePage';
 import { go } from './lib/router';
 
@@ -20,38 +20,26 @@ const TrashPage = lazy(() => import('./pages/TrashPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 
 export default function App() {
-  const session = useStore((s) => s.session);
+  const account = useStore((s) => s.account);
   const ready = useStore((s) => s.ready);
   const route = parse(useHash());
   const [drawer, setDrawer] = useState(false);
-  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
-    if (!cloud) {
-      void initLocal();
-      return;
-    }
-    void supabase.auth.getSession().then(({ data }) => useStore.setState({ session: data.session }));
-    const { data } = supabase.auth.onAuthStateChange((ev, s) => {
-      if (ev === 'PASSWORD_RECOVERY') setRecovery(true);
-      useStore.setState({ session: s });
-    });
-    return () => data.subscription.unsubscribe();
+    if (!cloud) void initLocal();
+    else void initAuth();
   }, []);
 
   useEffect(() => {
-    if (cloud && session) {
-      void initLocal().then(startSync);
-    }
-  }, [session]);
+    if (cloud && account) void initLocal().then(startSync);
+  }, [account]);
 
   // Yasal sayfalar girişsiz de açılır
-  if (route.name === 'legal' && (!cloud || !session)) {
+  if (route.name === 'legal' && (!cloud || !account)) {
     return <Suspense fallback={null}><LegalPage kind={route.kind} /></Suspense>;
   }
-  if (recovery) return <NewPassword onDone={() => setRecovery(false)} />;
-  if (cloud && session === undefined) return <div className="splash" />;
-  if (cloud && !session) return <Login />;
+  if (cloud && account === undefined) return <div className="splash" />;
+  if (cloud && !account) return <Login />;
 
   let page: React.ReactNode;
   switch (route.name) {

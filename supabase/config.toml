@@ -3,3 +3,7 @@ project_id = "ekfemuvjdjvjiuyenawi"
 [auth]
 site_url = "https://safaksahinn.github.io/thalamus/"
 additional_redirect_urls = ["https://safaksahinn.github.io/thalamus/", "http://localhost:5191/"]
+
+[functions.account]
+# Kullanıcılar Supabase Auth kullanmıyor; kimlik Google token ile doğrulanır
+verify_jwt = false

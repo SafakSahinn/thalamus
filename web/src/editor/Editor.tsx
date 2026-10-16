@@ -4,7 +4,6 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import 'katex/dist/katex.min.css';
 import { useEffect, useRef } from 'react';
 import { promptText } from '../components/Prompt';
-import { cloud } from '../lib/supabase';
 import { editorExtensions, insertImageFile } from './extensions';
 
 interface Props {
@@ -32,13 +31,13 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
         attributes: { class: 'prose' },
         handlePaste: (view, event) => {
           const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'));
-          if (!files.length || !cloud) return false;
+          if (!files.length) return false;
           files.forEach((f) => void insertImageFile(editorRef.current!, f));
           return true;
         },
         handleDrop: (view, event) => {
           const files = [...(event.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'));
-          if (!files.length || !cloud) return false;
+          if (!files.length) return false;
           const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
           files.forEach((f) => void insertImageFile(editorRef.current!, f, pos));
           return true;

@@ -1,7 +1,8 @@
-const CONTACT = 'safaksahin022@gmail.com';
+const CONTACT = 'getthalamus@gmail.com';
 const CONTROLLER = 'Şafak Şahin';
 const UPDATED = '16 Ekim 2026';
 const REPO = 'https://github.com/SafakSahinn/thalamus';
+const POLICY = 'https://developers.google.com/terms/api-services-user-data-policy';
 
 const Mail = () => <a href={`mailto:${CONTACT}`}>{CONTACT}</a>;
 
@@ -17,28 +18,57 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
             Bu metin, Thalamus’un hangi kişisel verileri neden ve nasıl işlediğini 6698 sayılı Kişisel Verilerin
             Korunması Kanunu (“KVKK”) kapsamında açıklar. Veri sorumlusu: <strong>{CONTROLLER}</strong>, iletişim: <Mail />.
           </p>
-          <h2>Hangi verileri tutuyoruz?</h2>
+
+          <h2>Notların bizde değil, senin Google Drive’ında</h2>
+          <p>
+            Yazdığın notlar, kelimeler, günlükler ve yüklediğin dosyalar <b>yalnızca</b> iki yerde durur: kullandığın cihazın
+            tarayıcısında (çevrimdışı çalışabilmek için) ve kendi Google Drive’ındaki <b>Thalamus</b> klasöründe. Uygulama
+            bunları tarayıcından doğrudan Google’a gönderir; içerik hiçbir zaman bizim sunucumuzdan geçmez ve tarafımızca
+            görüntülenemez. Bu veriler üzerindeki tasarruf tamamen sana aittir; Drive’ındaki klasörü istediğin zaman
+            indirebilir, taşıyabilir ya da silebilirsin.
+          </p>
+          <p>
+            Uygulama Google Drive’da yalnızca <b>kendi oluşturduğu dosyalara</b> erişebilir (drive.file izni); Drive’ındaki
+            diğer dosyaları göremez.
+          </p>
+
+          <h2>Bizde tutulan bilgiler</h2>
           <ul>
-            <li><b>Hesap bilgisi:</b> e-posta adresin ve şifrenin özeti (şifrenin kendisi saklanmaz).</li>
-            <li><b>İçeriğin:</b> yazdığın notlar, alanlar (yazar, puan, tarih…), kelimeler, günlük ve rutin işaretlerin, ayarların.</li>
-            <li><b>Yüklediğin dosyalar:</b> notlara eklediğin görseller ve PDF’ler.</li>
+            <li>Google hesabının e-posta adresi, adı ve Google hesap kimliği,</li>
+            <li>kayıt tarihin ve uygulamayı en son kullandığın zaman,</li>
+            <li>duyuru e-postası almak isteyip istemediğin,</li>
+            <li>Ayarlar’dan gönderdiğin geri bildirim mesajları.</li>
           </ul>
-          <p>Reklam, analiz ya da izleme aracı kullanılmaz. Çerez yerine yalnızca oturumunu ve çevrimdışı kopyayı tutmak için tarayıcının yerel depolaması kullanılır.</p>
-          <h2>Neden işliyoruz?</h2>
-          <p>Yalnızca hizmeti sunmak için: hesabını açmak, notlarını saklamak ve cihazların arasında eşitlemek. Hukuki sebep, KVKK m.5/2-c (sözleşmenin ifası) ve m.5/2-f’dir (meşru menfaat: hizmetin güvenliği).</p>
-          <h2>Nerede saklanıyor, kimler erişebilir?</h2>
-          <ul>
-            <li>Veriler Supabase altyapısında, Avrupa Birliği’ndeki (Frankfurt) sunucularda saklanır. Bu, KVKK m.9 kapsamında yurt dışına aktarım sayılır ve hizmetin sunulabilmesi için zorunludur.</li>
-            <li>Her kullanıcı yalnızca kendi verisini görebilir. Bu, veritabanı düzeyinde kurallarla sağlanır.</li>
-            <li>Veriler uçtan uca şifreli <b>değildir</b>. İletim ve depolama sırasında şifrelenir, ancak sistem yöneticisi teknik olarak veritabanına erişebilir. Yönetici, içeriğini yalnızca yasal zorunluluk ya da senin açık isteğin (ör. destek talebi) varsa görüntüler. Çok hassas bilgileri (şifreler, sağlık bilgileri vb.) buraya yazmamanı öneririz.</li>
-            <li>Verilerin üçüncü kişilere satılmaz ya da paylaşılmaz.</li>
-            <li>Notlarının bir kopyası, çevrimdışı çalışabilmesi için kullandığın cihazın tarayıcısında da tutulur. Çıkış yaptığında bu kopya silinir.</li>
-          </ul>
+          <p>
+            <b>Amaç:</b> hesabını tanımak, hizmetin kaç kişi tarafından kullanıldığını izlemek, hizmetle ilgili önemli
+            bildirimleri iletmek ve (yalnızca onay verdiysen) yenilikleri duyurmak. <b>Hukuki sebep:</b> KVKK m.5/2-c
+            (hizmet sözleşmesinin kurulması ve ifası), m.5/2-f (meşru menfaat: hizmetin işletilmesi ve güvenliği); duyuru
+            e-postaları için açık rızan. Duyurulardan her e-postadaki bağlantıyla ya da Ayarlar’dan çıkabilirsin.
+          </p>
+          <p>
+            Bu bilgiler Supabase altyapısında, Avrupa Birliği’ndeki (Frankfurt) sunucularda saklanır. Bu, KVKK m.9 kapsamında
+            yurt dışına aktarım sayılır ve hizmetin sunulabilmesi için gereklidir. Satılmaz, reklam için kullanılmaz,
+            üçüncü kişilerle paylaşılmaz. Reklam, analiz ya da izleme aracı kullanılmaz.
+          </p>
+
+          <h2>Google oturumu</h2>
+          <p>
+            Google ile giriş yaptığında Google’ın verdiği oturum anahtarı yalnızca senin cihazında saklanır. Bu anahtarın süresi
+            dolduğunda yenilenmesi için sunucumuzdaki bir işlevden geçer; işlev anahtarı kaydetmez, yalnızca Google’a iletir.
+          </p>
+          <p>
+            Thalamus’un Google API’lerinden aldığı bilgileri kullanımı ve başka uygulamalara aktarımı, Sınırlı Kullanım (Limited
+            Use) şartları dahil <a href={POLICY}>Google API Hizmetleri Kullanıcı Verileri Politikası</a>’na uygundur. Google
+            hesabından alınan bilgiler yalnızca yukarıda yazan amaçlarla kullanılır; yapay zekâ modellerinin eğitimi dahil başka
+            hiçbir amaçla kullanılmaz ve aktarılmaz.
+          </p>
+
           <h2>Hakların</h2>
-          <p>KVKK m.11 kapsamındaki haklarını (bilgi talebi, düzeltme, silme vb.) kullanabilirsin:</p>
+          <p>KVKK m.11 kapsamındaki haklarını (bilgi talebi, düzeltme, silme, itiraz vb.) kullanabilirsin:</p>
           <ul>
-            <li><b>Dışa aktarma:</b> Ayarlar → Yedek → “Yedeği indir” ile bütün notlarını tek dosya olarak indirebilirsin.</li>
-            <li><b>Silme:</b> Ayarlar → “Hesabımı sil” ile hesabın, notların ve dosyaların kalıcı olarak silinir.</li>
+            <li><b>Hesabı silme:</b> Ayarlar → “Hesabımı sil”. Hesap kaydın ve geri bildirimlerinle ilişkin bağlantı silinir, uygulamanın Google iznini geri alırız. İstersen Drive’ındaki Thalamus klasörü de silinir.</li>
+            <li><b>Google iznini geri alma:</b> Google hesabın → Güvenlik → Üçüncü taraf uygulamalar bölümünden de Thalamus’un erişimini istediğin an kaldırabilirsin.</li>
+            <li><b>Dışa aktarma:</b> Notların zaten Drive’ında; ayrıca Ayarlar → “Yedeği indir” ile tek dosya olarak indirebilirsin.</li>
             <li>Diğer talepler için: <Mail />.</li>
           </ul>
         </>
@@ -47,10 +77,10 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
           <h1>Kullanım Koşulları</h1>
           <p className="muted small">Son güncelleme: {UPDATED}</p>
           <ul>
-            <li>Thalamus, kişisel not tutmak için ücretsiz sunulan bir hizmettir. Açık kaynaklıdır: <a href={REPO}>{REPO.replace('https://', '')}</a>.</li>
-            <li>Hizmet “olduğu gibi” sunulur; kesintisiz çalışacağı ya da veri kaybı yaşanmayacağı garanti edilmez. Önemli notlarının düzenli olarak yedeğini (Ayarlar → Yedeği indir) almanı öneririz.</li>
-            <li>Yazdığın içerik sana aittir ve sorumluluğu sendedir. Hukuka aykırı içerik, başkalarının haklarını ihlal eden dosyalar ya da sistemi kötüye kullanmaya yönelik yüklemeler yasaktır.</li>
-            <li>Sistemi aşırı yükleyen ya da kötüye kullanan hesaplar uyarı yapılarak kapatılabilir.</li>
+            <li>Thalamus, kişisel not tutmak için ücretsiz sunulan bir uygulamadır. Açık kaynaklıdır: <a href={REPO}>{REPO.replace('https://', '')}</a>.</li>
+            <li>Notların kendi Google Drive’ında saklanır; Google Drive kullanımın Google’ın kendi koşullarına ve depolama kotana tabidir.</li>
+            <li>Uygulama “olduğu gibi” sunulur; kesintisiz çalışacağı ya da veri kaybı yaşanmayacağı garanti edilmez. Önemli notlarının ara sıra yedeğini almanı öneririz (Ayarlar → Yedeği indir).</li>
+            <li>Yazdığın içerik sana aittir ve sorumluluğu sendedir. Uygulamayı ya da altyapısını kötüye kullanmaya yönelik girişimler yasaktır; bu durumda hesap kaydı silinebilir.</li>
             <li>Koşullar değişirse bu sayfa güncellenir. İletişim: <Mail />.</li>
           </ul>
         </>

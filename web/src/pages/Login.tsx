@@ -1,55 +1,31 @@
-import { useState } from 'react';
-import { siteRoot, supabase } from '../lib/supabase';
+import { useEffect, useState } from 'react';
+import { authErrorText, preloadGoogle, signInWithGoogle } from '../lib/google';
+import { onSignedIn, useStore } from '../lib/store';
 
-export function NewPassword({ onDone }: { onDone: () => void }) {
-  const [pw, setPw] = useState('');
-  const [msg, setMsg] = useState('');
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.updateUser({ password: pw });
-    if (error) setMsg(error.message);
-    else onDone();
-  };
-  return (
-    <div className="login">
-      <form className="login-card" onSubmit={save}>
-        <h1>Yeni şifre</h1>
-        <input type="password" value={pw} minLength={8} placeholder="En az 8 karakter" onChange={(e) => setPw(e.target.value)} autoFocus />
-        <button className="btn primary" disabled={pw.length < 8}>Kaydet</button>
-        {msg && <p className="err">{msg}</p>}
-      </form>
-    </div>
-  );
-}
+const GoogleLogo = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+  </svg>
+);
 
 export default function Login() {
-  const [mode, setMode] = useState<'in' | 'up' | 'reset'>('in');
-  const [email, setEmail] = useState('');
-  const [pw, setPw] = useState('');
-  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [news, setNews] = useState(false);
+  const syncError = useStore((s) => s.sync.error);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(preloadGoogle, []);
+
+  const go = async () => {
     setBusy(true);
-    setMsg(null);
+    setErr(null);
     try {
-      if (mode === 'in') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
-        if (error) throw error;
-      } else if (mode === 'up') {
-        const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: siteRoot } });
-        if (error) throw error;
-        if (!data.session) setMsg({ ok: true, text: 'Onay e-postası gönderildi. E-postadaki bağlantıya tıkladıktan sonra giriş yapabilirsin.' });
-      } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: siteRoot });
-        if (error) throw error;
-        setMsg({ ok: true, text: 'Şifre sıfırlama bağlantısı e-postana gönderildi.' });
-      }
-    } catch (err) {
-      const m = err instanceof Error ? err.message : String(err);
-      setMsg({ ok: false, text: m === 'Invalid login credentials' ? 'E-posta veya şifre hatalı.' : m });
+      await onSignedIn(await signInWithGoogle(news));
+    } catch (e) {
+      setErr(authErrorText(e));
     } finally {
       setBusy(false);
     }
@@ -57,29 +33,29 @@ export default function Login() {
 
   return (
     <div className="login">
-      <form className="login-card" onSubmit={submit}>
-        <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={56} height={56} />
+      <div className="login-card">
+        <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={64} height={64} />
         <h1>Thalamus</h1>
-        <p className="muted">Notların, kitapların, makalelerin ve sözlüğün tek yerde ve birbirine bağlı.</p>
-        <input type="email" required value={email} placeholder="E-posta" autoComplete="email" onChange={(e) => setEmail(e.target.value)} />
-        {mode !== 'reset' && (
-          <div className="pwrow">
-            <input type={show ? 'text' : 'password'} required minLength={mode === 'up' ? 8 : undefined} value={pw} placeholder="Şifre" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} onChange={(e) => setPw(e.target.value)} />
-            <button type="button" className="iconbtn" onClick={() => setShow(!show)} title="Şifreyi göster/gizle">{show ? '🙈' : '👁'}</button>
-          </div>
-        )}
-        <button className="btn primary" disabled={busy}>
-          {mode === 'in' ? 'Giriş yap' : mode === 'up' ? 'Hesap oluştur' : 'Sıfırlama bağlantısı gönder'}
+        <p className="muted">Kitapların, makalelerin, derslerin ve kelimelerin; tek yerde ve birbirine bağlı.</p>
+        <ul className="login-points">
+          <li>Notların <b>kendi Google Drive’ında</b> saklanır; biz göremeyiz.</li>
+          <li>Telefonda ve bilgisayarda aynı notlar, internetsiz de çalışır.</li>
+          <li>Ücretsiz.</li>
+        </ul>
+        {syncError && <p className="err small">{syncError}</p>}
+        <button className="btn google" onClick={() => void go()} disabled={busy}>
+          <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google ile devam et'}
         </button>
-        {msg && <p className={msg.ok ? 'ok' : 'err'}>{msg.text}</p>}
-        <div className="login-links">
-          {mode !== 'in' && <button type="button" className="linkbtn" onClick={() => setMode('in')}>Giriş yap</button>}
-          {mode !== 'up' && <button type="button" className="linkbtn" onClick={() => setMode('up')}>Hesap oluştur</button>}
-          {mode !== 'reset' && <button type="button" className="linkbtn" onClick={() => setMode('reset')}>Şifremi unuttum</button>}
-        </div>
-        {mode === 'up' && <p className="muted small">Hesap oluşturarak <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş ve <a href="#/gizlilik">Gizlilik ve KVKK Aydınlatma Metni</a>’ni okumuş olursun.</p>}
-        <p className="muted small legal-links"><a href="#/gizlilik">Gizlilik</a> · <a href="#/kosullar">Koşullar</a></p>
-      </form>
+        {err && <p className="err small">{err}</p>}
+        <label className="small news">
+          <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
+          Yenilikler hakkında ara sıra e-posta almak istiyorum (isteğe bağlı)
+        </label>
+        <p className="muted small">
+          Devam ederek <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş olursun. Hesabın için yalnızca e-posta adresin,
+          kayıt tarihin ve son kullanım zamanın tutulur: <a href="#/gizlilik">Gizlilik ve KVKK Aydınlatma Metni</a>.
+        </p>
+      </div>
     </div>
   );
 }

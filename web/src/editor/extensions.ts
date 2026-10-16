@@ -49,7 +49,7 @@ function pickImage(editor: Editor) {
   input.click();
 }
 
-/** Supabase'deki özel dosyalar sb://yol olarak saklanır, gösterirken imzalı adrese çevrilir. */
+/** Ekler gd:// (Drive) veya local:// (yalnızca bu cihaz) olarak saklanır, gösterirken yerel adrese çevrilir. */
 const StoredImage = Image.extend({
   addNodeView() {
     return ({ node }) => {

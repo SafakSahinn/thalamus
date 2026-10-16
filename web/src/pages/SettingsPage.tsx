@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
-import { deleteAccount, insertNotes, saveSettings, signOut, syncNow, uid, useStore } from '../lib/store';
-import { cloud } from '../lib/supabase';
+import { cloud } from '../lib/google';
+import {
+  deleteAccount, getAttachMode, insertNotes, saveSettings, sendFeedback, setAnnouncements, signOut, syncNow, uid, useStore,
+  type AttachMode,
+} from '../lib/store';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import type { Note, Routine } from '../lib/types';
 
@@ -39,8 +42,37 @@ function Routines() {
   );
 }
 
+function Feedback() {
+  const [text, setText] = useState('');
+  const [state, setState] = useState<'idle' | 'busy' | 'sent' | string>('idle');
+  const send = async () => {
+    setState('busy');
+    try {
+      await sendFeedback(text);
+      setText('');
+      setState('sent');
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      setState(code === 'rate_limited' ? 'Bugün çok fazla mesaj gönderdin, yarın tekrar dene.' : e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <section>
+      <h3>Geri bildirim</h3>
+      <p className="muted small">Bir hata mı buldun, bir özellik mi istiyorsun? Doğrudan geliştiriciye iletilir.</p>
+      <textarea className="feedback" rows={3} value={text} maxLength={5000} placeholder="Mesajın…" onChange={(e) => { setText(e.target.value); if (state !== 'busy') setState('idle'); }} />
+      <div className="row">
+        <button className="btn" disabled={!text.trim() || state === 'busy'} onClick={() => void send()}>{state === 'busy' ? 'Gönderiliyor…' : 'Gönder'}</button>
+        {state === 'sent' && <span className="ok small">Teşekkürler, iletildi.</span>}
+        {!['idle', 'busy', 'sent'].includes(state) && <span className="err small">{state}</span>}
+      </div>
+    </section>
+  );
+}
+
 function DeleteAccount({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
+  const [drive, setDrive] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -48,7 +80,7 @@ function DeleteAccount({ email }: { email: string }) {
     setBusy(true);
     setErr('');
     try {
-      await deleteAccount();
+      await deleteAccount(drive);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(false);
@@ -61,7 +93,11 @@ function DeleteAccount({ email }: { email: string }) {
         <button className="btn danger" onClick={() => setOpen(true)}>Hesabımı sil…</button>
       ) : (
         <div className="danger-box">
-          <p>Hesabın, bütün notların, yüklediğin dosyalar ve ayarların <b>kalıcı olarak</b> silinir. Bu geri alınamaz. İstersen önce yukarıdan yedeğini indir.</p>
+          <p>Thalamus hesap kaydın silinir, uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır.</p>
+          <label className="small">
+            <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} /> Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil
+          </label>
+          {!drive && <p className="muted small">Notların Drive’ında kalır; istediğin zaman tekrar giriş yapıp kaldığın yerden devam edebilirsin.</p>}
           <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={email} />
           <div className="row">
@@ -86,7 +122,10 @@ function download(name: string, text: string, type = 'application/json') {
 }
 
 export default function SettingsPage() {
-  const session = useStore((s) => s.session);
+  const account = useStore((s) => s.account);
+  const announcements = useStore((s) => s.announcements);
+  const [attach, setAttach] = useState<AttachMode>(getAttachMode());
+  const [annErr, setAnnErr] = useState('');
   const sync = useStore((s) => s.sync);
   const notes = useStore((s) => s.notes);
   const settings = useStore((s) => s.settings);
@@ -127,20 +166,49 @@ export default function SettingsPage() {
         <h3>Hesap ve eşitleme</h3>
         {cloud ? (
           <>
-            <p>{session?.user.email}</p>
+            <div className="account">
+              {account?.picture && <img src={account.picture} alt="" width={36} height={36} referrerPolicy="no-referrer" />}
+              <div>
+                <div>{account?.name}</div>
+                <div className="muted small">{account?.email}</div>
+              </div>
+            </div>
             <div className="row">
               <SyncBadge />
               {sync.last && <span className="muted small">son eşitleme {relTime(sync.last)}</span>}
               <button className="btn small" onClick={() => void syncNow()}>Şimdi eşitle</button>
             </div>
             {sync.error && <p className="err small">{sync.error}</p>}
-            <p className="muted small">Notlar önce bu cihaza kaydedilir, internet varken birkaç saniye içinde buluta ve diğer cihazlarına gider. Çevrimdışıyken de yazabilirsin.</p>
-            <button className="btn ghost" onClick={() => void signOut()}>Çıkış yap</button>
+            <p className="muted small">Notlar önce bu cihaza kaydedilir, internet varken birkaç saniye içinde Google Drive’ındaki <b>Thalamus</b> klasörüne gider. Diğer cihazların uygulamayı açtığında ya da yarım dakika içinde güncellenir. Çevrimdışıyken de yazabilirsin.</p>
+            <label className="small">
+              <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x) => setAnnErr(String(x))); }} /> Yenilikler hakkında ara sıra e-posta al
+            </label>
+            {annErr && <p className="err small">{annErr}</p>}
+            <div><button className="btn ghost" onClick={() => void signOut()}>Bu cihazda çıkış yap</button></div>
           </>
         ) : (
           <p className="muted">Bulut ayarlanmadı: notlar yalnızca bu tarayıcıda tutuluyor. Düzenli olarak yedek almayı unutma.</p>
         )}
       </section>
+
+      {cloud && (
+        <section>
+          <h3>Görsel ve PDF ekleri</h3>
+          <div className="seg">
+            {(['drive', 'local'] as AttachMode[]).map((m) => (
+              <button key={m} className={attach === m ? 'on' : ''} onClick={() => { localStorage.setItem('attachMode', m); setAttach(m); }}>
+                {m === 'drive' ? 'Drive’a yükle' : 'Sadece bu cihazda tut'}
+              </button>
+            ))}
+          </div>
+          <p className="muted small">
+            {attach === 'drive'
+              ? 'Ekler Drive’ına yüklenir ve bütün cihazlarında görünür.'
+              : 'Ekler yalnızca bu cihazda saklanır: Drive’ında yer kaplamaz ama diğer cihazlarında görünmez ve bu tarayıcının verileri silinirse kaybolur.'}
+            {' '}Bu ayar bu cihaza özeldir.
+          </p>
+        </section>
+      )}
 
       <section>
         <h3>Günlük rutinler</h3>
@@ -170,7 +238,9 @@ export default function SettingsPage() {
         {msg && <p className="small">{msg}</p>}
       </section>
 
-      {cloud && session && <DeleteAccount email={session.user.email ?? ''} />}
+      {cloud && account && <Feedback />}
+
+      {cloud && account && <DeleteAccount email={account.email} />}
 
       <p className="muted small"><a href="#/gizlilik">Gizlilik ve KVKK</a> · <a href="#/kosullar">Kullanım Koşulları</a></p>
 

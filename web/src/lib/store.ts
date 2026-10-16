@@ -1,8 +1,8 @@
-import type { RealtimeChannel, Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import { clearAll, db, getMeta, loadAll, putNotes, setMeta } from './db';
+import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db';
+import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
+import { accessToken, callFn, cloud as cloudConfigured, loadAuth, type AuthState, type Profile } from './google';
 import { buildBacklinks, computeLinks, plainText } from './links';
-import { cloud, supabase } from './supabase';
 import { DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
@@ -10,18 +10,29 @@ export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
 interface State {
   notes: Record<string, Note>;
   ready: boolean;
-  /** undefined: henüz bilinmiyor */
-  session: Session | null | undefined;
+  /** Google hesabı; undefined: henüz bilinmiyor, null: giriş yapılmamış */
+  account: Profile | null | undefined;
+  announcements: boolean;
   settings: Settings;
   sync: { status: SyncStatus; pending: number; last?: string; error?: string };
   /** Başka cihazdan gelen değişiklik sayacı (açık editörün içeriği yenilensin diye) */
   remoteRev: Record<string, number>;
 }
 
+let cloud = cloudConfigured;
+let api: DriveApi = realDrive;
+
+/** Testler için: sahte Drive ile bulut modunu aç */
+export function __useDrive(fake: DriveApi) {
+  api = fake;
+  cloud = true;
+}
+
 export const useStore = create<State>(() => ({
   notes: {},
   ready: false,
-  session: cloud ? undefined : null,
+  account: cloud ? undefined : null,
+  announcements: false,
   settings: DEFAULT_SETTINGS,
   sync: { status: cloud ? 'idle' : 'local', pending: 0 },
   remoteRev: {},
@@ -40,6 +51,23 @@ export async function initLocal() {
   void refreshPending();
 }
 
+/** Açılışta kayıtlı Google oturumunu yükler. */
+export async function initAuth() {
+  const a = await loadAuth();
+  set({ account: a?.profile ?? null, announcements: a?.announcements ?? false });
+}
+
+/** Girişten sonra: başka bir hesabın yerel verisi kaldıysa temizle. */
+export async function onSignedIn(a: AuthState) {
+  const owner = await getMeta<string>('ownerSub');
+  if (owner && owner !== a.profile.sub) {
+    await clearAll();
+    await setMeta('auth', a);
+  }
+  await setMeta('ownerSub', a.profile.sub);
+  set({ account: a.profile, announcements: a.announcements });
+}
+
 // ---------- yerel değişiklikler ----------
 
 const memQueue = new Map<string, Note>();
@@ -56,7 +84,7 @@ function commit(list: Note[]) {
   writeTimer = setTimeout(() => void writePending(), 300);
 }
 
-async function writePending() {
+export async function writePending() {
   clearTimeout(writeTimer);
   if (!memQueue.size) return;
   const list = [...memQueue.values()];
@@ -92,7 +120,10 @@ export type NotePatch = Partial<Pick<Note, 'title' | 'props' | 'content' | 'pinn
 export function updateNote(id: string, patch: NotePatch) {
   const old = get().notes[id];
   if (!old) return;
-  const n: Note = { ...old, ...patch, updated_at: now() };
+  // Aynı milisaniyede iki düzenleme olursa da sıralama bozulmasın
+  let t = now();
+  if (t <= old.updated_at) t = new Date(Date.parse(old.updated_at) + 1).toISOString();
+  const n: Note = { ...old, ...patch, updated_at: t };
   if ('content' in patch) n.text = plainText(n.content);
   if ('content' in patch || 'props' in patch || 'type' in patch) n.links = computeLinks(n);
   commit([n]);
@@ -148,53 +179,30 @@ export const useIndex = () => indexOf(useStore((s) => s.notes));
 
 export async function saveSettings(settings: Settings) {
   set({ settings });
-  const t = now();
   await setMeta('settings', settings);
-  await setMeta('settingsAt', t);
-  if (cloud && get().session) {
-    await supabase.from('user_settings').upsert({ data: settings, updated_at: t });
+  await setMeta('settingsAt', now());
+  await setMeta('settingsDirty', true);
+  scheduleFlush();
+}
+
+// ---------- Drive eşitlemesi ----------
+//
+// Çekme: ilk seferde özet dosyası + klasör listesi, sonrasında Drive "changes" akışı.
+// Gönderme: outbox'taki her not kendi dosyasına yazılır. Çakışmada son düzenleyen kazanır (updated_at).
+
+const SNAPSHOT_EVERY = 25;
+const SNAPSHOT_MAX_AGE = 24 * 3600_000;
+
+let folders: Folders | null = null;
+
+async function getFolders(): Promise<Folders> {
+  folders ??= (await getMeta<Folders>('folders')) ?? null;
+  if (!folders) {
+    folders = await api.ensureFolders();
+    await setMeta('folders', folders);
   }
+  return folders;
 }
-
-async function pullSettings() {
-  const { data, error } = await supabase.from('user_settings').select('data,updated_at').maybeSingle();
-  if (error) throw error;
-  const localAt = (await getMeta<string>('settingsAt')) ?? '';
-  if (data && new Date(data.updated_at).toISOString() > localAt) {
-    const settings = { ...DEFAULT_SETTINGS, ...(data.data as Settings) };
-    set({ settings });
-    await setMeta('settings', settings);
-    await setMeta('settingsAt', new Date(data.updated_at).toISOString());
-  } else if (!data && localAt) {
-    await supabase.from('user_settings').upsert({ data: get().settings, updated_at: localAt });
-  }
-}
-
-// ---------- senkronizasyon ----------
-
-const iso = (s: string | null) => (s ? new Date(s).toISOString() : null);
-
-function fromRow(r: Record<string, unknown>): Note {
-  return {
-    id: r.id as string,
-    type: r.type as TypeId,
-    title: (r.title as string) ?? '',
-    props: (r.props as Record<string, unknown>) ?? {},
-    content: r.content ?? null,
-    text: (r.text as string) ?? '',
-    links: (r.links as string[]) ?? [],
-    pinned: Boolean(r.pinned),
-    created_at: iso(r.created_at as string)!,
-    updated_at: iso(r.updated_at as string)!,
-    deleted_at: iso(r.deleted_at as string | null),
-    synced_at: r.synced_at as string,
-  };
-}
-
-const toRow = (n: Note) => ({
-  id: n.id, type: n.type, title: n.title, props: n.props, content: n.content, text: n.text,
-  links: n.links, pinned: n.pinned, created_at: n.created_at, updated_at: n.updated_at, deleted_at: n.deleted_at,
-});
 
 async function refreshPending() {
   if (!cloud) return;
@@ -202,66 +210,148 @@ async function refreshPending() {
   set({ sync: { ...get().sync, pending } });
 }
 
+/** Bir dizi işi en fazla n tanesi aynı anda olacak şekilde çalıştırır */
+async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]);
+  }));
+}
+
+const fileData = (n: Note) => {
+  const { synced_at: _s, ...rest } = n;
+  return rest;
+};
+const noteProps = (n: Note) => ({ thalamus: 'note', noteId: n.id, updatedAt: n.updated_at });
+
 async function applyRemote(rows: Note[]) {
+  if (!rows.length) return;
   const d = await db();
   const notes = { ...get().notes };
   const rev = { ...get().remoteRev };
   const toPut: Note[] = [];
   for (const r of rows) {
+    if (!r?.id || !r.updated_at) continue;
     const pending = memQueue.get(r.id) ?? (await d.get('outbox', r.id));
-    if (pending && pending.updated_at > r.updated_at) continue; // yereldeki daha yeni, o gönderilecek
+    if (pending && pending.updated_at >= r.updated_at) continue; // yereldeki daha yeni, o gönderilecek
     if (pending) {
       memQueue.delete(r.id);
       await d.delete('outbox', r.id);
     }
     const local = notes[r.id];
-    if (local && local.updated_at !== r.updated_at) rev[r.id] = (rev[r.id] ?? 0) + 1;
-    notes[r.id] = r;
-    toPut.push(r);
+    if (local && local.updated_at >= r.updated_at) continue;
+    if (local) rev[r.id] = (rev[r.id] ?? 0) + 1;
+    const n: Note = { ...r, text: r.text ?? plainText(r.content), links: r.links ?? computeLinks(r) };
+    notes[r.id] = n;
+    toPut.push(n);
   }
+  if (!toPut.length) return;
   set({ notes, remoteRev: rev });
   await putNotes(toPut, false);
 }
 
-async function pull() {
-  let cursor = (await getMeta<string>('cursor')) ?? '1970-01-01T00:00:00Z';
-  for (;;) {
-    const { data, error } = await supabase
-      .from('notes').select('*').gt('synced_at', cursor).order('synced_at').limit(500);
-    if (error) throw error;
-    if (!data.length) break;
-    await applyRemote(data.map(fromRow));
-    cursor = data[data.length - 1].synced_at as string;
-    await setMeta('cursor', cursor);
-    if (data.length < 500) break;
+/** Drive dosya listesinden yeni olanları indirir. */
+async function applyFiles(files: DFile[]) {
+  const d = await db();
+  const fetchIds: string[] = [];
+  let settingsFile: DFile | null = null;
+  for (const f of files) {
+    const p = f.appProperties ?? {};
+    if (f.trashed) continue;
+    if (p.thalamus === 'note' && p.noteId && p.updatedAt) {
+      await d.put('driveIds', f.id, p.noteId);
+      const local = get().notes[p.noteId];
+      const pending = memQueue.get(p.noteId) ?? (await d.get('outbox', p.noteId));
+      const newest = [local?.updated_at, pending?.updated_at].filter(Boolean).sort().pop();
+      if (!newest || p.updatedAt > newest) fetchIds.push(f.id);
+    } else if (p.thalamus === 'settings') {
+      settingsFile = f;
+    }
   }
+  const got: Note[] = [];
+  await pool(fetchIds, 6, async (id) => {
+    try {
+      got.push(await api.readJson<Note>(id));
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
+    }
+  });
+  await applyRemote(got);
+  if (settingsFile) await pullSettings(settingsFile);
+}
+
+async function pullSettings(f: DFile) {
+  await setMeta('settingsFileId', f.id);
+  const remoteAt = f.appProperties?.updatedAt ?? '';
+  const localAt = (await getMeta<string>('settingsAt')) ?? '';
+  if (remoteAt <= localAt) return;
+  const s = await api.readJson<Settings>(f.id);
+  const settings = { ...DEFAULT_SETTINGS, ...s };
+  set({ settings });
+  await setMeta('settings', settings);
+  await setMeta('settingsAt', remoteAt);
+  await delMeta('settingsDirty');
+}
+
+async function fullPull() {
+  const start = await api.startPageToken();
+  const f = await getFolders();
+  const rootFiles = await api.list(f.root);
+  const snap = rootFiles.find((x) => x.appProperties?.thalamus === 'snapshot');
+  if (snap) {
+    await setMeta('snapshotId', snap.id);
+    const data = await api.readJson<{ notes: Note[] }>(snap.id).catch(() => ({ notes: [] as Note[] }));
+    await applyRemote(data.notes ?? []);
+  }
+  await applyFiles([...rootFiles.filter((x) => x.appProperties?.thalamus === 'settings'), ...(await api.list(f.notes))]);
+  await setMeta('changesToken', start);
+}
+
+async function pull() {
+  const token = await getMeta<string>('changesToken');
+  if (!token) return fullPull();
+  const { files, next } = await api.changes(token);
+  await applyFiles(files);
+  await setMeta('changesToken', next);
 }
 
 let flushing = false;
 let flushTimer: ReturnType<typeof setTimeout> | undefined;
 
 function scheduleFlush() {
-  if (!cloud) return;
+  if (!cloud || !get().account) return;
   clearTimeout(flushTimer);
-  flushTimer = setTimeout(() => void flush().catch(onSyncError), 1500);
+  flushTimer = setTimeout(() => void push().catch(onSyncError), 2000);
 }
 
-async function flush() {
-  if (!cloud || !get().session || flushing || !navigator.onLine) return;
+async function push() {
+  if (!cloud || !get().account || flushing || !navigator.onLine) return;
   flushing = true;
   try {
     await writePending();
     const d = await db();
+    const f = await getFolders();
     const items = await d.getAll('outbox');
-    for (let i = 0; i < items.length; i += 100) {
-      const chunk = items.slice(i, i + 100);
-      const { error } = await supabase.from('notes').upsert(chunk.map(toRow), { onConflict: 'id' });
-      if (error) throw error;
-      for (const it of chunk) {
-        const cur = await d.get('outbox', it.id);
-        if (cur && cur.updated_at === it.updated_at) await d.delete('outbox', it.id);
+    await pool(items, 4, async (it) => {
+      let id = await d.get('driveIds', it.id);
+      if (id) {
+        try {
+          await api.updateJson(id, fileData(it), noteProps(it));
+        } catch (e) {
+          if (!isNotFound(e)) throw e;
+          id = undefined;
+        }
       }
-    }
+      if (!id) {
+        id = await api.createJson(f.notes, `${it.id}.json`, fileData(it), noteProps(it));
+        await d.put('driveIds', id, it.id);
+      }
+      const cur = await d.get('outbox', it.id);
+      if (cur && cur.updated_at === it.updated_at) await d.delete('outbox', it.id);
+    });
+    if (items.length) await setMeta('sinceSnapshot', ((await getMeta<number>('sinceSnapshot')) ?? 0) + items.length);
+    await pushSettings(f);
+    await maybeSnapshot(f);
     set({ sync: { ...get().sync, status: 'idle', last: now(), error: undefined } });
   } finally {
     flushing = false;
@@ -269,13 +359,64 @@ async function flush() {
   }
 }
 
+async function pushSettings(f: Folders) {
+  if (!(await getMeta<boolean>('settingsDirty'))) return;
+  const at = (await getMeta<string>('settingsAt')) ?? now();
+  const props = { thalamus: 'settings', updatedAt: at };
+  let id = await getMeta<string>('settingsFileId');
+  if (id) {
+    try {
+      await api.updateJson(id, get().settings, props);
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
+      id = undefined;
+    }
+  }
+  if (!id) await setMeta('settingsFileId', await api.createJson(f.root, 'settings.json', get().settings, props));
+  await delMeta('settingsDirty');
+}
+
+/** Yeni bir cihazın hızlı açılması için ara ara bütün notları tek dosyaya yazar. */
+async function maybeSnapshot(f: Folders, force = false) {
+  const since = (await getMeta<number>('sinceSnapshot')) ?? 0;
+  const at = (await getMeta<number>('snapshotAt')) ?? 0;
+  if (!force && (since === 0 || (since < SNAPSHOT_EVERY && Date.now() - at < SNAPSHOT_MAX_AGE))) return;
+  const data = { app: 'thalamus', version: 1, at: now(), notes: Object.values(get().notes).map(fileData) };
+  const props = { thalamus: 'snapshot', updatedAt: data.at };
+  let id = await getMeta<string>('snapshotId');
+  if (id) {
+    try {
+      await api.updateJson(id, data, props);
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
+      id = undefined;
+    }
+  }
+  if (!id) await setMeta('snapshotId', await api.createJson(f.root, 'snapshot.json', data, props));
+  await setMeta('sinceSnapshot', 0);
+  await setMeta('snapshotAt', Date.now());
+}
+
 function onSyncError(e: unknown) {
+  if ((e as Error | undefined)?.name === 'AuthRevokedError') {
+    set({ account: null, sync: { ...get().sync, status: 'error', error: 'Google oturumun sona erdi, yeniden giriş yap.' } });
+    return;
+  }
+  if (isNotFound(e)) {
+    // Kullanıcı Drive'daki Thalamus klasörünü silmiş olabilir: baştan kur
+    folders = null;
+    void Promise.all(['folders', 'changesToken', 'snapshotId', 'settingsFileId'].map(delMeta)).then(async () => {
+      (await db()).clear('driveIds');
+      await putNotes(Object.values(get().notes), true);
+      await setMeta('settingsDirty', true);
+    });
+  }
   const offline = !navigator.onLine;
   set({
     sync: {
       ...get().sync,
       status: offline ? 'offline' : 'error',
-      error: offline ? undefined : e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e),
+      error: offline ? undefined : e instanceof Error ? e.message : String(e),
     },
   });
 }
@@ -283,7 +424,7 @@ function onSyncError(e: unknown) {
 let syncing: Promise<void> | null = null;
 
 export function syncNow(): Promise<void> {
-  if (!cloud || !get().session) return Promise.resolve();
+  if (!cloud || !get().account) return Promise.resolve();
   if (!navigator.onLine) {
     set({ sync: { ...get().sync, status: 'offline' } });
     return Promise.resolve();
@@ -292,8 +433,7 @@ export function syncNow(): Promise<void> {
     set({ sync: { ...get().sync, status: 'syncing' } });
     try {
       await pull();
-      await pullSettings();
-      await flush();
+      await push();
       set({ sync: { ...get().sync, status: 'idle', last: now(), error: undefined } });
     } catch (e) {
       onSyncError(e);
@@ -304,15 +444,14 @@ export function syncNow(): Promise<void> {
   return syncing;
 }
 
-let channel: RealtimeChannel | null = null;
 let started = false;
 
 export function startSync() {
   if (!cloud || started) return;
   started = true;
   void (async () => {
-    // İlk bulut eşitlemesi: yerel modda yazılmış notlar da gönderilsin
-    if (!(await getMeta<string>('cursor'))) {
+    // İlk eşitleme: yerel modda (girişten önce) yazılmış notlar da gönderilsin
+    if (!(await getMeta<string>('changesToken'))) {
       const local = Object.values(get().notes);
       if (local.length) await putNotes(local, true);
     }
@@ -328,71 +467,101 @@ export function startSync() {
   window.addEventListener('online', () => void syncNow());
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') soon();
-    else void writePending().then(() => flush()).catch(onSyncError);
+    else void writePending().then(() => push()).catch(onSyncError);
   });
-  setInterval(() => void syncNow(), 120_000);
-  let t: ReturnType<typeof setTimeout> | undefined;
-  channel = supabase
-    .channel('notes-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => {
-      clearTimeout(t);
-      t = setTimeout(() => void syncNow(), 800);
-    })
-    .subscribe();
+  // Açıkken yarım dakikada bir başka cihazlardan gelenlere bak
+  setInterval(() => {
+    if (document.visibilityState === 'visible') void syncNow();
+  }, 30_000);
 }
+
+// ---------- hesap ----------
 
 export async function signOut() {
   await writePending();
-  await flush().catch(() => undefined);
-  if (channel) await supabase.removeChannel(channel);
-  await supabase.auth.signOut();
-  await clearAll();
-  location.reload();
-}
-
-/** Hesabı kalıcı olarak siler: önce dosyalar, sonra hesap (notlar ve ayarlar onunla birlikte gider). */
-export async function deleteAccount() {
-  const user = get().session?.user;
-  if (!cloud || !user) throw new Error('Oturum yok.');
-  for (;;) {
-    const { data, error } = await supabase.storage.from('files').list(user.id, { limit: 100 });
-    if (error) throw error;
-    if (!data.length) break;
-    const { error: e2 } = await supabase.storage.from('files').remove(data.map((f) => `${user.id}/${f.name}`));
-    if (e2) throw e2;
-  }
-  const { error } = await supabase.rpc('delete_my_account');
-  if (error) throw error;
-  if (channel) await supabase.removeChannel(channel);
-  await supabase.auth.signOut({ scope: 'local' });
+  await push().catch(() => undefined);
   await clearAll();
   location.hash = '#/';
   location.reload();
 }
 
-// ---------- dosyalar (görsel, PDF) ----------
-
-export async function uploadFile(file: File | Blob, name: string): Promise<string> {
-  const user = get().session?.user;
-  if (!cloud || !user) throw new Error('Dosya yüklemek için çevrimiçi hesap gerekli.');
-  const safe = name.normalize('NFD').replace(/[^\w.-]+/g, '_').slice(-80);
-  const path = `${user.id}/${uid()}-${safe}`;
-  const { error } = await supabase.storage.from('files').upload(path, file, { contentType: file.type || undefined });
-  if (error) throw error;
-  return `sb://${path}`;
+/** Hesap kaydını siler ve Google iznini geri alır; istenirse Drive'daki Thalamus klasörünü de siler. */
+export async function deleteAccount(alsoDrive: boolean) {
+  const token = await accessToken();
+  if (alsoDrive) {
+    const f = folders ?? (await getMeta<Folders>('folders'));
+    if (f) await api.remove(f.root).catch((e) => {
+      if (!isNotFound(e)) throw e;
+    });
+  }
+  await callFn({ action: 'delete', access_token: token });
+  await clearAll();
+  location.hash = '#/';
+  location.reload();
 }
 
-const signed = new Map<string, { url: string; exp: number }>();
+export async function setAnnouncements(v: boolean) {
+  await callFn({ action: 'settings', access_token: await accessToken(), announcements: v });
+  set({ announcements: v });
+  const a = await loadAuth();
+  if (a) await setMeta('auth', { ...a, announcements: v });
+}
 
-export async function resolveFileUrl(src: string): Promise<string> {
-  if (!src.startsWith('sb://')) return src;
-  const path = src.slice(5);
-  const hit = signed.get(path);
-  if (hit && hit.exp > Date.now()) return hit.url;
-  const { data, error } = await supabase.storage.from('files').createSignedUrl(path, 3600);
-  if (error) throw error;
-  signed.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60_000 });
-  return data.signedUrl;
+export async function sendFeedback(message: string) {
+  await callFn({ action: 'feedback', access_token: await accessToken(), message });
+}
+
+// ---------- dosyalar (görsel, PDF) ----------
+//
+// "Drive'a yükle" (varsayılan): gd://<dosya kimliği>, her cihazda görünür, bu cihazda önbelleğe alınır.
+// "Sadece bu cihazda": local://<kimlik>, yalnızca yüklendiği cihazda görünür.
+
+export type AttachMode = 'drive' | 'local';
+
+export const getAttachMode = (): AttachMode => {
+  try {
+    return (localStorage.getItem('attachMode') as AttachMode) || 'drive';
+  } catch {
+    return 'drive';
+  }
+};
+
+export async function uploadFile(file: File | Blob, name: string): Promise<string> {
+  const d = await db();
+  if (!cloud || !get().account || getAttachMode() === 'local') {
+    const key = uid();
+    await d.put('blobs', file, `local:${key}`);
+    return `local://${key}#${encodeURIComponent(name)}`;
+  }
+  const f = await getFolders();
+  const id = await api.uploadBlob(f.files, name, file);
+  await d.put('blobs', file, `gd:${id}`);
+  return `gd://${id}#${encodeURIComponent(name)}`;
+}
+
+const urls = new Map<string, Promise<string>>();
+
+export function resolveFileUrl(src: string): Promise<string> {
+  if (!/^(gd|local):\/\//.test(src)) return Promise.resolve(src);
+  let p = urls.get(src);
+  if (!p) {
+    p = (async () => {
+      const d = await db();
+      const [scheme, rest] = src.split('://');
+      const id = rest.split('#')[0];
+      const key = `${scheme}:${id}`;
+      let blob = await d.get('blobs', key);
+      if (!blob) {
+        if (scheme === 'local') throw new Error('Bu dosya yalnızca yüklendiği cihazda duruyor.');
+        blob = await api.readBlob(id);
+        await d.put('blobs', blob, key);
+      }
+      return URL.createObjectURL(blob);
+    })();
+    p.catch(() => urls.delete(src));
+    urls.set(src, p);
+  }
+  return p;
 }
 
 window.addEventListener('beforeunload', () => void writePending());
