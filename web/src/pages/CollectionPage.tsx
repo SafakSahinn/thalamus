@@ -1,162 +1,189 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Chip, ComputedValue, NoteChip, Stars } from '../components/PropertyPanel';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { promptText } from '../components/Prompt';
 import TypeEditor from '../components/TypeEditor';
-import { displayTitle, fmtDate, relTime } from '../lib/format';
-import { norm } from '../lib/links';
 import { go } from '../lib/router';
-import { createNote, resolveFileUrl, useIndex, useStore } from '../lib/store';
-import { relationIds, typeOf, type Note, type PropDef } from '../lib/types';
+import { createNote, saveSettings, useIndex, useStore } from '../lib/store';
+import { typeOf, type SavedView, type ViewKind } from '../lib/types';
+import { applyView, defaultViews, newViewId, VIEW_KINDS } from '../lib/views';
+import { FilterMenu, SortMenu, ViewOptions } from './collection/Toolbar';
+import { BoardView, CalendarView, CardsView, ListView, TableView, type ViewProps } from './collection/Views';
 
-export function Cell({ note, def }: { note: Note; def: PropDef }) {
-  const notes = useStore((s) => s.notes);
-  if (['formula', 'rollup', 'created', 'updated'].includes(def.kind)) return <ComputedValue note={note} def={def} />;
-  const v = note.props[def.key];
-  if (v === undefined || v === null || v === '') return null;
-  switch (def.kind) {
-    case 'email': return <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
-    case 'phone': return <a href={`tel:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
-    case 'select': return <Chip text={String(v)} />;
-    case 'multiselect': return <>{(v as string[]).map((x) => <Chip key={x} text={x} />)}</>;
-    case 'rating': return <Stars value={Number(v)} />;
-    case 'date': return <>{fmtDate(v)}</>;
-    case 'checkbox': return <>{v ? '✓' : ''}</>;
-    case 'url': return <span className="muted">↗</span>;
-    case 'relation': {
-      const list = relationIds(v).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
-      return <>{list.slice(0, 3).map((n) => <NoteChip key={n.id} note={n} />)}{list.length > 3 && <span className="muted"> +{list.length - 3}</span>}</>;
-    }
-    case 'longtext': return <span className="clip">{String(v)}</span>;
-    default: return <>{String(v)}</>;
-  }
+export { Cell } from './collection/Cells';
+
+const RENDER: Record<ViewKind, (p: ViewProps) => React.ReactNode> = {
+  table: TableView,
+  cards: CardsView,
+  board: BoardView,
+  calendar: CalendarView,
+  list: ListView,
+};
+
+function useViews(typeId: string) {
+  const saved = useStore((s) => s.settings.views?.[typeId]);
+  const t = typeOf(typeId);
+  // Kayıtlı görünüm yoksa varsayılanlar (ilk değişiklikte kaydedilir)
+  const defaults = useMemo(() => defaultViews(t), [t.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const views = saved?.length ? saved : defaults;
+  const save = (next: SavedView[]) => {
+    const s = useStore.getState().settings;
+    void saveSettings({ ...s, views: { ...(s.views ?? {}), [typeId]: next } });
+  };
+  return { views, save };
 }
 
-function Cover({ src, icon }: { src?: string; icon: string }) {
-  const [url, setUrl] = useState<string | null>(null);
+function useOutside(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (src) resolveFileUrl(src).then(setUrl, () => setUrl(null));
-  }, [src]);
-  return url ? <img className="cover" src={url} alt="" loading="lazy" /> : <div className="cover empty">{icon}</div>;
+    if (!open) return;
+    const out = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && close();
+    document.addEventListener('mousedown', out);
+    return () => document.removeEventListener('mousedown', out);
+  }, [open, close]);
+  return ref;
 }
 
-type SortKey = 'updated' | 'title' | string;
+function ViewTab({ v, active, onSelect, onRename, onDuplicate, onDelete, canDelete }: {
+  v: SavedView; active: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; canDelete: boolean;
+}) {
+  const [menu, setMenu] = useState(false);
+  const ref = useOutside(menu, () => setMenu(false));
+  const icon = VIEW_KINDS.find((k) => k.id === v.kind)?.icon;
+  return (
+    <div className={`view-tab ${active ? 'on' : ''}`} ref={ref}>
+      <button type="button" onClick={() => (active ? setMenu(!menu) : onSelect())} title={active ? 'Görünüm menüsü' : v.name}>
+        {icon} {v.name}{active && <small> ▾</small>}
+      </button>
+      {menu && (
+        <div className="tb-pop view-menu">
+          <button type="button" className="bm-row" onClick={() => { setMenu(false); onRename(); }}>✎ Yeniden adlandır</button>
+          <button type="button" className="bm-row" onClick={() => { setMenu(false); onDuplicate(); }}>⧉ Çoğalt</button>
+          {canDelete && <button type="button" className="bm-row danger" onClick={() => { setMenu(false); onDelete(); }}>🗑 Sil</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddView({ onAdd }: { onAdd: (k: ViewKind) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useOutside(open, () => setOpen(false));
+  return (
+    <div className="view-tab add" ref={ref}>
+      <button type="button" onClick={() => setOpen(!open)} title="Görünüm ekle">＋</button>
+      {open && (
+        <div className="tb-pop view-menu">
+          {VIEW_KINDS.map((k) => (
+            <button key={k.id} type="button" className="bm-row" onClick={() => { setOpen(false); onAdd(k.id); }}>{k.icon} {k.label}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CollectionPage({ type, edit }: { type: string; edit?: boolean }) {
   const t = typeOf(type);
-  const [editing, setEditing] = useState(Boolean(edit));
+  const notes = useStore((s) => s.notes);
   const { alive } = useIndex();
-  const pref = `view:${t.id}`;
-  const [view, setView] = useState<'table' | 'cards'>(() => (localStorage.getItem(pref) as 'table' | 'cards') ?? (t.cover ? 'cards' : 'table'));
+  const [editing, setEditing] = useState(Boolean(edit));
+  const { views, save } = useViews(t.id);
+  const pref = `activeView:${t.id}`;
+  const [activeId, setActiveId] = useState(() => localStorage.getItem(pref) ?? '');
   const [q, setQ] = useState('');
-  const statusDef = t.props.find((p) => p.kind === 'select');
-  const [status, setStatus] = useState('');
-  const [sort, setSort] = useState<SortKey>(t.sort ?? 'updated');
-  const [asc, setAsc] = useState(false);
-
   useEffect(() => {
+    setActiveId(localStorage.getItem(`activeView:${t.id}`) ?? '');
     setQ('');
-    setStatus('');
-    setSort(t.sort ?? 'updated');
-    setAsc(false);
-    setView((localStorage.getItem(`view:${t.id}`) as 'table' | 'cards') ?? (t.cover ? 'cards' : 'table'));
-  }, [t]);
+    setEditing(Boolean(edit));
+  }, [t.id, edit]);
+  const view = views.find((v) => v.id === activeId) ?? views[0];
 
-  const list = useMemo(() => {
-    const nq = norm(q);
-    const rows = alive.filter((n) => n.type === t.id
-      && (!status || n.props[statusDef!.key] === status)
-      && (!nq || norm(displayTitle(n)).includes(nq) || norm(n.text).includes(nq)));
-    const key = (n: Note): string | number => {
-      if (sort === 'updated') return n.updated_at;
-      if (sort === 'title') return norm(displayTitle(n));
-      const v = n.props[sort];
-      return typeof v === 'number' ? v : typeof v === 'string' ? v : '';
+  const select = (id: string) => {
+    setActiveId(id);
+    try {
+      localStorage.setItem(pref, id);
+    } catch {
+      /* gizli sekme */
+    }
+  };
+  const update = (patch: Partial<SavedView>) => save(views.map((v) => (v.id === view.id ? { ...v, ...patch } : v)));
+  const addView = (kind: ViewKind) => {
+    const k = VIEW_KINDS.find((x) => x.id === kind)!;
+    const v: SavedView = {
+      id: newViewId(), name: k.label.replace(' (kanban)', ''), kind, filters: [], sort: [],
+      groupBy: kind === 'board' ? t.props.find((p) => p.kind === 'select')?.key : undefined,
+      dateKey: kind === 'calendar' ? t.props.find((p) => p.kind === 'date')?.key : undefined,
     };
-    rows.sort((a, b) => {
-      const x = key(a), y = key(b);
-      const c = x < y ? -1 : x > y ? 1 : 0;
-      return sort === 'title' ? (asc ? -c : c) : asc ? c : -c;
-    });
-    return rows;
-  }, [alive, t, q, status, statusDef, sort, asc]);
-
-  const cols = t.props.filter((p) => p.table);
-  const sortable = t.props.filter((p) => ['date', 'number', 'rating', 'text', 'select'].includes(p.kind));
-  const newNote = () => {
-    const props: Record<string, unknown> = status && statusDef ? { [statusDef.key]: status } : {};
-    go(`/n/${createNote(t.id, '', props).id}`);
+    save([...views, v]);
+    select(v.id);
   };
 
+  const rows = useMemo(
+    () => applyView(alive.filter((n) => n.type === t.id), view, t, notes, q),
+    [alive, t, view, notes, q],
+  );
+
+  // Filtrelenmiş görünümde yeni not: filtre değerleri baştan dolu gelsin (Notion gibi)
+  const newProps = () => {
+    const props: Record<string, unknown> = {};
+    for (const f of view.filters) {
+      const def = t.props.find((p) => p.key === f.key);
+      if (!def) continue;
+      if (def.kind === 'checkbox' && f.op === 'checked') props[def.key] = true;
+      if (f.value === undefined || f.value === '') continue;
+      if (def.kind === 'select' && f.op === 'is') props[def.key] = f.value;
+      if ((def.kind === 'multiselect' || def.kind === 'relation') && f.op === 'has') props[def.key] = [f.value];
+    }
+    return props;
+  };
+  const newNote = () => go(`/n/${createNote(t.id, '', newProps()).id}`);
+  const Render = RENDER[view.kind];
+  const total = alive.filter((n) => n.type === t.id).length;
+
   return (
-    <div className="page wide">
+    <div className={`page wide coll-page view-${view.kind}`}>
       {editing && <TypeEditor typeId={t.id} onClose={() => { setEditing(false); if (edit) history.replaceState(null, '', `#/c/${t.id}`); }} />}
       <div className="coll-head">
-        <h1>{t.icon} {t.plural} <span className="count">{list.length}</span></h1>
+        <h1>{t.icon} {t.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
         <button className="btn primary" onClick={newNote}>+ Yeni {t.label.toLocaleLowerCase('tr')}</button>
       </div>
+      <div className="view-tabs">
+        {views.map((v) => (
+          <ViewTab
+            key={v.id}
+            v={v}
+            active={v.id === view.id}
+            canDelete={views.length > 1}
+            onSelect={() => select(v.id)}
+            onRename={async () => {
+              const name = await promptText('Görünümün adı', v.name);
+              if (name?.trim()) save(views.map((x) => (x.id === v.id ? { ...x, name: name.trim() } : x)));
+            }}
+            onDuplicate={() => {
+              const copy = { ...structuredClone(v), id: newViewId(), name: `${v.name} (kopya)` };
+              save([...views, copy]);
+              select(copy.id);
+            }}
+            onDelete={() => save(views.filter((x) => x.id !== v.id))}
+          />
+        ))}
+        <AddView onAdd={addView} />
+      </div>
       <div className="toolbar">
         <input className="search" placeholder="Bu koleksiyonda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
-        {statusDef && (
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">{statusDef.label}: tümü</option>
-            {statusDef.options?.map((o) => <option key={o}>{o}</option>)}
-          </select>
-        )}
-        <select value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="updated">Son düzenlenen</option>
-          <option value="title">Ada göre</option>
-          {sortable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-        </select>
-        <button className="iconbtn" title="Sıralama yönü" onClick={() => setAsc(!asc)}>{asc ? '↑' : '↓'}</button>
-        <div className="seg">
-          {(['table', 'cards'] as const).map((v) => (
-            <button key={v} className={view === v ? 'on' : ''} onClick={() => { setView(v); localStorage.setItem(pref, v); }}>
-              {v === 'table' ? '☰ Tablo' : '▦ Kart'}
-            </button>
-          ))}
-        </div>
+        <FilterMenu t={t} view={view} update={update} />
+        <SortMenu t={t} view={view} update={update} />
+        <ViewOptions t={t} view={view} update={update} />
       </div>
 
-      {list.length === 0 ? (
+      {total === 0 ? (
         <div className="empty">
           <p>Henüz {t.label.toLocaleLowerCase('tr')} yok.</p>
           <button className="btn" onClick={newNote}>İlkini ekle</button>
         </div>
-      ) : view === 'table' ? (
-        <div className="tablewrap">
-          <table className="dbtable">
-            <thead>
-              <tr>
-                <th>Ad</th>
-                {cols.map((c) => <th key={c.key}>{c.label}</th>)}
-                <th>Düzenlendi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((n) => (
-                <tr key={n.id} onClick={() => go(`/n/${n.id}`)}>
-                  <td className="tname">{n.pinned && '📌 '}{displayTitle(n)}</td>
-                  {cols.map((c) => <td key={c.key} onClick={c.kind === 'relation' ? (e) => (e.target as HTMLElement).closest('a') && e.stopPropagation() : undefined}><Cell note={n} def={c} /></td>)}
-                  <td className="muted small">{relTime(n.updated_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       ) : (
-        <div className="cards">
-          {list.map((n) => (
-            <a key={n.id} className="card" href={`#/n/${n.id}`}>
-              {t.cover && <Cover src={n.props[t.cover] as string | undefined} icon={t.icon} />}
-              <div className="card-body">
-                <div className="card-title">{displayTitle(n)}</div>
-                {cols.slice(0, 3).map((c) => (n.props[c.key] !== undefined ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
-                {!t.cover && n.text && <div className="card-snip">{n.text.slice(0, 140)}</div>}
-              </div>
-            </a>
-          ))}
-        </div>
+        <Render t={t} rows={rows} view={view} newProps={newProps} />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { norm } from '../lib/links';
-import { buildNotes, guessColumn, guessType, readNotionZip, type DbMapping, type Parsed } from '../lib/notionImport';
+import { buildNotes, guessColumn, guessType, inferKind, readNotionZip, type DbMapping, type Parsed } from '../lib/notionImport';
+import { addProp } from '../lib/schema';
 import { insertNotes, saveSettings, syncNow, uploadFile, useIndex, useStore } from '../lib/store';
 import { TYPES, TYPE_MAP, type TypeId } from '../lib/types';
 
@@ -45,8 +46,18 @@ export default function ImportPage() {
     setBusy('Hazırlanıyor…');
     setErr(null);
     try {
+      // "Yeni alan" seçilen sütunlar için koleksiyona alan ekle (tür değerlerden tahmin edilir)
+      const mappings: Record<string, DbMapping> = structuredClone(maps);
+      for (const db of parsed.databases) {
+        const m = mappings[db.key];
+        for (const [col, target] of Object.entries(m.columns)) {
+          if (target !== 'new') continue;
+          setBusy(`"${col}" alanı oluşturuluyor…`);
+          m.columns[col] = await addProp(m.type, { label: col, table: true, ...inferKind(db.rows.map((r) => r[col] ?? '')) });
+        }
+      }
       const res = await buildNotes(parsed, {
-        mappings: maps,
+        mappings,
         pageType,
         existing: alive,
         upload: uploadFile,
@@ -119,6 +130,7 @@ export default function ImportPage() {
                           <select value={target} onChange={(e) => setMaps({ ...maps, [db.key]: { ...m, columns: { ...m.columns, [col]: e.target.value } } })}>
                             {props.map((p) => <option key={p.key} value={p.key}>{p.label}{p.kind === 'relation' ? ' (bağlantı)' : ''}</option>)}
                             {m.type === 'daily' && <option value="routine">Rutin (işaret kutusu)</option>}
+                            <option value="new">＋ Yeni alan olarak ekle</option>
                             <option value="extra">Ek bilgi olarak sakla</option>
                             <option value="skip">Aktarma</option>
                           </select>
@@ -157,7 +169,7 @@ function guessColumns(cols: string[], type: TypeId, rows: Record<string, string>
   const out: Record<string, string> = {};
   for (const c of cols) {
     let g = guessColumn(c, type, rows.map((r) => r[c] ?? '').slice(0, 30));
-    if (g !== 'extra' && g !== 'routine' && used.has(g)) g = 'extra';
+    if (g !== 'extra' && g !== 'new' && g !== 'routine' && used.has(g)) g = 'new';
     used.add(g);
     out[c] = g;
   }

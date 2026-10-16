@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
 import { computeLinks, plainText, wikiTargets } from './links';
-import { buildNotes, guessColumn, guessType, parseDate, parseRelation, readNotionZip } from './notionImport';
+import { buildNotes, guessColumn, guessType, inferKind, parseDate, parseRelation, readNotionZip } from './notionImport';
 
 const H1 = '0123456789abcdef0123456789abcdef';
 const H2 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -51,7 +51,12 @@ describe('yardımcılar', () => {
     expect(guessColumn('Etiketler', 'book', [])).toBe('topics');
     expect(guessColumn('Bitiş', 'book', [])).toBe('finished');
     expect(guessColumn('Spor', 'daily', ['Yes', 'No'])).toBe('routine');
-    expect(guessColumn('Garip', 'book', ['x'])).toBe('extra');
+    expect(guessColumn('Garip', 'book', ['x'])).toBe('new');
+    expect(inferKind(['Evet', 'Hayır'])).toEqual({ kind: 'checkbox' });
+    expect(inferKind(['October 3, 2025', '2025/01/02'])).toEqual({ kind: 'date' });
+    expect(inferKind(['12', '3,5'])).toEqual({ kind: 'number' });
+    expect(inferKind(['IEEE, Elsevier', 'IEEE'])).toEqual({ kind: 'multiselect', options: ['IEEE', 'Elsevier'] });
+    expect(inferKind(['Kolay', 'Zor', 'Kolay'])).toEqual({ kind: 'select', options: ['Kolay', 'Zor'] });
   });
 });
 

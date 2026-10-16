@@ -184,7 +184,7 @@ const SYN: Record<string, string[]> = {
   kind: ['type', 'tur', 'tip', 'kind'],
 };
 
-export type ColTarget = string; // prop anahtarı | 'extra' | 'skip' | 'routine'
+export type ColTarget = string; // prop anahtarı | 'new' | 'extra' | 'skip' | 'routine'
 
 export function guessColumn(col: string, type: TypeId, sample: string[]): ColTarget {
   const c = norm(col);
@@ -193,7 +193,28 @@ export function guessColumn(col: string, type: TypeId, sample: string[]): ColTar
   if (direct) return direct.key;
   for (const p of props) if (SYN[p.key]?.includes(c)) return p.key;
   if (type === 'daily' && sample.length && sample.every((v) => /^(yes|no|true|false|evet|hayir|)$/i.test(v))) return 'routine';
-  return 'extra';
+  return 'new';
+}
+
+/** Tanınmayan bir Notion sütunu için en uygun alan türü (yeni alan oluştururken) */
+export function inferKind(values: string[]): Pick<PropDef, 'kind' | 'options' | 'target'> {
+  const vals = values.map((v) => v.trim()).filter(Boolean);
+  if (!vals.length) return { kind: 'text' };
+  if (vals.every((v) => /^(yes|no|true|false|evet|hayır|hayir)$/i.test(v))) return { kind: 'checkbox' };
+  if (vals.some((v) => /\([^)]*\.md\)/.test(v))) return { kind: 'relation', target: ['note'] };
+  if (vals.every((v) => parseDate(v))) return { kind: 'date' };
+  if (vals.every((v) => /^-?\d+([.,]\d+)?$/.test(v))) return { kind: 'number' };
+  if (vals.every((v) => /^https?:\/\//.test(v))) return { kind: 'url' };
+  if (vals.every((v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))) return { kind: 'email' };
+  if (vals.every((v) => /^⭐+$/.test(v))) return { kind: 'rating' };
+  const parts = vals.flatMap((v) => v.split(/,\s*/));
+  const distinct = [...new Set(parts)];
+  const short = distinct.every((p) => p.length <= 40);
+  if (short && distinct.length <= Math.max(12, vals.length / 3)) {
+    const multi = vals.some((v) => v.includes(','));
+    return { kind: multi ? 'multiselect' : 'select', options: distinct };
+  }
+  return { kind: vals.some((v) => v.length > 80) ? 'longtext' : 'text' };
 }
 
 // ---------- değer dönüştürme ----------
@@ -428,7 +449,10 @@ export async function buildNotes(parsed: Parsed, opts: BuildOpts): Promise<Build
           continue;
         }
         const pd = def.props.find((p) => p.key === target);
-        if (!pd) continue;
+        if (!pd) {
+          extra[col] = raw;
+          continue;
+        }
         const val = convert(pd, raw, (title, path) => {
           if (path) {
             const hit = pageFor(path);
