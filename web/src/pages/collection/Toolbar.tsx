@@ -141,6 +141,22 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
           </select>
         </label>
       )}
+      {view.kind === 'timeline' && (
+        <>
+          <label className="opt-line">Başlangıç:
+            <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>
+              <option value="">seç…</option>
+              {dates.filter((p) => p.kind === 'date').map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </label>
+          <label className="opt-line">Bitiş:
+            <select value={view.endKey ?? ''} onChange={(e) => update({ endKey: e.target.value || undefined })}>
+              <option value="">yok (tek gün)</option>
+              {dates.filter((p) => p.kind === 'date' && p.key !== view.dateKey).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </label>
+        </>
+      )}
       {view.kind === 'calendar' && (
         <label className="opt-line">Tarih alanı:
           <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>

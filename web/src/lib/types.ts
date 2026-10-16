@@ -269,7 +269,7 @@ export interface Routine {
   icon: string;
 }
 
-export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list';
+export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list' | 'timeline';
 
 export interface ViewFilter {
   key: string;
@@ -285,8 +285,10 @@ export interface SavedView {
   sort: { key: string; dir: 'asc' | 'desc' }[];
   /** board: gruplanacak seçim alanı · table/list: gruplama alanı */
   groupBy?: string;
-  /** calendar: tarih alanı */
+  /** calendar/timeline: (başlangıç) tarih alanı */
   dateKey?: string;
+  /** timeline: bitiş tarihi alanı */
+  endKey?: string;
   /** table: gizli sütunlar */
   hidden?: string[];
 }

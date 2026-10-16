@@ -340,3 +340,121 @@ export function CalendarView({ t, rows, view, newProps }: ViewProps) {
     </div>
   );
 }
+
+// ---------- zaman çizelgesi ----------
+
+const SCALES = { gün: 36, hafta: 14, ay: 4 } as const;
+type Scale = keyof typeof SCALES;
+const dayNum = (s: string) => Math.round(new Date(`${s}T12:00:00`).getTime() / 864e5);
+const fromNum = (n: number) => ymd(new Date(n * 864e5));
+const MONTH_SHORT = new Intl.DateTimeFormat('tr-TR', { month: 'short', year: '2-digit' });
+
+export function TimelineView({ t, rows, view, newProps }: ViewProps) {
+  const [scale, setScale] = useState<Scale>(() => (localStorage.getItem('tlScale') as Scale) || 'hafta');
+  const [drag, setDrag] = useState<{ id: string; mode: 'move' | 'end'; x0: number; s0: number; e0: number; dx: number } | null>(null);
+  const sdef = t.props.find((p) => p.key === view.dateKey && p.kind === 'date');
+  const edef = t.props.find((p) => p.key === view.endKey && p.kind === 'date');
+  if (!sdef) return <p className="muted">Zaman çizelgesi için bir “Tarih” alanı gerekli. Görünüm ayarlarından başlangıç alanını seç.</p>;
+  const px = SCALES[scale];
+  const today = dayNum(todayStr());
+  const items = rows.map((n) => {
+    const s = typeof n.props[sdef.key] === 'string' ? dayNum(n.props[sdef.key] as string) : null;
+    const eRaw = edef && typeof n.props[edef.key] === 'string' ? dayNum(n.props[edef.key] as string) : null;
+    return { n, s, e: s !== null ? Math.max(s, eRaw ?? s) : null };
+  });
+  const dated = items.filter((x) => x.s !== null) as { n: Note; s: number; e: number }[];
+  const undated = items.filter((x) => x.s === null);
+  const min = Math.min(today - 14, ...dated.map((x) => x.s)) - 7;
+  const max = Math.max(today + 45, ...dated.map((x) => x.e)) + 14;
+  const width = (max - min + 1) * px;
+  // Ay başları (ölçek çizgisi)
+  const marks: { x: number; label: string }[] = [];
+  for (let d = min; d <= max; d++) {
+    const date = new Date(d * 864e5);
+    if (date.getUTCDate() === 1) marks.push({ x: (d - min) * px, label: MONTH_SHORT.format(date) });
+  }
+  const shift = (x: { s: number; e: number }, id: string) => {
+    if (!drag || drag.id !== id) return x;
+    const dd = Math.round(drag.dx / px);
+    return drag.mode === 'move' ? { s: x.s + dd, e: x.e + dd } : { s: x.s, e: Math.max(x.s, x.e + dd) };
+  };
+  const startDrag = (e: React.PointerEvent, x: { n: Note; s: number; e: number }, mode: 'move' | 'end') => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDrag({ id: x.n.id, mode, x0: e.clientX, s0: x.s, e0: x.e, dx: 0 });
+  };
+  const endDrag = () => {
+    if (!drag) return;
+    const dd = Math.round(drag.dx / px);
+    if (dd !== 0) {
+      if (drag.mode === 'move') {
+        setProp(drag.id, sdef.key, fromNum(drag.s0 + dd));
+        if (edef && drag.e0 !== drag.s0) setProp(drag.id, edef.key, fromNum(drag.e0 + dd));
+        else if (edef && useStore.getState().notes[drag.id]?.props[edef.key]) setProp(drag.id, edef.key, fromNum(drag.e0 + dd));
+      } else if (edef) setProp(drag.id, edef.key, fromNum(Math.max(drag.s0, drag.e0 + dd)));
+    } else if (drag.mode === 'move') open(drag.id);
+    setDrag(null);
+  };
+  return (
+    <div className="timeline">
+      <div className="tl-head">
+        <div className="seg">
+          {(Object.keys(SCALES) as Scale[]).map((k) => (
+            <button key={k} className={scale === k ? 'on' : ''} onClick={() => { setScale(k); localStorage.setItem('tlScale', k); }}>{k[0].toLocaleUpperCase('tr') + k.slice(1)}</button>
+          ))}
+        </div>
+        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}</span>
+      </div>
+      <div className="tl-scroll" ref={(el) => {
+        if (el && !el.dataset.done) {
+          el.dataset.done = '1';
+          el.scrollLeft = Math.max(0, (today - min - 10) * px);
+        }
+      }}>
+        <div className="tl-grid" style={{ width: width + 220 }}>
+          <div className="tl-scale" style={{ marginLeft: 220, width }}>
+            {marks.map((m) => <span key={m.x} className="tl-month" style={{ left: m.x }}>{m.label}</span>)}
+            <span className="tl-today" style={{ left: (today - min) * px }} title="Bugün" />
+          </div>
+          {dated.map((x) => {
+            const p = shift(x, x.n.id);
+            return (
+              <div key={x.n.id} className="tl-row">
+                <div className="tl-label" onClick={() => open(x.n.id)}>{noteIcon(x.n)} {displayTitle(x.n)}</div>
+                <div className="tl-track" style={{ width }}>
+                  <span className="tl-today-line" style={{ left: (today - min) * px }} />
+                  <div
+                    className={`tl-bar ${drag?.id === x.n.id ? 'dragging' : ''}`}
+                    style={{ left: (p.s - min) * px, width: Math.max(px, (p.e - p.s + 1) * px), '--c': t.color } as React.CSSProperties}
+                    onPointerDown={(e) => startDrag(e, x, 'move')}
+                    onPointerMove={(e) => drag && setDrag({ ...drag, dx: e.clientX - drag.x0 })}
+                    onPointerUp={endDrag}
+                    title={`${displayTitle(x.n)}: ${fromNum(p.s)}${p.e !== p.s ? ` → ${fromNum(p.e)}` : ''}`}
+                  >
+                    <span className="tl-bar-label">{displayTitle(x.n)}</span>
+                    {edef && (
+                      <span
+                        className="tl-resize"
+                        onPointerDown={(e) => startDrag(e, x, 'end')}
+                        onPointerMove={(e) => drag && setDrag({ ...drag, dx: e.clientX - drag.x0 })}
+                        onPointerUp={endDrag}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {undated.length > 0 && (
+        <div className="tl-undated">
+          <span className="muted small">Tarihsiz ({undated.length}):</span>
+          {undated.map((x) => <button key={x.n.id} type="button" className="chip-soft small" onClick={() => open(x.n.id)}>{noteIcon(x.n)} {displayTitle(x.n)}</button>)}
+        </div>
+      )}
+      <button type="button" className="linkbtn muted small" onClick={() => open(createDefault(t.id, { ...newProps(), [sdef.key]: todayStr() }).id)}>＋ Yeni</button>
+    </div>
+  );
+}

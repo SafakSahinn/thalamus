@@ -208,3 +208,44 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .bulk-bar select, .bulk-bar input { border: 1px solid var(--border); }
 
 .cell-edit .cal-btn { display: none; }
+
+/* ---------- zaman çizelgesi ---------- */
+.tl-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.tl-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+.tl-grid { position: relative; padding-bottom: 6px; }
+.tl-scale { position: relative; height: 26px; border-bottom: 1px solid var(--border); }
+.tl-month { position: absolute; top: 4px; font-size: 11px; color: var(--muted); border-left: 1px solid var(--border); padding-left: 4px; white-space: nowrap; text-transform: capitalize; }
+.tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); }
+.tl-row { display: flex; height: 34px; align-items: center; border-bottom: 1px solid var(--border); }
+.tl-label { position: sticky; left: 0; z-index: 2; width: 220px; flex: none; padding: 0 10px; background: var(--bg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; cursor: pointer; border-right: 1px solid var(--border); height: 100%; display: flex; align-items: center; }
+.tl-label:hover { background: var(--hover); }
+.tl-track { position: relative; height: 100%; }
+.tl-today-line { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--danger) 45%, transparent); }
+.tl-bar {
+  position: absolute; top: 6px; height: 22px; border-radius: 6px; cursor: grab; touch-action: none; user-select: none;
+  background: color-mix(in srgb, var(--c) 30%, var(--bg)); border: 1px solid color-mix(in srgb, var(--c) 70%, var(--bg));
+  display: flex; align-items: center; overflow: visible;
+}
+.tl-bar.dragging { cursor: grabbing; box-shadow: var(--shadow); }
+.tl-bar-label { font-size: 12px; padding: 0 6px; white-space: nowrap; pointer-events: none; }
+.tl-resize { position: absolute; right: -3px; top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
+.tl-undated { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.chip-soft { border: 1px solid var(--border); background: var(--panel); border-radius: 12px; padding: 1px 8px; cursor: pointer; }
+
+/* ---------- sayfa içinde koleksiyon ---------- */
+.inline-db { margin: 0.8em 0; border-top: 1px solid var(--border); padding-top: 6px; }
+.idb-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.idb-title { font-weight: 600; font-size: 1.05rem; }
+.idb-title:hover { text-decoration: underline; }
+.idb-settings { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 8px 10px; background: var(--panel); border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+.idb-settings label { display: flex; gap: 6px; align-items: center; }
+.idb-settings select { border: 1px solid var(--border); }
+.idb-body { font-size: 14px; }
+.idb-body .cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.idb-empty { padding: 8px 0; }
+.prose .inline-db table { margin: 0; }
+.prose .inline-db table { table-layout: auto; width: max-content; min-width: 100%; margin: 0; }
+.prose .inline-db td, .prose .inline-db th { border: none; border-bottom: 1px solid var(--border); padding: 4px 6px; vertical-align: middle; position: static; }
+.prose .inline-db th { background: none; font-weight: 500; color: var(--muted); font-size: 13px; }
+.prose .inline-db .tablewrap { overflow-x: auto; }
+.prose .inline-db p { margin: 0; }

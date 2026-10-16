@@ -16,6 +16,7 @@ import { norm } from '../lib/links';
 import { createNote, resolveFileUrl, uploadFile } from '../lib/store';
 import { Bookmark, Callout, Column, Columns, columnsContent, DateChip, Embed, FileBlock, Mermaid, Toc } from './blocks';
 import { CodeBlock } from './CodeBlock';
+import { CollectionBlock } from './CollectionBlock';
 import { FindReplace } from './FindReplace';
 import { Mention } from './Mention';
 import { suggestConfig, type Entry } from './suggest';
@@ -129,6 +130,7 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
   { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
   { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
+  { icon: '🗂', label: 'Sayfa içinde koleksiyon', keys: 'veritabani database tablo pano koleksiyon inline liste', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'collectionView' }).run() },
   { icon: '☰', label: 'İçindekiler', keys: 'toc icindekiler basliklar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'toc' }).run() },
   { icon: '🔀', label: 'Diyagram (Mermaid)', keys: 'mermaid diyagram akis sema flowchart graph', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
@@ -215,6 +217,7 @@ export function baseExtensions(): AnyExtension[] {
     Bookmark,
     Embed,
     DateChip,
+    CollectionBlock,
     Youtube.configure({ nocookie: true, modestBranding: true, HTMLAttributes: { class: 'yt' } }),
     TaskList,
     TaskItem.configure({ nested: true }),

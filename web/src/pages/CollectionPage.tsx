@@ -8,7 +8,7 @@ import { createDefault } from '../lib/templates';
 import { typeOf, type SavedView, type ViewKind } from '../lib/types';
 import { applyView, defaultViews, newViewId, VIEW_KINDS } from '../lib/views';
 import { FilterMenu, SortMenu, ViewOptions } from './collection/Toolbar';
-import { BoardView, CalendarView, CardsView, ListView, TableView, type ViewProps } from './collection/Views';
+import { BoardView, CalendarView, CardsView, ListView, TableView, TimelineView, type ViewProps } from './collection/Views';
 
 export { Cell } from './collection/Cells';
 
@@ -18,6 +18,7 @@ const RENDER: Record<ViewKind, (p: ViewProps) => React.ReactNode> = {
   board: BoardView,
   calendar: CalendarView,
   list: ListView,
+  timeline: TimelineView,
 };
 
 function useViews(typeId: string) {
@@ -113,7 +114,8 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
     const v: SavedView = {
       id: newViewId(), name: k.label.replace(' (kanban)', ''), kind, filters: [], sort: [],
       groupBy: kind === 'board' ? t.props.find((p) => p.kind === 'select')?.key : undefined,
-      dateKey: kind === 'calendar' ? t.props.find((p) => p.kind === 'date')?.key : undefined,
+      dateKey: kind === 'calendar' || kind === 'timeline' ? t.props.find((p) => p.kind === 'date')?.key : undefined,
+      endKey: kind === 'timeline' ? t.props.filter((p) => p.kind === 'date')[1]?.key : undefined,
     };
     save([...views, v]);
     select(v.id);

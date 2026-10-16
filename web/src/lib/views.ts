@@ -208,6 +208,7 @@ export const VIEW_KINDS: { id: ViewKind; label: string; icon: string }[] = [
   { id: 'board', label: 'Pano (kanban)', icon: '▥' },
   { id: 'calendar', label: 'Takvim', icon: '📅' },
   { id: 'list', label: 'Liste', icon: '≡' },
+  { id: 'timeline', label: 'Zaman çizelgesi', icon: '▤' },
 ];
 
 export const newViewId = vid;
