@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CalendarSettings from '../components/CalendarSettings';
 import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
 import { cloud } from '../lib/google';
@@ -219,6 +220,8 @@ export default function SettingsPage() {
           {annErr && <p className="err small">{annErr}</p>}
         </section>
       )}
+
+      {cloud && account && <CalendarSettings />}
 
       {cloud && (
         <section>

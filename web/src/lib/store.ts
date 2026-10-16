@@ -534,6 +534,10 @@ function onSyncError(e: unknown) {
   });
 }
 
+const afterSync: (() => void)[] = [];
+/** Başarılı her eşitlemeden sonra çalışacak işler (ör. Google Takvim) */
+export const onAfterSync = (fn: () => void) => afterSync.push(fn);
+
 let syncing: Promise<void> | null = null;
 
 export function syncNow(): Promise<void> {
@@ -548,6 +552,7 @@ export function syncNow(): Promise<void> {
       await pull();
       await push();
       set({ sync: { ...get().sync, status: 'idle', last: now(), error: undefined } });
+      afterSync.forEach((fn) => fn());
     } catch (e) {
       onSyncError(e);
     } finally {

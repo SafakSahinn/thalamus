@@ -5,6 +5,8 @@ import { getMeta, setMeta } from './db';
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+/** Yalnızca uygulamanın oluşturduğu "Thalamus" takvimi ve içindeki etkinlikler */
+export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
 const SCOPE = `openid email profile ${DRIVE_SCOPE}`;
 
 export const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || '';
@@ -30,6 +32,8 @@ export interface AuthState {
   announcements: boolean;
   /** Bu girişte hesap ilk kez oluşturuldu (hoş geldin penceresi için) */
   is_new?: boolean;
+  /** Google Takvim izni verildi */
+  calendar?: boolean;
 }
 
 interface CodeResponse {
@@ -50,6 +54,7 @@ declare global {
             ux_mode: 'popup';
             prompt?: string;
             hint?: string;
+            include_granted_scopes?: boolean;
             callback: (r: CodeResponse) => void;
             error_callback?: (e: { type: string; message?: string }) => void;
           }): { requestCode(): void };
@@ -79,17 +84,19 @@ function loadGis(): Promise<void> {
 /** Sayfa açılır açılmaz yüklemeye başla: düğmeye basınca popup engellenmesin. */
 export const preloadGoogle = () => void loadGis().catch(() => undefined);
 
-function requestCode(prompt: string, hint?: string): Promise<string> {
+function requestCode(prompt: string, hint?: string, extra = ''): Promise<string> {
   return new Promise((resolve, reject) => {
     const c = window.google!.accounts.oauth2.initCodeClient({
       client_id: clientId,
-      scope: SCOPE,
+      scope: extra ? `${SCOPE} ${extra}` : SCOPE,
       ux_mode: 'popup',
       prompt,
       hint,
+      include_granted_scopes: true,
       callback: (r) => {
         if (r.error || !r.code) reject(new Error(r.error_description ?? r.error ?? 'no_code'));
         else if (!(r.scope ?? '').includes(DRIVE_SCOPE)) reject(new Error('drive_scope_missing'));
+        else if (extra && !(r.scope ?? '').includes(extra)) reject(new Error('calendar_scope_missing'));
         else resolve(r.code);
       },
       error_callback: (e) => reject(new Error(e.type === 'popup_closed' ? 'popup_closed' : e.message ?? e.type)),
@@ -125,6 +132,7 @@ interface ExchangeResp {
 const ERRORS: Record<string, string> = {
   popup_closed: 'Google penceresi kapatıldı.',
   drive_scope_missing: 'Notlarını saklayabilmek için Google Drive iznini de onaylaman gerekiyor.',
+  calendar_scope_missing: 'Takvim eşitlemesi için Google Takvim iznini onaylaman gerekiyor.',
   access_denied: 'Google izni verilmedi.',
 };
 export const authErrorText = (e: unknown) => {
@@ -153,6 +161,16 @@ export async function signInWithGoogle(): Promise<AuthState> {
 }
 
 export const loadAuth = () => getMeta<AuthState>('auth');
+
+/** Google Takvim iznini sonradan iste (yalnızca takvim eşitlemesini açan kullanıcıdan) */
+export async function grantCalendar(): Promise<void> {
+  await loadGis();
+  const a = await loadAuth();
+  const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('consent', a?.profile.email, CALENDAR_SCOPE) });
+  if (!r.refresh_token) throw new Error('Google kalıcı izin vermedi, lütfen tekrar dene.');
+  const cur = a ?? ({ profile: r.profile, announcements: r.announcements } as AuthState);
+  await setMeta('auth', { ...cur, refresh_token: r.refresh_token, access_token: r.access_token, expires_at: Date.now() + r.expires_in * 1000, calendar: true });
+}
 
 let refreshing: Promise<string> | null = null;
 

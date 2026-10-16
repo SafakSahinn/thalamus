@@ -298,6 +298,8 @@ export interface Settings {
   views?: Record<string, SavedView[]>;
   /** Koleksiyon başına varsayılan şablon kimliği */
   defaultTemplates?: Record<string, string>;
+  /** Google Takvim eşitlemesi */
+  calendar?: { enabled: boolean; calendarId?: string; fields: string[]; reminders: number[] };
 }
 
 export const DEFAULT_SETTINGS: Settings = {

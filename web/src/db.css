@@ -175,3 +175,8 @@ tr:hover .open-btn, .open-btn:focus { opacity: 1; }
 .shared-page .prose [data-type='callout'] { display: flex; gap: 10px; padding: 12px 14px; border-radius: 6px; margin: 0.5em 0; }
 .shared-page .prose .columns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 24px; }
 .shared-page .prose [data-type='toc'] { display: none; }
+
+/* ---------- takvim eşitlemesi ---------- */
+.cal-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px 18px; }
+.cal-field-group { display: flex; flex-direction: column; gap: 2px; }
+.cal-field-group label, .settings .row label { display: flex; gap: 6px; align-items: center; margin: 0; }

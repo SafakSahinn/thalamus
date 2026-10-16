@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Shortcuts from './components/Shortcuts';
 import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
+import './lib/gcal';
 import { cloud } from './lib/google';
 import { createNote, initAuth, initLocal, startSync, useStore } from './lib/store';
 import CollectionPage from './pages/CollectionPage';
