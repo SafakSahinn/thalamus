@@ -299,11 +299,17 @@ export async function mdToDoc(md: string, ctx: DocCtx): Promise<JSONContent | nu
       box.remove();
     }
   }
-  // Notion "callout" kutuları → alıntı
+  // Notion "callout" kutuları (<aside>) → bilgi kutusu; baştaki emoji kutunun simgesi olur
   for (const aside of [...doc.querySelectorAll('aside')]) {
-    const bq = doc.createElement('blockquote');
-    bq.innerHTML = aside.innerHTML;
-    aside.replaceWith(bq);
+    const box = doc.createElement('div');
+    box.setAttribute('data-type', 'callout');
+    const html = aside.innerHTML.trim();
+    const m = html.match(/^(\p{Extended_Pictographic}️?)\s*/u);
+    box.setAttribute('data-emoji', m ? m[1] : '💡');
+    box.innerHTML = /^<(p|h\d|ul|ol|div|blockquote|pre)/i.test(m ? html.slice(m[0].length) : html)
+      ? (m ? html.slice(m[0].length) : html)
+      : `<p>${m ? html.slice(m[0].length) : html}</p>`;
+    aside.replaceWith(box);
   }
   return generateJSON(doc.body.innerHTML, schemaExtensions());
 }
@@ -435,6 +441,9 @@ export async function buildNotes(parsed: Parsed, opts: BuildOpts): Promise<Build
       }
     }
     if (Object.keys(extra).length) props.extra = extra;
+    // Notion alt sayfası: "Üst sayfa <hash>/Alt sayfa <hash>.md"
+    const parentPg = byPath.get(dir(pg.path));
+    if (parentPg && parentPg !== pg) props.parent = [ids.get(parentPg)!];
     let title = pg.title;
     if (type === 'daily') {
       const d = (props.date as string) ?? parseDate(pg.title);

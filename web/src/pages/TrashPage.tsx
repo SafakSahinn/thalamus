@@ -1,4 +1,4 @@
-import { displayTitle, relTime } from '../lib/format';
+import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { restoreNote, useStore } from '../lib/store';
 import { typeOf } from '../lib/types';
 
@@ -12,7 +12,7 @@ export default function TrashPage() {
       <div className="list">
         {trash.map((n) => (
           <div key={n.id} className="rowlink">
-            <span>{typeOf(n.type).icon}</span>
+            <span>{noteIcon(n)}</span>
             <a className="grow" href={`#/n/${n.id}`}>{displayTitle(n)}</a>
             <span className="muted small">{relTime(n.deleted_at!)}</span>
             <button className="btn small" onClick={() => restoreNote(n.id)}>Geri yükle</button>

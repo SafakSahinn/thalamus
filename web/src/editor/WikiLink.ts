@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import Suggestion from '@tiptap/suggestion';
-import { displayTitle } from '../lib/format';
+import { displayTitle, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
 import { searchNotes } from '../lib/search';
 import { createNote, indexOf, useStore } from '../lib/store';
@@ -15,7 +15,7 @@ function wikiItems(query: string): Entry[] {
   const found = searchNotes(alive, query, { limit: 8 });
   const out: Entry[] = found.map((n) => ({
     key: n.id,
-    icon: typeOf(n.type).icon,
+    icon: noteIcon(n),
     label: displayTitle(n),
     hint: typeOf(n.type).label,
     action: (editor, range) => {

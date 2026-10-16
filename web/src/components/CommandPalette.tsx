@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
-import { displayTitle } from '../lib/format';
+import { displayTitle, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
 import { searchNotes } from '../lib/search';
 import { createNote, useIndex } from '../lib/store';
@@ -56,7 +56,7 @@ export default function CommandPalette() {
         const i = n.text.toLocaleLowerCase('tr').indexOf(q.toLocaleLowerCase('tr'));
         if (i >= 0) snippet = (i > 30 ? '…' : '') + n.text.slice(Math.max(0, i - 30), i + 60).replace(/\s+/g, ' ');
       }
-      return { key: n.id, icon: typeOf(n.type).icon, label: displayTitle(n), hint: typeOf(n.type).label, snippet, run: () => go(`/n/${n.id}`) };
+      return { key: n.id, icon: noteIcon(n), label: displayTitle(n), hint: typeOf(n.type).label, snippet, run: () => go(`/n/${n.id}`) };
     });
     if (q.trim()) {
       for (const t of TYPES.filter((x) => x.id !== 'daily')) {

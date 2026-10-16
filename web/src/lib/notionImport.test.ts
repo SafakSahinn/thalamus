@@ -8,6 +8,7 @@ const H2 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const H3 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 const HDB = 'cccccccccccccccccccccccccccccccc';
 const HP = 'dddddddddddddddddddddddddddddddd';
+const H4 = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 async function fakeExport() {
   const inner = new JSZip();
@@ -20,6 +21,7 @@ async function fakeExport() {
   inner.file(`${root}/Kitaplarım ${HDB}/Yeraltından Notlar ${H2}.md`, `# Yeraltından Notlar\n\nDurum: Okunuyor\n\nYeraltı adamı.\n`);
   inner.file(`${root}/Ders Notları ${HP}.md`, `# Ders Notları\n\n## Devre Analizi\n\nThevenin eşdeğeri. [Suç ve Ceza](Kitapl%C4%B1m/Su%C3%A7%20ve%20Ceza%20${H1}.md) ile ilgisi yok :)\n\n| a | b |\n|---|---|\n| 1 | 2 |\n`);
   inner.file(`${root}/Boş sayfa ${H3}.md`, `# Boş sayfa\n`);
+  inner.file(`${root}/Ders Notları ${HP}/Op-amp ${H4}.md`, `# Op-amp\n\nEviren kuvvetlendirici.\n`);
   const outer = new JSZip();
   outer.file('Export-123-Part-1.zip', await inner.generateAsync({ type: 'uint8array' }));
   return outer.generateAsync({ type: 'uint8array' });
@@ -62,7 +64,7 @@ describe('Notion zip içe aktarma', () => {
     expect(db.rows).toHaveLength(3); // _all.csv tercih edildi
     expect(db.titleColumn).toBe('Name');
     // 4 md + CSV'de olup md'si olmayan 1 satır (Beyaz Geceler)
-    expect(parsed.pages).toHaveLength(5);
+    expect(parsed.pages).toHaveLength(6);
     const suc = parsed.pages.find((p) => p.title === 'Suç ve Ceza')!;
     expect(suc.dbKey).toBe(HDB);
     expect(suc.row?.Durum).toBe('Bitti');
@@ -113,6 +115,9 @@ describe('Notion zip içe aktarma', () => {
     // md'si olmayan satır da not oldu
     expect(by('Beyaz Geceler').props.status).toBe('Okunacak');
     expect(by('Boş sayfa').content).toBeNull();
+    // Notion alt sayfası üst sayfasına bağlandı
+    expect(by('Op-amp').props.parent).toEqual([ders.id]);
+    expect(computeLinks(by('Op-amp'))).toContain(ders.id);
 
     // ikinci aktarımda aynı sayfalar atlanır
     const again = await buildNotes(parsed, { mappings: { [HDB]: { type: 'book', columns: {} } }, pageType: 'note', existing: res.notes });

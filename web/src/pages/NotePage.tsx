@@ -1,11 +1,42 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
+import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
 import { displayTitle, relTime } from '../lib/format';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
-import { deleteNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
-import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
+import { createNote, deleteNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
+import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
+
+/** Üst sayfa zinciri (en üstten başlayarak) */
+function useAncestors(note: Note) {
+  const notes = useStore((s) => s.notes);
+  const out: Note[] = [];
+  const seen = new Set([note.id]);
+  let cur = relationIds(note.props.parent)[0];
+  while (cur && !seen.has(cur) && notes[cur] && !notes[cur].deleted_at) {
+    seen.add(cur);
+    out.unshift(notes[cur]);
+    cur = relationIds(notes[cur].props.parent)[0];
+  }
+  return out;
+}
+
+function SubPages({ note }: { note: Note }) {
+  const { alive } = useIndex();
+  const kids = alive.filter((n) => relationIds(n.props.parent).includes(note.id)).sort((a, b) => a.title.localeCompare(b.title, 'tr'));
+  return (
+    <section className="subpages">
+      {kids.length > 0 && <h3>Alt sayfalar <span className="count">{kids.length}</span></h3>}
+      <div className="list">
+        {kids.map((k) => (
+          <a key={k.id} className="rowlink" href={`#/n/${k.id}`}><span>{noteIcon(k)}</span><span className="grow">{displayTitle(k)}</span></a>
+        ))}
+      </div>
+      <button type="button" className="linkbtn muted small" onClick={() => go(`/n/${createNote('note', '', { parent: [note.id] }).id}`)}>＋ Alt sayfa ekle</button>
+    </section>
+  );
+}
 
 const GraphView = lazy(() => import('../components/GraphView'));
 
@@ -83,12 +114,14 @@ export default function NotePage({ id }: { id: string }) {
 
   return (
     <div className="page note-page">
+      <PageDecor note={note} />
       {note.deleted_at && (
         <div className="banner warn">
           Bu not çöp kutusunda. <button className="btn small" onClick={() => restoreNote(note.id)}>Geri yükle</button>
         </div>
       )}
       <div className="note-head">
+        <Crumbs note={note} />
         <a className="typechip" href={`#/c/${note.type}`} style={{ '--c': t.color } as React.CSSProperties}>{t.icon} {t.label}</a>
         <span className="muted small">düzenlendi {relTime(note.updated_at)}</span>
         <span className="spacer" />
@@ -132,6 +165,8 @@ export default function NotePage({ id }: { id: string }) {
         onChange={(doc) => updateNote(note.id, { content: doc })}
       />
 
+      <SubPages note={note} />
+
       <Backlinks note={note} />
 
       <section className="localgraph">
@@ -160,5 +195,17 @@ function OutLinks({ note }: { note: Note }) {
     <>
       {note.links.map((id) => notes[id]).filter((n) => n && !n.deleted_at).map((n) => <NoteChip key={n.id} note={n} />)}
     </>
+  );
+}
+
+function Crumbs({ note }: { note: Note }) {
+  const up = useAncestors(note);
+  if (!up.length) return null;
+  return (
+    <nav className="crumbs" aria-label="Üst sayfalar">
+      {up.map((a) => (
+        <span key={a.id}><a href={`#/n/${a.id}`}>{noteIcon(a)} {displayTitle(a)}</a> › </span>
+      ))}
+    </nav>
   );
 }

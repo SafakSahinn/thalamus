@@ -6,6 +6,7 @@ import { useStore } from './lib/store';
 import { applyTheme } from './lib/theme';
 import './styles.css';
 import './blocks.css';
+import './pages.css';
 
 applyTheme();
 // Geliştirme sırasında tarayıcı konsolundan durumu incelemek için (yayın paketine girmez)

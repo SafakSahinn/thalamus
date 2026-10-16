@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
-import { displayTitle, optionHue } from '../lib/format';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
+import { displayTitle, optionHue, noteIcon } from '../lib/format';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
-import { createNote, resolveFileUrl, setProp, uploadFile, useIndex, useStore } from '../lib/store';
+import { createNote, indexOf, resolveFileUrl, setProp, uploadFile, useIndex, useStore } from '../lib/store';
 import { relationIds, typeOf, TYPE_MAP, type Note, type PropDef } from '../lib/types';
 
 export function Chip({ text }: { text: string }) {
@@ -23,7 +24,7 @@ export function Stars({ value, onChange }: { value: number; onChange?: (v: numbe
 export function NoteChip({ note }: { note: Note }) {
   return (
     <a className="notechip" href={noteHref(note.id)}>
-      <span>{typeOf(note.type).icon}</span>
+      <span>{noteIcon(note)}</span>
       {displayTitle(note)}
     </a>
   );
@@ -89,7 +90,7 @@ function RelationInput({ note, def }: { note: Note; def: PropDef }) {
           <div className="suggest pop">
             {options.map((n, i) => (
               <button key={n.id} className={i === sel ? 'sel' : ''} onMouseDown={(e) => { e.preventDefault(); add(n.id); }}>
-                <span className="ic">{typeOf(n.type).icon}</span><span className="lb">{displayTitle(n)}</span>
+                <span className="ic">{noteIcon(n)}</span><span className="lb">{displayTitle(n)}</span>
               </button>
             ))}
             {canCreate && (
@@ -164,7 +165,83 @@ function WordList({ note, def }: { note: Note; def: PropDef }) {
   );
 }
 
+/** Kitap kapağı / film afişi arama penceresi */
+function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
+  const notes = useStore((s) => s.notes);
+  const isBook = note.type === 'book';
+  const people = relationIds(note.props[isBook ? 'author' : 'director']).map((id) => notes[id]?.title).filter(Boolean);
+  const [q, setQ] = useState([note.title, ...(isBook ? people : [])].join(' ').trim());
+  const [hits, setHits] = useState<CoverHit[] | null>(null);
+  const [err, setErr] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  const run = async (query: string) => {
+    if (!query.trim()) return;
+    setHits(null);
+    setErr('');
+    try {
+      setHits(await (isBook ? searchBookCovers(query) : searchPosters(query)));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+      setHits([]);
+    }
+  };
+  useEffect(() => {
+    void run(q);
+    const out = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && onClose();
+    setTimeout(() => document.addEventListener('mousedown', out), 0);
+    return () => document.removeEventListener('mousedown', out);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const pick = (h: CoverHit) => {
+    setProp(note.id, 'cover', h.url);
+    // Boş alanları da doldur
+    const cur = useStore.getState().notes[note.id];
+    if (isBook && h.pages && !cur.props.pages) setProp(note.id, 'pages', h.pages);
+    if (isBook && h.authors?.length && !relationIds(cur.props.author).length) {
+      const { alive } = indexOf(useStore.getState().notes);
+      const ids = h.authors.slice(0, 3).map((a) => (findByTitle(alive, a, 'person') ?? createNote('person', a)).id);
+      setProp(note.id, 'author', ids);
+    }
+    if (!isBook && h.year && !cur.props.year) setProp(note.id, 'year', h.year);
+    onClose();
+  };
+  return (
+    <div className="cover-finder" ref={ref}>
+      <div className="row">
+        <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? 'Kitap adı ve yazar' : 'Film adı'} />
+        <button type="button" className="btn small" onClick={() => void run(q)}>Ara</button>
+      </div>
+      <p className="muted small">{isBook ? 'Google Books ve Open Library’den.' : 'Wikipedia’dan.'} Seçtiğin görsel kapak olur{isBook ? '; yazar ve sayfa sayısı boşsa onlar da doldurulur' : ''}.</p>
+      {err && <p className="err small">{err}</p>}
+      {hits === null ? (
+        <p className="muted small">Aranıyor…</p>
+      ) : hits.length === 0 ? (
+        <p className="muted small">Sonuç bulunamadı. Adı farklı yazmayı dene.</p>
+      ) : (
+        <div className="cf-grid">
+          {hits.map((h) => (
+            <button key={h.url} type="button" className="cf-item" onClick={() => pick(h)} title={[h.title, h.sub].filter(Boolean).join(' · ')}>
+              <img src={h.url} alt="" loading="lazy" referrerPolicy="no-referrer" onLoad={(e) => { if (e.currentTarget.naturalWidth < 10) (e.currentTarget.closest('.cf-item') as HTMLElement).style.display = 'none'; }} onError={(e) => ((e.currentTarget.closest('.cf-item') as HTMLElement).style.display = 'none')} />
+              <span>{h.title}{h.year ? ` (${h.year})` : ''}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoverThumb({ src }: { src: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    resolveFileUrl(src).then(setUrl, () => setUrl(null));
+  }, [src]);
+  return url ? <img className="cover-thumb" src={url} alt="" referrerPolicy="no-referrer" /> : null;
+}
+
 function UrlInput({ note, def }: { note: Note; def: PropDef }) {
+  const [finder, setFinder] = useState(false);
+  const canFind = def.key === 'cover' && (note.type === 'book' || note.type === 'movie');
   const v = (note.props[def.key] as string) ?? '';
   const [busy, setBusy] = useState(false);
   const open = async () => window.open(await resolveFileUrl(v), '_blank', 'noopener');
@@ -189,6 +266,7 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   const isFile = v.startsWith('gd://') || v.startsWith('local://');
   return (
     <div className="urlinput">
+      {def.key === 'cover' && v && <CoverThumb src={v} />}
       {isFile ? (
         <span className="muted">📎 {decodeURIComponent(v.split('#')[1] ?? 'Dosya')}</span>
       ) : (
@@ -199,6 +277,8 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
       {!v && (def.key === 'pdf' || def.key === 'cover') && (
         <button className="btn small ghost" disabled={busy} onClick={upload}>{busy ? 'Yükleniyor…' : 'Dosya yükle'}</button>
       )}
+      {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? 'Kapak bul' : 'Afiş bul'}</button>}
+      {finder && <CoverFinder note={note} onClose={() => setFinder(false)} />}
     </div>
   );
 }
@@ -311,5 +391,6 @@ export default function PropertyPanel({ note }: { note: Note }) {
 /** Yeni notta önemli alanlar boş olsa da görünsün */
 function alwaysShow(note: Note, d: PropDef) {
   if (d.kind === 'relation' && d.target?.[0] === 'word') return true;
+  if (d.key === 'cover' && (note.type === 'book' || note.type === 'movie')) return true;
   return ['status', 'author', 'authors', 'meaning', 'language', 'kind', 'speakers', 'definition', 'course', 'date', 'year'].includes(d.key);
 }

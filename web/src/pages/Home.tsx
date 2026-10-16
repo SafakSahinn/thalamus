@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
-import { displayTitle, relTime } from '../lib/format';
+import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
 import { createNote, todayStr, useIndex } from '../lib/store';
 import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
@@ -104,7 +104,7 @@ export default function Home() {
 function Row({ n, meta }: { n: Note; meta: string }) {
   return (
     <a className="rowlink" href={`#/n/${n.id}`}>
-      <span>{typeOf(n.type).icon}</span>
+      <span>{noteIcon(n)}</span>
       <span className="grow">{displayTitle(n)}</span>
       <span className="muted small">{meta}</span>
     </a>

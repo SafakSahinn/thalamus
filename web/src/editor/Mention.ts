@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import Suggestion from '@tiptap/suggestion';
-import { addDays, displayTitle, fmtDay } from '../lib/format';
+import { addDays, displayTitle, fmtDay, noteIcon } from '../lib/format';
 import { norm } from '../lib/links';
 import { searchNotes } from '../lib/search';
 import { indexOf, todayStr, useStore } from '../lib/store';
@@ -56,7 +56,7 @@ function items(query: string): Entry[] {
   const notes: Entry[] = query
     ? searchNotes(alive, query, { limit: 6 }).map((n) => ({
         key: n.id,
-        icon: typeOf(n.type).icon,
+        icon: noteIcon(n),
         label: displayTitle(n),
         hint: typeOf(n.type).label,
         action: (editor, range) => {

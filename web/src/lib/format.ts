@@ -1,3 +1,5 @@
+import { typeOf, type Note } from './types';
+
 const dateFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 const dayFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
 
@@ -35,3 +37,6 @@ export function optionHue(s: string) {
 
 export const displayTitle = (n: { title: string; type: string; props: Record<string, unknown> }) =>
   n.type === 'daily' && typeof n.props.date === 'string' ? fmtDay(n.props.date) : n.title || 'Adsız';
+
+/** Notun simgesi: kullanıcının seçtiği emoji, yoksa tipinin simgesi */
+export const noteIcon = (n: Pick<Note, 'type' | 'props'>) => (n.props.icon as string) || typeOf(n.type).icon;
