@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import HistoryDialog from '../components/HistoryDialog';
 import MoveDialog from '../components/MoveDialog';
+import { closePeek, usePeek } from '../components/Peek';
 import ShareDialog from '../components/ShareDialog';
 import { publishShare } from '../lib/share';
 import PageDecor, { noteIcon } from '../components/PageDecor';
@@ -184,7 +185,13 @@ export default function NotePage({ id }: { id: string }) {
                 <button className="btn small" onClick={() => { const tpl = saveAsTemplate(note); setMenu(false); go(`/n/${tpl.id}`); }}>🧩 Şablon olarak kaydet</button>
               )}
               {!note.deleted_at && (
-                <button className="btn danger small" onClick={() => { deleteNote(note.id); setMenu(false); history.back(); }}>Çöp kutusuna taşı</button>
+                <button className="btn danger small" onClick={() => {
+                  deleteNote(note.id);
+                  setMenu(false);
+                  // Yan paneldeyse yalnızca paneli kapat, sayfadan çıkma
+                  if (usePeek.getState().id === note.id) closePeek();
+                  else history.back();
+                }}>Çöp kutusuna taşı</button>
               )}
             </div>
           )}

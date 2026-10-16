@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import CommandPalette, { openPalette } from './components/CommandPalette';
 import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
+import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
 import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
@@ -84,6 +85,7 @@ export default function App() {
       <PromptHost />
       <Welcome />
       <Shortcuts />
+      <Peek />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon, parseDay, relTime } from '../../lib/format';
 import { go } from '../../lib/router';
-import { setProp, todayStr, updateNote, useStore } from '../../lib/store';
+import { deleteNote, duplicateNote, setProp, todayStr, updateNote, useStore } from '../../lib/store';
 import { createDefault } from '../../lib/templates';
 import type { Note, PropDef, SavedView, TypeDef } from '../../lib/types';
 import { groupNotes, type Group } from '../../lib/views';
+import { openPeek, peekClick } from '../../components/Peek';
 import { Cell, Cover, EditCell } from './Cells';
 
 export interface ViewProps {
@@ -15,7 +16,9 @@ export interface ViewProps {
   newProps: () => Record<string, unknown>;
 }
 
-const open = (id: string) => go(`/n/${id}`);
+/** Koleksiyondan açılan notlar yan panelde açılır */
+const open = (id: string) => openPeek(id);
+void go;
 
 // ---------- tablo ----------
 
@@ -30,16 +33,17 @@ function TitleCell({ n }: { n: Note }) {
         onBlur={(e) => e.target.value !== n.title && updateNote(n.id, { title: e.target.value })}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
-      <button type="button" className="open-btn" onClick={() => open(n.id)}>Aç ↗</button>
+      <button type="button" className="open-btn" onClick={() => open(n.id)} title="Yan panelde aç (Ctrl ile tam sayfa)">Aç</button>
     </div>
   );
 }
 
-function TableRows({ rows, cols }: { rows: Note[]; cols: PropDef[] }) {
+function TableRows({ rows, cols, sel, toggle }: { rows: Note[]; cols: PropDef[]; sel: Set<string>; toggle: (id: string, e: React.MouseEvent | React.ChangeEvent) => void }) {
   return (
     <>
       {rows.map((n) => (
-        <tr key={n.id}>
+        <tr key={n.id} className={sel.has(n.id) ? 'row-sel' : ''}>
+          <td className="sel-cell"><input type="checkbox" className="check" checked={sel.has(n.id)} onChange={(e) => toggle(n.id, e)} aria-label="Seç" /></td>
           <td className="tname">{n.type === 'daily' ? <a href={`#/n/${n.id}`}>{displayTitle(n)}</a> : <TitleCell n={n} />}</td>
           {cols.map((c) => <td key={c.key}><EditCell note={n} def={c} /></td>)}
           <td className="muted small nowrap">{relTime(n.updated_at)}</td>
@@ -49,38 +53,114 @@ function TableRows({ rows, cols }: { rows: Note[]; cols: PropDef[] }) {
   );
 }
 
+/** Seçili satırlara toplu işlem */
+function BulkBar({ t, ids, clear }: { t: TypeDef; ids: string[]; clear: () => void }) {
+  const editable = t.props.filter((p) => ['select', 'checkbox', 'date', 'rating', 'multiselect'].includes(p.kind));
+  const [key, setKey] = useState(editable[0]?.key ?? '');
+  const def = editable.find((p) => p.key === key);
+  const apply = (value: unknown) => {
+    if (!def) return;
+    for (const id of ids) {
+      if (def.kind === 'multiselect') {
+        const cur = useStore.getState().notes[id]?.props[def.key];
+        const arr = Array.isArray(cur) ? (cur as string[]) : [];
+        if (value && !arr.includes(String(value))) setProp(id, def.key, [...arr, String(value)]);
+      } else setProp(id, def.key, value);
+    }
+  };
+  return (
+    <div className="bulk-bar">
+      <b>{ids.length} seçili</b>
+      {editable.length > 0 && (
+        <>
+          <select value={key} onChange={(e) => setKey(e.target.value)}>
+            {editable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          {def && (def.kind === 'select' || def.kind === 'multiselect') && (
+            <select value="" onChange={(e) => e.target.value && apply(e.target.value === '__none' ? undefined : e.target.value)}>
+              <option value="">{def.kind === 'multiselect' ? 'ekle…' : 'değer seç…'}</option>
+              {def.kind === 'select' && <option value="__none">— boşalt</option>}
+              {def.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          )}
+          {def?.kind === 'checkbox' && (
+            <>
+              <button type="button" className="btn small" onClick={() => apply(true)}>✓ İşaretle</button>
+              <button type="button" className="btn small" onClick={() => apply(undefined)}>İşareti kaldır</button>
+            </>
+          )}
+          {def?.kind === 'date' && <input type="date" onChange={(e) => apply(e.target.value || undefined)} />}
+          {def?.kind === 'rating' && (
+            <select value="" onChange={(e) => e.target.value && apply(Number(e.target.value) || undefined)}>
+              <option value="">puan…</option>
+              {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{'★'.repeat(r)}</option>)}
+              <option value="0">— boşalt</option>
+            </select>
+          )}
+        </>
+      )}
+      <span className="spacer" />
+      <button type="button" className="btn small" onClick={() => { ids.forEach((id) => duplicateNote(id)); clear(); }}>⧉ Çoğalt</button>
+      <button type="button" className="btn small danger" onClick={() => { ids.forEach((id) => deleteNote(id)); clear(); }}>🗑 Çöpe taşı</button>
+      <button type="button" className="iconbtn" title="Seçimi temizle" onClick={clear}>×</button>
+    </div>
+  );
+}
+
 export function TableView({ t, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [anchor, setAnchor] = useState<string | null>(null);
   const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
   const cols = t.props.filter((p) => !hidden.has(p.key));
   const gdef = view.groupBy ? t.props.find((p) => p.key === view.groupBy) : undefined;
   const groups: Group[] = gdef ? groupNotes(rows, gdef, notes) : [{ key: '*', label: '', notes: rows }];
+  const visible = new Set(rows.map((r) => r.id));
+  const selected = [...sel].filter((id) => visible.has(id));
+  const order = groups.flatMap((g) => g.notes.map((n) => n.id));
+  // Shift ile tıklayınca aralığı seç
+  const toggle = (id: string, e: React.MouseEvent | React.ChangeEvent) => {
+    const next = new Set(sel);
+    const shift = (e.nativeEvent as MouseEvent).shiftKey;
+    if (shift && anchor) {
+      const [a, b] = [order.indexOf(anchor), order.indexOf(id)].sort((x, y) => x - y);
+      order.slice(a, b + 1).forEach((x) => next.add(x));
+    } else if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setAnchor(id);
+    setSel(next);
+  };
+  const allOn = selected.length > 0 && selected.length === rows.length;
   const add = (g?: Group) => {
     const props = newProps();
     if (gdef && g && g.key) props[gdef.key] = gdef.kind === 'multiselect' || gdef.kind === 'relation' ? [g.key] : gdef.kind === 'checkbox' ? g.key === 'true' : g.key;
-    createDefault(t.id, props);
+    openPeek(createDefault(t.id, props).id);
   };
   return (
-    <div className="tablewrap">
-      <table className="dbtable editable">
-        <thead>
-          <tr>
-            <th>Ad</th>
-            {cols.map((c) => <th key={c.key}>{c.label}</th>)}
-            <th>Düzenlendi</th>
-          </tr>
-        </thead>
-        {groups.map((g) => (
-          <tbody key={g.key}>
-            {gdef && (
-              <tr className="group-row"><td colSpan={cols.length + 2}><b>{g.label}</b> <span className="muted small">{g.notes.length}</span></td></tr>
-            )}
-            <TableRows rows={g.notes} cols={cols} />
-            <tr className="add-row"><td colSpan={cols.length + 2}><button type="button" className="linkbtn muted small" onClick={() => add(g)}>＋ Yeni</button></td></tr>
-          </tbody>
-        ))}
-      </table>
-    </div>
+    <>
+      {selected.length > 0 && <BulkBar t={t} ids={selected} clear={() => setSel(new Set())} />}
+      <div className="tablewrap">
+        <table className="dbtable editable">
+          <thead>
+            <tr>
+              <th className="sel-cell"><input type="checkbox" className="check" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(rows.map((r) => r.id)))} aria-label="Tümünü seç" /></th>
+              <th>Ad</th>
+              {cols.map((c) => <th key={c.key}>{c.label}</th>)}
+              <th>Düzenlendi</th>
+            </tr>
+          </thead>
+          {groups.map((g) => (
+            <tbody key={g.key}>
+              {gdef && (
+                <tr className="group-row"><td colSpan={cols.length + 3}><b>{g.label}</b> <span className="muted small">{g.notes.length}</span></td></tr>
+              )}
+              <TableRows rows={g.notes} cols={cols} sel={sel} toggle={toggle} />
+              <tr className="add-row"><td colSpan={cols.length + 3}><button type="button" className="linkbtn muted small" onClick={() => add(g)}>＋ Yeni</button></td></tr>
+            </tbody>
+          ))}
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -92,7 +172,7 @@ export function CardsView({ t, rows, view }: ViewProps) {
   return (
     <div className="cards">
       {rows.map((n) => (
-        <a key={n.id} className="card" href={`#/n/${n.id}`}>
+        <a key={n.id} className="card" href={`#/n/${n.id}`} onClick={peekClick(n.id)}>
           {t.cover && <Cover src={n.props[t.cover] as string | undefined} icon={noteIcon(n)} />}
           <div className="card-body">
             <div className="card-title">{!t.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
@@ -113,7 +193,7 @@ export function ListView({ t, rows, view }: ViewProps) {
   return (
     <div className="list dblist">
       {rows.map((n) => (
-        <a key={n.id} className="rowlink" href={`#/n/${n.id}`}>
+        <a key={n.id} className="rowlink" href={`#/n/${n.id}`} onClick={peekClick(n.id)}>
           <span>{noteIcon(n)}</span>
           <span className="grow">{displayTitle(n)}</span>
           {cols.map((c) => <span key={c.key} className="list-prop"><Cell note={n} def={c} /></span>)}
@@ -155,6 +235,7 @@ export function BoardView({ t, rows, view, newProps }: ViewProps) {
             <a
               key={n.id}
               href={`#/n/${n.id}`}
+              onClick={peekClick(n.id)}
               className="board-card"
               draggable
               onDragStart={(e) => { e.dataTransfer.setData('text/thalamus-note', n.id); e.dataTransfer.effectAllowed = 'move'; }}
@@ -246,7 +327,7 @@ export function CalendarView({ t, rows, view, newProps }: ViewProps) {
                 {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(t.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
               </div>
               {items.slice(0, 4).map((n) => (
-                <a key={n.id} href={`#/n/${n.id}`} className="cal-item" draggable={editable}
+                <a key={n.id} href={`#/n/${n.id}`} onClick={peekClick(n.id)} className="cal-item" draggable={editable}
                   onDragStart={(e) => e.dataTransfer.setData('text/thalamus-note', n.id)}>
                   {noteIcon(n)} {displayTitle(n)}
                 </a>
