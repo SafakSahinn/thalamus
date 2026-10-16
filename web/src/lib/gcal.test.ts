@@ -13,8 +13,15 @@ const mk = (id: string, type: string, title: string, props: Record<string, unkno
   id, type, title, props, content: null, text: '', links: [], pinned: false, created_at: '', updated_at: '', deleted_at: null,
 });
 
-// Bellek içi sahte Google Takvim
-const events = new Map<string, Record<string, unknown>>();
+// Bellek içi sahte Google Takvim (iptal edilenler status: cancelled ile kalır, syncToken = değişiklik sırası)
+type Ev = Record<string, unknown> & { id: string; status: string; seq: number };
+const all = new Map<string, Ev>();
+let seq = 0;
+const put = (id: string, body: Record<string, unknown>, status = 'confirmed') => all.set(id, { ...body, id, status, seq: ++seq });
+const events = {
+  get size() { return [...all.values()].filter((e) => e.status !== 'cancelled').length; },
+  values: () => [...all.values()].filter((e) => e.status !== 'cancelled').values(),
+};
 let calls = 0;
 beforeAll(() => {
   globalThis.fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
@@ -23,16 +30,27 @@ beforeAll(() => {
     const method = init?.method ?? 'GET';
     if (u.endsWith('/calendars') && method === 'POST') return new Response(JSON.stringify({ id: 'cal1' }), { status: 200 });
     if (/\/calendars\/cal1$/.test(u)) return new Response('{}', { status: 200 });
+    const list = u.match(/\/events\?(.*)$/);
+    if (list && method === 'GET') {
+      const since = Number(new URLSearchParams(list[1]).get('syncToken') ?? 0);
+      const items = [...all.values()].filter((e) => e.seq > since && (since || e.status !== 'cancelled'));
+      return new Response(JSON.stringify({ items, nextSyncToken: String(seq) }));
+    }
     const m = u.match(/\/events(?:\/([^/?]+))?$/);
     if (m) {
       const id = m[1];
-      if (method === 'PUT') return events.has(id) ? (events.set(id, JSON.parse(String(init!.body))), new Response('{}')) : new Response('{}', { status: 404 });
+      if (method === 'PUT') return all.has(id) ? (put(id, JSON.parse(String(init!.body))), new Response('{}')) : new Response('{}', { status: 404 });
       if (method === 'POST') {
         const b = JSON.parse(String(init!.body));
-        events.set(b.id, b);
+        put(b.id, b);
         return new Response('{}');
       }
-      if (method === 'DELETE') return events.delete(id) ? new Response(null, { status: 204 }) : new Response('{}', { status: 410 });
+      if (method === 'DELETE') {
+        const e = all.get(id);
+        if (!e || e.status === 'cancelled') return new Response('{}', { status: 410 });
+        put(id, e, 'cancelled');
+        return new Response(null, { status: 204 });
+      }
     }
     return new Response('{}', { status: 400 });
   }) as typeof fetch;
@@ -60,13 +78,13 @@ describe('Google Takvim eşitlemesi', () => {
     await store.saveSettings({ ...store.useStore.getState().settings, calendar: { enabled: true, fields: ['lab.due'], reminders: [1] } });
     const lab = store.createNote('lab', 'RC deneyi', { due: '2026-10-22' });
     let r = await syncCalendar();
-    expect(r).toEqual({ created: 1, updated: 0, deleted: 0 });
+    expect(r).toEqual({ created: 1, updated: 0, deleted: 0, pulled: 0 });
     expect(events.size).toBe(1);
 
     const before = calls;
     r = await syncCalendar();
-    expect(r).toEqual({ created: 0, updated: 0, deleted: 0 });
-    expect(calls - before).toBe(1); // yalnızca takvimin varlık kontrolü
+    expect(r).toEqual({ created: 0, updated: 0, deleted: 0, pulled: 0 });
+    expect(calls - before).toBe(2); // takvimin varlık kontrolü + değişiklik okuma
 
     store.setProp(lab.id, 'due', '2026-10-25');
     r = await syncCalendar();
@@ -77,5 +95,51 @@ describe('Google Takvim eşitlemesi', () => {
     r = await syncCalendar();
     expect(r.deleted).toBe(1);
     expect(events.size).toBe(0);
+  });
+
+  it('Google Takvim’de taşınan tarih nota, silinen etkinlik boş alana döner', async () => {
+    const store = await import('./store');
+    const { syncCalendar } = await import('./gcal');
+    const lab = store.createNote('lab', 'Op-amp deneyi', { due: '2026-11-02' });
+    await syncCalendar();
+    const ev = [...all.values()].find((e) => (e.extendedProperties as { private: { thalamus: string } } | undefined)?.private.thalamus === lab.id)!;
+
+    // Kullanıcı takvimde etkinliği 5 Kasım'a sürükledi
+    put(ev.id, { ...ev, start: { date: '2026-11-05' }, end: { date: '2026-11-06' } });
+    let r = await syncCalendar();
+    expect(r.pulled).toBe(1);
+    expect(store.useStore.getState().notes[lab.id].props.due).toBe('2026-11-05');
+
+    // Elle eklenen etkinliğe dokunulmaz
+    put('elle1', { summary: 'Toplantı', start: { date: '2026-11-03' }, end: { date: '2026-11-04' } });
+    r = await syncCalendar();
+    expect(r).toMatchObject({ pulled: 0, deleted: 0 });
+    expect(all.get('elle1')!.status).toBe('confirmed');
+
+    // Thalamus'ta da aynı anda değiştiyse Thalamus kazanır
+    store.setProp(lab.id, 'due', '2026-11-10');
+    put(ev.id, { ...all.get(ev.id)!, start: { date: '2026-11-07' }, end: { date: '2026-11-08' } });
+    await syncCalendar();
+    expect(store.useStore.getState().notes[lab.id].props.due).toBe('2026-11-10');
+    expect(all.get(ev.id)!.start).toEqual({ date: '2026-11-10' });
+
+    // Kullanıcı takvimden sildi
+    put(ev.id, all.get(ev.id)!, 'cancelled');
+    r = await syncCalendar();
+    expect(r.pulled).toBe(1);
+    expect(store.useStore.getState().notes[lab.id].props.due).toBeUndefined();
+    expect(all.get(ev.id)!.status).toBe('cancelled');
+  });
+
+  it('konferans aralığı takvimde uzatılınca bitiş tarihi de değişir', async () => {
+    const store = await import('./store');
+    const { syncCalendar } = await import('./gcal');
+    await store.saveSettings({ ...store.useStore.getState().settings, calendar: { enabled: true, fields: ['conference.start', 'conference.end'], reminders: [1] } });
+    const c = store.createNote('conference', 'ECC', { start: '2027-06-01', end: '2027-06-03' });
+    await syncCalendar();
+    const ev = [...all.values()].find((e) => (e.extendedProperties as { private: { thalamus: string } } | undefined)?.private.thalamus === c.id)!;
+    put(ev.id, { ...ev, start: { date: '2027-06-02' }, end: { date: '2027-06-06' } });
+    await syncCalendar();
+    expect(store.useStore.getState().notes[c.id].props).toMatchObject({ start: '2027-06-02', end: '2027-06-05' });
   });
 });

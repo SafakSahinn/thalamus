@@ -35,7 +35,7 @@ export default function CalendarSettings() {
   };
   const syncNowMsg = async () => {
     const r = await syncCalendar();
-    setMsg(`Takvim eşitlendi: ${r.created} yeni, ${r.updated} güncellenen, ${r.deleted} silinen etkinlik.`);
+    setMsg(`Takvim eşitlendi: ${r.created} yeni, ${r.updated} güncellenen, ${r.deleted} silinen etkinlik${r.pulled ? `, takvimden ${r.pulled} değişiklik notlara alındı` : ''}.`);
   };
 
   const connect = () => run('Bağlanıyor…', async () => {
@@ -62,8 +62,10 @@ export default function CalendarSettings() {
     <section>
       <h3>Google Takvim eşitlemesi</h3>
       <p className="muted small">
-        Seçtiğin tarih alanları Google Takvim’inde <b>“Thalamus”</b> adlı ayrı bir takvimde etkinlik olur. Tarihi değiştirince etkinlik
-        güncellenir, notu ya da tarihi silince etkinlik de silinir. Thalamus yalnızca bu takvime erişebilir, diğer takvimlerini göremez.
+        Seçtiğin tarih alanları Google Takvim’inde <b>“Thalamus”</b> adlı ayrı bir takvimde etkinlik olur. Eşitleme iki yönlüdür:
+        Thalamus’ta tarihi değiştirince etkinlik taşınır, notu ya da tarihi silince etkinlik de silinir; Google Takvim’de etkinliği
+        taşırsan nottaki tarih değişir, silersen o tarih alanı boşalır. Aynı tarihi iki tarafta birden değiştirdiysen Thalamus’taki geçerli
+        olur. Bu takvime elle eklediğin etkinliklere dokunulmaz. Thalamus yalnızca bu takvime erişebilir, diğer takvimlerini göremez.
       </p>
       {!granted || !cs.enabled ? (
         <div className="row">
