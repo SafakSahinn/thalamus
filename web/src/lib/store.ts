@@ -13,6 +13,8 @@ interface State {
   /** Google hesabı; undefined: henüz bilinmiyor, null: giriş yapılmamış */
   account: Profile | null | undefined;
   announcements: boolean;
+  /** Yeni kayıt olan kullanıcıya bir kez gösterilen karşılama */
+  welcome: boolean;
   settings: Settings;
   sync: { status: SyncStatus; pending: number; last?: string; error?: string };
   /** Başka cihazdan gelen değişiklik sayacı (açık editörün içeriği yenilensin diye) */
@@ -33,6 +35,7 @@ export const useStore = create<State>(() => ({
   ready: false,
   account: cloud ? undefined : null,
   announcements: false,
+  welcome: false,
   settings: DEFAULT_SETTINGS,
   sync: { status: cloud ? 'idle' : 'local', pending: 0 },
   remoteRev: {},
@@ -65,7 +68,7 @@ export async function onSignedIn(a: AuthState) {
     await setMeta('auth', a);
   }
   await setMeta('ownerSub', a.profile.sub);
-  set({ account: a.profile, announcements: a.announcements });
+  set({ account: a.profile, announcements: a.announcements, welcome: Boolean(a.is_new) });
 }
 
 // ---------- yerel değişiklikler ----------

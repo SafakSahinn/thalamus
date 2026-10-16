@@ -28,6 +28,8 @@ export interface AuthState {
   /** ms */
   expires_at: number;
   announcements: boolean;
+  /** Bu girişte hesap ilk kez oluşturuldu (hoş geldin penceresi için) */
+  is_new?: boolean;
 }
 
 interface CodeResponse {
@@ -117,6 +119,7 @@ interface ExchangeResp {
   refresh_token: string | null;
   profile: Profile;
   announcements: boolean;
+  is_new: boolean;
 }
 
 const ERRORS: Record<string, string> = {
@@ -133,9 +136,9 @@ export const authErrorText = (e: unknown) => {
  * Google ile giriş. Google kalıcı oturum (yenileme) token'ını yalnızca onay ekranı gösterildiğinde verdiği için
  * hesap seçimi ve onay tek pencerede istenir (art arda ikinci pencere tarayıcıda engellenebilir).
  */
-export async function signInWithGoogle(announcements: boolean): Promise<AuthState> {
+export async function signInWithGoogle(): Promise<AuthState> {
   await loadGis();
-  const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('select_account consent'), announcements });
+  const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('select_account consent') });
   if (!r.refresh_token) throw new Error('Google kalıcı oturum izni vermedi, lütfen tekrar dene.');
   const state: AuthState = {
     profile: r.profile,
@@ -143,6 +146,7 @@ export async function signInWithGoogle(announcements: boolean): Promise<AuthStat
     access_token: r.access_token,
     expires_at: Date.now() + r.expires_in * 1000,
     announcements: r.announcements,
+    is_new: r.is_new,
   };
   await setMeta('auth', state);
   return state;

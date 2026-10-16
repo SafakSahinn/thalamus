@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import CommandPalette, { openPalette } from './components/CommandPalette';
 import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
+import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
 import { cloud } from './lib/google';
 import { createNote, initAuth, initLocal, startSync, useStore } from './lib/store';
@@ -72,6 +73,7 @@ export default function App() {
       </main>
       <CommandPalette />
       <PromptHost />
+      <Welcome />
     </div>
   );
 }

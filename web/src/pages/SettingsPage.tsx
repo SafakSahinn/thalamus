@@ -180,16 +180,24 @@ export default function SettingsPage() {
             </div>
             {sync.error && <p className="err small">{sync.error}</p>}
             <p className="muted small">Notlar önce bu cihaza kaydedilir, internet varken birkaç saniye içinde Google Drive’ındaki <b>Thalamus</b> klasörüne gider. Diğer cihazların uygulamayı açtığında ya da yarım dakika içinde güncellenir. Çevrimdışıyken de yazabilirsin.</p>
-            <label className="small">
-              <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x) => setAnnErr(String(x))); }} /> Yenilikler hakkında ara sıra e-posta al
-            </label>
-            {annErr && <p className="err small">{annErr}</p>}
             <div><button className="btn ghost" onClick={() => void signOut()}>Bu cihazda çıkış yap</button></div>
           </>
         ) : (
           <p className="muted">Bulut ayarlanmadı: notlar yalnızca bu tarayıcıda tutuluyor. Düzenli olarak yedek almayı unutma.</p>
         )}
       </section>
+
+      {cloud && account && (
+        <section>
+          <h3>E-posta bildirimleri</h3>
+          <label className="small">
+            <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x) => setAnnErr(String(x))); }} />
+            Yenilikler hakkında ara sıra e-posta al
+          </label>
+          <p className="muted small">{announcements ? 'Açık: yeni özellikler duyurulduğunda e-posta alırsın. Her e-postada abonelikten çıkma bağlantısı da olur.' : 'Kapalı: Thalamus sana duyuru e-postası göndermez.'}</p>
+          {annErr && <p className="err small">{annErr}</p>}
+        </section>
+      )}
 
       {cloud && (
         <section>

@@ -14,7 +14,6 @@ const GoogleLogo = () => (
 export default function Login() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [news, setNews] = useState(false);
   const syncError = useStore((s) => s.sync.error);
 
   useEffect(preloadGoogle, []);
@@ -23,7 +22,7 @@ export default function Login() {
     setBusy(true);
     setErr(null);
     try {
-      await onSignedIn(await signInWithGoogle(news));
+      await onSignedIn(await signInWithGoogle());
     } catch (e) {
       setErr(authErrorText(e));
     } finally {
@@ -47,10 +46,6 @@ export default function Login() {
           <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google ile devam et'}
         </button>
         {err && <p className="err small">{err}</p>}
-        <label className="small news">
-          <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
-          Yenilikler hakkında ara sıra e-posta almak istiyorum (isteğe bağlı)
-        </label>
         <p className="muted small">
           Devam ederek <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş olursun. Hesabın için yalnızca e-posta adresin,
           kayıt tarihin ve son kullanım zamanın tutulur: <a href="#/gizlilik">Gizlilik ve KVKK Aydınlatma Metni</a>.
