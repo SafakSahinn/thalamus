@@ -32,6 +32,9 @@ export interface DriveApi {
   uploadBlob(parent: string, name: string, blob: Blob): Promise<string>;
   readBlob(id: string): Promise<Blob>;
   remove(id: string): Promise<void>;
+  /** Dosyanın Drive'da tutulan eski sürümleri */
+  revisions?(id: string): Promise<{ id: string; modifiedTime: string }[]>;
+  readRevision?<T>(id: string, rev: string): Promise<T>;
 }
 
 export class NotFoundError extends Error {
@@ -168,5 +171,15 @@ export const drive: DriveApi = {
 
   async remove(id) {
     await req(`${API}/files/${id}`, { method: 'DELETE' });
+  },
+
+  async revisions(id) {
+    const r = await req(`${API}/files/${id}/revisions?fields=revisions(id,modifiedTime)&pageSize=200`);
+    return ((await r.json()) as { revisions?: { id: string; modifiedTime: string }[] }).revisions ?? [];
+  },
+
+  async readRevision<T>(id: string, rev: string) {
+    const r = await req(`${API}/files/${id}/revisions/${rev}?alt=media`);
+    return (await r.json()) as T;
   },
 };

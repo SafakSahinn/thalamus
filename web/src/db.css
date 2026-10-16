@@ -147,3 +147,17 @@ tr:hover .open-btn, .open-btn:focus { opacity: 1; }
 .sc-grid h4 { margin: 12px 0 6px; font-size: 13px; color: var(--muted); }
 .sc-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
 .sc-row kbd { white-space: nowrap; }
+
+/* ---------- sayfa geçmişi ---------- */
+.modal.history { max-width: 960px; width: 100%; padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.modal-back:has(.history) { padding-top: 4vh; }
+.history h3 { margin: 0; }
+.history-body { display: grid; grid-template-columns: 240px 1fr; gap: 14px; height: 66vh; min-height: 300px; }
+.history-list { overflow-y: auto; border-right: 1px solid var(--border); padding-right: 8px; display: flex; flex-direction: column; gap: 2px; }
+.hist-item { display: flex; flex-direction: column; align-items: flex-start; border: none; background: none; text-align: left; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.hist-item:hover { background: var(--hover); }
+.hist-item.on { background: var(--accent-soft); }
+.history-view { overflow-y: auto; padding-right: 6px; }
+.history-title { margin: 0 0 10px; }
+.history-preview { pointer-events: none; }
+@media (max-width: 700px) { .history-body { grid-template-columns: 1fr; height: auto; } .history-list { max-height: 160px; border-right: none; border-bottom: 1px solid var(--border); } .history-view { max-height: 50vh; } }

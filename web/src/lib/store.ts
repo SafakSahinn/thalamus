@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db';
 import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, type AuthState, type Profile } from './google';
+import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText } from './links';
 import { applyTypeSettings, DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
 
@@ -132,6 +133,7 @@ export function updateNote(id: string, patch: NotePatch) {
   let t = now();
   if (t <= old.updated_at) t = new Date(Date.parse(old.updated_at) + 1).toISOString();
   const n: Note = { ...old, ...patch, updated_at: t };
+  if ('content' in patch || 'title' in patch) void snapshot(old).catch(() => undefined);
   if ('content' in patch) n.text = plainText(n.content);
   if ('content' in patch || 'props' in patch || 'type' in patch) n.links = computeLinks(n);
   commit([n]);
@@ -255,7 +257,10 @@ async function applyRemote(rows: Note[]) {
     }
     const local = notes[r.id];
     if (local && local.updated_at >= r.updated_at) continue;
-    if (local) rev[r.id] = (rev[r.id] ?? 0) + 1;
+    if (local) {
+      rev[r.id] = (rev[r.id] ?? 0) + 1;
+      void snapshot(local).catch(() => undefined);
+    }
     const n: Note = { ...r, text: r.text ?? plainText(r.content), links: r.links ?? computeLinks(r) };
     notes[r.id] = n;
     toPut.push(n);
@@ -349,6 +354,7 @@ async function purgeRemoved(fileIds: string[]) {
 async function purgeLocal(id: string) {
   const d = await db();
   memQueue.delete(id);
+  await dropHistory(id).catch(() => undefined);
   await Promise.all([d.delete('notes', id), d.delete('outbox', id), d.delete('driveIds', id)]);
   if (get().notes[id]) {
     const notes = { ...get().notes };
@@ -371,6 +377,37 @@ export async function purgeNote(id: string) {
     // Özet dosyası hemen yenilensin ki yeni cihazlarda geri gelmesin
     await maybeSnapshot(await getFolders(), true).catch(() => undefined);
   }
+}
+
+/** Notun sürümleri (yeniden eskiye): bu cihaz + Drive */
+export async function noteVersions(id: string): Promise<Version[]> {
+  const out = await deviceVersions(id);
+  if (cloud && get().account && api.revisions && api.readRevision && navigator.onLine) {
+    const fileId = await (await db()).get('driveIds', id);
+    if (fileId) {
+      try {
+        const revs = await api.revisions(fileId);
+        for (const r of revs) {
+          out.push({
+            key: `g:${r.id}`, at: r.modifiedTime, title: '', props: {}, content: null, source: 'drive',
+            load: () => api.readRevision!<Note>(fileId, r.id),
+          });
+        }
+      } catch {
+        /* Drive geçmişi alınamadıysa yalnız cihaz sürümleri */
+      }
+    }
+  }
+  return out.sort((a, b) => (a.at < b.at ? 1 : -1));
+}
+
+/** Eski sürümü geri yükle (mevcut hali önce geçmişe kaydedilir) */
+export async function restoreVersion(id: string, v: { title: string; props: Record<string, unknown>; content: unknown }) {
+  const cur = get().notes[id];
+  if (!cur) return;
+  await snapshot(cur, true);
+  updateNote(id, { title: v.title, props: v.props, content: v.content });
+  refreshEditor(id);
 }
 
 /** Çöp kutusunu boşalt; olderThanDays verilirse yalnızca o kadar günden eski olanlar */

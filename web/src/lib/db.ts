@@ -1,4 +1,5 @@
 import { openDB, type IDBPDatabase } from 'idb';
+import type { Snapshot } from './history';
 import type { Note } from './types';
 
 // Yerel veritabanı: uygulama açılırken notlar ağı beklemeden buradan gelir.
@@ -11,14 +12,15 @@ interface Schema {
   meta: { key: string; value: unknown };
   driveIds: { key: string; value: string };
   blobs: { key: string; value: Blob };
+  history: { key: string; value: Snapshot; indexes: { note: string } };
 }
 
-const STORES = ['notes', 'outbox', 'meta', 'driveIds', 'blobs'] as const;
+const STORES = ['notes', 'outbox', 'meta', 'driveIds', 'blobs', 'history'] as const;
 
 let dbp: Promise<IDBPDatabase<Schema>> | null = null;
 
 export function db() {
-  dbp ??= openDB<Schema>('thalamus', 2, {
+  dbp ??= openDB<Schema>('thalamus', 3, {
     upgrade(d, old) {
       if (old < 1) {
         d.createObjectStore('notes', { keyPath: 'id' });
@@ -28,6 +30,9 @@ export function db() {
       if (old < 2) {
         d.createObjectStore('driveIds');
         d.createObjectStore('blobs');
+      }
+      if (old < 3) {
+        d.createObjectStore('history', { keyPath: 'k' }).createIndex('note', 'noteId');
       }
     },
   });

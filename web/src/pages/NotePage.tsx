@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
+import HistoryDialog from '../components/HistoryDialog';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
@@ -124,6 +125,7 @@ export default function NotePage({ id }: { id: string }) {
   const rev = useStore((s) => s.remoteRev[id]);
   const ready = useStore((s) => s.ready);
   const [menu, setMenu] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [graphOpen, setGraphOpen] = useState(() => localStorage.getItem('localGraph') !== '0');
 
   if (!note) return <div className="page"><p className="muted">{ready ? 'Not bulunamadı.' : 'Yükleniyor…'}</p></div>;
@@ -131,6 +133,7 @@ export default function NotePage({ id }: { id: string }) {
 
   return (
     <div className="page note-page">
+      {showHistory && <HistoryDialog note={note} onClose={() => setShowHistory(false)} />}
       <PageDecor note={note} />
       {isTemplate(note) && (
         <div className="banner">
@@ -156,6 +159,7 @@ export default function NotePage({ id }: { id: string }) {
               <select value={note.type} onChange={(e) => { updateNote(note.id, { type: e.target.value as TypeId }); setMenu(false); }}>
                 {TYPES.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.label}</option>)}
               </select>
+              <button className="btn small" onClick={() => { setShowHistory(true); setMenu(false); }}>🕓 Sayfa geçmişi</button>
               <button className="btn small" onClick={() => { exportNoteMd(note); setMenu(false); }}>⬇ Markdown olarak indir</button>
               <button className="btn small" onClick={() => { setMenu(false); setTimeout(printNote, 50); }}>🖨 Yazdır / PDF</button>
               {!isTemplate(note) && note.type !== 'daily' && (
