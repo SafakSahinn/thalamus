@@ -310,7 +310,14 @@ let started = false;
 export function startSync() {
   if (!cloud || started) return;
   started = true;
-  void syncNow();
+  void (async () => {
+    // İlk bulut eşitlemesi: yerel modda yazılmış notlar da gönderilsin
+    if (!(await getMeta<string>('cursor'))) {
+      const local = Object.values(get().notes);
+      if (local.length) await putNotes(local, true);
+    }
+    await syncNow();
+  })();
   let last = 0;
   const soon = () => {
     if (Date.now() - last < 5000) return;
