@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thalamus — Gizlilik Politikası</title>
+<link rel="icon" href="icon.svg">
+<style>
+  :root { --bg: #fbfaf7; --fg: #24221f; --muted: #6f6a62; --link: #3d5afe; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #191817; --fg: #ebe7e0; --muted: #a39d93; --link: #8c9eff; } }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.8rem; margin: 0.5em 0 0.2em; }
+  h2 { font-size: 1.2rem; margin-top: 2em; }
+  a { color: var(--link); }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← Thalamus</a></p>
+  <h1>Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
+  <p class="muted">Son güncelleme: 16 Ekim 2026</p>
+  <p>
+    Bu metin, Thalamus’un hangi kişisel verileri neden ve nasıl işlediğini 6698 sayılı Kişisel Verilerin Korunması Kanunu
+    (“KVKK”) kapsamında açıklar. Veri sorumlusu: <strong>Şafak Şahin</strong>, iletişim:
+    <a href="mailto:getthalamus@gmail.com">getthalamus@gmail.com</a>.
+  </p>
+
+  <h2>Notların senin Google Drive’ında</h2>
+  <p>
+    Yazdığın notlar, kelimeler, günlükler ve yüklediğin dosyalar yalnızca iki yerde durur: kullandığın cihazın tarayıcısında
+    (çevrimdışı çalışabilmek için) ve kendi Google Drive’ındaki <b>Thalamus</b> klasöründe. Uygulama bunları tarayıcından
+    doğrudan Google’a gönderir; içerik sunucumuzdan geçmez ve sunucumuzda saklanmaz. Drive’ındaki klasörü istediğin zaman
+    indirebilir, taşıyabilir ya da silebilirsin.
+  </p>
+  <p>
+    Uygulama Google Drive’da yalnızca <b>kendi oluşturduğu dosyalara</b> erişebilir (drive.file izni); Drive’ındaki diğer
+    dosyaları göremez.
+  </p>
+
+  <h2>Google Takvim (isteğe bağlı)</h2>
+  <p>
+    Takvim eşitlemesini açarsan uygulama Google Takvim’inde “Thalamus” adlı ayrı bir takvim oluşturur ve yalnızca bu takvime
+    erişebilir (calendar.app.created izni). Seçtiğin tarih alanları bu takvimde etkinlik olur; bu takvimde yaptığın
+    değişiklikler notlarına geri yansır. Diğer takvimlerini göremez.
+  </p>
+
+  <h2>Herkese açık paylaştığın notlar</h2>
+  <p>
+    Bir notu “Paylaş” ile bağlantıyla yayınlarsan, o notun bir kopyası (başlık, alanlar ve içerik) bağlantıyı açanlara
+    gösterilebilmesi için tutulur ve bağlantıyı bilen herkes tarafından görülebilir. Paylaşımı kaldırdığında bu kopya silinir.
+    Paylaşmadığın notlar sunucumuza hiç gelmez.
+  </p>
+
+  <h2>Bizde tutulan bilgiler</h2>
+  <ul>
+    <li>Google hesabının e-posta adresi, adı ve Google hesap kimliği,</li>
+    <li>kayıt tarihin ve uygulamayı en son kullandığın zaman,</li>
+    <li>duyuru e-postası almak isteyip istemediğin,</li>
+    <li>Ayarlar’dan gönderdiğin geri bildirim mesajları.</li>
+  </ul>
+  <p>
+    <b>Amaç:</b> hesabını tanımak, hizmetin kaç kişi tarafından kullanıldığını izlemek, hizmetle ilgili önemli bildirimleri
+    iletmek ve (yalnızca onay verdiysen) yenilikleri duyurmak. <b>Hukuki sebep:</b> KVKK m.5/2-c (hizmet sözleşmesinin
+    kurulması ve ifası), m.5/2-f (meşru menfaat: hizmetin işletilmesi ve güvenliği); duyuru e-postaları için açık rızan.
+  </p>
+  <p>
+    Bu bilgiler Supabase altyapısında, Avrupa Birliği’ndeki (Frankfurt) sunucularda saklanır. Bu, KVKK m.9 kapsamında yurt
+    dışına aktarım sayılır ve hizmetin sunulabilmesi için gereklidir. Satılmaz, reklam için kullanılmaz, üçüncü kişilerle
+    paylaşılmaz. Reklam, analiz ya da izleme aracı kullanılmaz.
+  </p>
+
+  <h2>Google oturumu</h2>
+  <p>
+    Google ile giriş yaptığında Google’ın verdiği kalıcı oturum anahtarı, yeni cihazlarda izin ekranını tekrar göstermemek için
+    <b>şifrelenmiş</b> olarak saklanır. Bu anahtar yalnızca Thalamus’un kendi oluşturduğu Drive dosyalarına (ve takvim
+    eşitlemesini açtıysan “Thalamus” takvimine) erişebilir. Hesabını sildiğinde ya da Google hesabından Thalamus’un erişimini
+    kaldırdığında anahtar da geçersiz olur.
+  </p>
+  <p>
+    Thalamus’un Google API’lerinden aldığı bilgileri kullanımı ve başka uygulamalara aktarımı, Sınırlı Kullanım (Limited Use)
+    şartları dahil <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Hizmetleri Kullanıcı
+    Verileri Politikası</a>’na uygundur. Google hesabından alınan bilgiler yalnızca yukarıda yazan amaçlarla kullanılır; yapay
+    zekâ modellerinin eğitimi dahil başka hiçbir amaçla kullanılmaz ve aktarılmaz.
+  </p>
+
+  <h2>Hakların</h2>
+  <p>KVKK m.11 kapsamındaki haklarını (bilgi talebi, düzeltme, silme, itiraz vb.) kullanabilirsin:</p>
+  <ul>
+    <li><b>Hesabı silme:</b> Ayarlar → “Hesabımı sil”. Hesap kaydın silinir, uygulamanın Google iznini geri alırız. İstersen Drive’ındaki Thalamus klasörü de silinir.</li>
+    <li><b>Google iznini geri alma:</b> Google hesabın → Güvenlik → Üçüncü taraf uygulamalar bölümünden Thalamus’un erişimini istediğin an kaldırabilirsin.</li>
+    <li><b>Dışa aktarma:</b> Notların zaten Drive’ında; ayrıca Ayarlar → “Yedeği indir” ile tek dosya olarak indirebilirsin.</li>
+    <li>Diğer talepler için: <a href="mailto:getthalamus@gmail.com">getthalamus@gmail.com</a>.</li>
+  </ul>
+  <p class="muted"><a href="terms.html">Kullanım Koşulları</a></p>
+</main>
+</body>
+</html>
