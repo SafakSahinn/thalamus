@@ -3,7 +3,7 @@ import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db
 import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
-import { buildBacklinks, computeLinks, plainText } from './links';
+import { buildBacklinks, computeLinks, plainText, setSyncedSource } from './links';
 import { runRules } from './automations';
 import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
@@ -154,6 +154,19 @@ function automate(old: Note | null, n: Note) {
 }
 
 /** Toplu ekleme (içe aktarma): bağlantıları hesaplanmış hazır notlar. */
+/** Senkron blok değişince onu kullanan notların bağlantı ve arama metnini yenile */
+export function refreshDerived(ids: string[]) {
+  const list: Note[] = [];
+  for (const id of ids) {
+    const n = get().notes[id];
+    if (!n) continue;
+    const text = plainText(n.content);
+    const links = computeLinks(n);
+    if (text !== n.text || links.join() !== n.links.join()) list.push({ ...n, text, links });
+  }
+  if (list.length) commit(list);
+}
+
 export function insertNotes(list: Note[]) {
   commit(list.map((n) => ({ ...n, text: plainText(n.content), links: computeLinks(n) })));
 }
@@ -785,3 +798,6 @@ export function resolveFileUrl(src: string): Promise<string> {
 }
 
 window.addEventListener('beforeunload', () => void writePending());
+
+// Senkron blok içerikleri bağlantı ve arama metni hesabına katılsın
+setSyncedSource((sid) => useStore.getState().settings.synced?.[sid]?.content ?? null);

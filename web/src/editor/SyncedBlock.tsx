@@ -3,7 +3,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { displayTitle } from '../lib/format';
 import { walk } from '../lib/links';
-import { saveSettings, uid, useStore } from '../lib/store';
+import { refreshDerived, saveSettings, uid, useStore } from '../lib/store';
 
 // Senkron blok (Notion'daki gibi): aynı içerik birden çok sayfada; birinde düzenleyince hepsinde değişir.
 // İçerik ayarlarda (settings.synced) tutulur, Drive ile eşitlenir. Blok yalnızca içeriğin kimliğini taşır.
@@ -22,7 +22,18 @@ function saveSynced(sid: string, content: unknown) {
   // Ekranda hemen güncelle, diske/Drive'a biraz sonra
   useStore.setState({ settings: { ...s, synced } });
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => void saveSettings(useStore.getState().settings), 800);
+  saveTimer = setTimeout(() => {
+    void saveSettings(useStore.getState().settings);
+    // Bu bloğu kullanan sayfaların bağlantıları (harita, geri bağlantılar) ve arama metni güncellensin
+    const users = Object.values(useStore.getState().notes).filter((n) => {
+      let found = false;
+      walk(n.content, (x) => {
+        if (x.type === 'syncedBlock' && (x.attrs as { sid?: string } | undefined)?.sid === sid) found = true;
+      });
+      return found;
+    });
+    refreshDerived(users.map((n) => n.id));
+  }, 800);
 }
 
 /** Bu senkron bloğu kullanan notlar */

@@ -16,11 +16,23 @@ export function walk(node: unknown, fn: (n: PMNode) => void) {
   n.content?.forEach((c) => walk(c, fn));
 }
 
-/** Belgedeki [[wiki]] bağlantılarının hedef kimlikleri. */
-export function wikiTargets(doc: unknown): string[] {
+// Senkron blokların içeriği ayarlarda durur; bağlantı ve arama metni hesaplanırken içine de bakılsın
+let syncedSource: (sid: string) => unknown = () => null;
+export const setSyncedSource = (fn: (sid: string) => unknown) => {
+  syncedSource = fn;
+};
+const syncedOf = (n: PMNode) => (n.type === 'syncedBlock' && typeof n.attrs?.sid === 'string' ? syncedSource(n.attrs.sid) : null);
+
+/** Belgedeki [[wiki]] bağlantılarının hedef kimlikleri (senkron blokların içi dahil). */
+export function wikiTargets(doc: unknown, seen = new Set<string>()): string[] {
   const out: string[] = [];
   walk(doc, (n) => {
     if (n.type === 'wikiLink' && typeof n.attrs?.id === 'string') out.push(n.attrs.id);
+    const sid = n.type === 'syncedBlock' ? String(n.attrs?.sid ?? '') : '';
+    if (sid && !seen.has(sid)) {
+      seen.add(sid);
+      out.push(...wikiTargets(syncedOf(n), seen));
+    }
   });
   return out;
 }
@@ -28,12 +40,18 @@ export function wikiTargets(doc: unknown): string[] {
 /** Arama için düz metin (bloklar arası satır sonu). */
 export function plainText(doc: unknown): string {
   const parts: string[] = [];
+  let depth = 0;
   const rec = (node: unknown) => {
     if (!node || typeof node !== 'object') return;
     const n = node as PMNode;
     if (n.type === 'text' && n.text) parts.push(n.text);
     else if (n.type === 'wikiLink') parts.push(String(n.attrs?.label ?? ''));
     else if (n.type === 'inlineMath' || n.type === 'blockMath') parts.push(String(n.attrs?.latex ?? ''));
+    else if (n.type === 'syncedBlock' && depth < 2) {
+      depth++;
+      rec(syncedOf(n));
+      depth--;
+    }
     n.content?.forEach(rec);
     if (n.type && BLOCKS.has(n.type)) parts.push('\n');
   };
