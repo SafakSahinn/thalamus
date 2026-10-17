@@ -379,6 +379,8 @@ export interface Settings {
   defaultTemplates?: Record<string, string>;
   /** Google Takvim eşitlemesi */
   calendar?: { enabled: boolean; calendarId?: string; fields: string[]; reminders: number[]; eventOff?: boolean; external?: string[] };
+  /** Ana sayfa bileşenlerinin sırası ve görünürlüğü */
+  home?: { id: string; on: boolean }[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
