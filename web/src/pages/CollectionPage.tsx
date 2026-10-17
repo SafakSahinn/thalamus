@@ -9,6 +9,7 @@ import { typeOf, type SavedView, type ViewKind } from '../lib/types';
 import { applyView, defaultViews, newViewId, VIEW_KINDS } from '../lib/views';
 import { FilterMenu, SortMenu, ViewOptions } from './collection/Toolbar';
 import { ChartView } from './collection/ChartView';
+import { FormView } from './collection/FormView';
 import { BoardView, CalendarView, CardsView, ListView, TableView, TimelineView, type ViewProps } from './collection/Views';
 
 export { Cell } from './collection/Cells';
@@ -21,6 +22,7 @@ const RENDER: Record<ViewKind, (p: ViewProps) => React.ReactNode> = {
   list: ListView,
   timeline: TimelineView,
   chart: ChartView,
+  form: FormView,
 };
 
 function useViews(typeId: string) {

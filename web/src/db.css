@@ -399,3 +399,26 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .chart-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .chart-picked { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chart-picked > .muted { width: 100%; }
+
+/* Form görünümü */
+.form-view { display: flex; justify-content: center; padding: 8px 0 24px; }
+.form-card {
+  width: min(620px, 100%); display: flex; flex-direction: column; gap: 16px; padding: 24px 26px;
+  border: 1px solid var(--border); border-radius: 16px; background: var(--panel); box-sizing: border-box;
+}
+.form-head { display: flex; gap: 14px; align-items: flex-start; }
+.form-head h2 { margin: 2px 0 4px; }
+.form-head p { margin: 0; }
+.form-icon { font-size: 34px; line-height: 1; }
+.form-field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.form-field > span:first-child { font-weight: 600; }
+.form-field .req { color: var(--danger); }
+.form-field input:not([type='checkbox']), .form-field textarea, .form-field select {
+  border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 8px 10px; font: inherit;
+}
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus { border-color: var(--accent); }
+.form-opts { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.form-opt { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.form-rel { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
+.form-done { background: var(--ok-bg); color: var(--ok); border-radius: 10px; padding: 10px 12px; font-size: 14px; }

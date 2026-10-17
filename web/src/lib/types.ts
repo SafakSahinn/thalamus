@@ -331,7 +331,7 @@ export interface Routine {
   icon: string;
 }
 
-export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list' | 'timeline' | 'chart';
+export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list' | 'timeline' | 'chart' | 'form';
 
 export interface ViewFilter {
   key: string;

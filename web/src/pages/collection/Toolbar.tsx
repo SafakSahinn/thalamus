@@ -182,9 +182,9 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
           </select>
         </label>
       )}
-      {view.kind !== 'calendar' && (
+      {view.kind !== 'calendar' && view.kind !== 'chart' && (
         <>
-          <div className="bm-h">Gösterilen alanlar</div>
+          <div className="bm-h">{view.kind === 'form' ? 'Formda sorulacak alanlar' : 'Gösterilen alanlar'}</div>
           <div className="col-toggles">
             {t.props.map((p) => (
               <label key={p.key}><input type="checkbox" checked={!hidden.has(p.key)} onChange={() => toggle(p.key)} /> {p.label}</label>

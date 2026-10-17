@@ -225,6 +225,7 @@ export const VIEW_KINDS: { id: ViewKind; label: string; icon: string }[] = [
   { id: 'list', label: 'Liste', icon: '≡' },
   { id: 'timeline', label: 'Zaman çizelgesi', icon: '▤' },
   { id: 'chart', label: 'Grafik', icon: '📊' },
+  { id: 'form', label: 'Form', icon: '📝' },
 ];
 
 export const newViewId = vid;

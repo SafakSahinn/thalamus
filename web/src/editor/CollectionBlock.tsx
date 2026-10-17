@@ -6,10 +6,11 @@ import { useIndex, useStore } from '../lib/store';
 import { TYPES, typeOf, type SavedView, type ViewKind } from '../lib/types';
 import { applyView, VIEW_KINDS } from '../lib/views';
 import { ChartView } from '../pages/collection/ChartView';
+import { FormView } from '../pages/collection/FormView';
 import { BoardView, CalendarView, CardsView, ListView, TableView, TimelineView, type ViewProps } from '../pages/collection/Views';
 
 const RENDER: Record<ViewKind, (p: ViewProps) => React.ReactNode> = {
-  table: TableView, cards: CardsView, board: BoardView, calendar: CalendarView, list: ListView, timeline: TimelineView, chart: (p) => <ChartView {...p} />, // döngüsel içe aktarma: çizim anında çözülür
+  table: TableView, cards: CardsView, board: BoardView, calendar: CalendarView, list: ListView, timeline: TimelineView, chart: (p) => <ChartView {...p} />, form: (p) => <FormView {...p} />, // döngüsel içe aktarma: çizim anında çözülür
 };
 
 function CollectionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
