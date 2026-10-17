@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { openPeek, peekClick } from '../components/Peek';
 import { addDays, displayTitle, noteIcon, parseDay } from '../lib/format';
-import { calSettings } from '../lib/gcal';
+import { calSettings, parseTime } from '../lib/gcal';
 import { setProp, todayStr, useStore } from '../lib/store';
-import { isTemplate } from '../lib/templates';
+import { createDefault, isTemplate } from '../lib/templates';
 import { typeOf, TYPES, type Note } from '../lib/types';
 
 const WEEK = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
@@ -41,6 +41,8 @@ export default function CalendarPage() {
   });
   const [hidden, setHidden] = useState<string[]>(loadHidden);
   const [over, setOver] = useState<string | null>(null);
+  /** "+" ile açılan gün menüsü */
+  const [adding, setAdding] = useState<string | null>(null);
 
   // Tarih alanı olan koleksiyonlar (günlük kendi sayfasında)
   const types = useMemo(() => TYPES.filter((t) => t.id !== 'daily' && t.props.some((p) => p.kind === 'date')), [settings]);
@@ -67,8 +69,19 @@ export default function CalendarPage() {
         add(start, { note: n, key: def.key, label: multi ? def.label : '' });
       }
     }
+    // Gün içinde saatliler saat sırasıyla, saatsizler önce
+    const at = (it: Item) => (it.note.type === 'event' && it.key === 'date' ? parseTime(it.note.props.time) ?? '' : '');
+    for (const list of map.values()) list.sort((a, b) => at(a).localeCompare(at(b)));
     return map;
   }, [notes, hidden, settings]);
+
+  const addOn = (typeId: string, day: string) => {
+    const t = typeOf(typeId);
+    const key = t.props.find((p) => p.kind === 'date')?.key;
+    if (!key) return;
+    setAdding(null);
+    openPeek(createDefault(typeId, { [key]: day }).id);
+  };
 
   const days = useMemo(() => {
     const offset = (cursor.getDay() + 6) % 7; // pazartesi başlangıç
@@ -109,7 +122,7 @@ export default function CalendarPage() {
     <div className="page calendar-page">
       <h1>📆 Takvim</h1>
       <p className="muted small">
-        Bütün notlarındaki tarihler: son başvurular, konferanslar, teslimler, deneyler… Bir öğeyi başka güne sürükleyerek tarihini değiştirebilirsin.
+        Bütün notlarındaki tarihler: etkinlikler, son başvurular, konferanslar, teslimler, deneyler… Bir güne ＋ ile etkinlik, ▾ ile başka koleksiyondan not ekleyebilir; öğeleri başka güne sürükleyebilirsin.
         {' '}Google Takvim eşitlemesi {gcalOn ? <b>açık</b> : <>kapalı · <a href="#/settings">Ayarlar’dan bağla</a></>}.
       </p>
       <div className="chips cal-types">
@@ -145,7 +158,18 @@ export default function CalendarPage() {
                   if (raw) drop(raw, k);
                 }}
               >
-                <div className="cal-num">{parseDay(k).getDate()}</div>
+                <div className="cal-num">
+                  {parseDay(k).getDate()}
+                  <button type="button" className="cal-add" title="Bu güne etkinlik ekle" aria-label="Bu güne ekle" onClick={() => addOn('event', k)}>＋</button>
+                  <button type="button" className="cal-add" title="Bu güne başka koleksiyondan ekle" aria-label="Başka koleksiyondan ekle" onClick={() => setAdding(adding === k ? null : k)}>▾</button>
+                </div>
+                {adding === k && (
+                  <div className="cal-addmenu" role="menu">
+                    {types.map((t) => (
+                      <button key={t.id} type="button" role="menuitem" onClick={() => addOn(t.id, k)}>{t.icon} {t.label}</button>
+                    ))}
+                  </div>
+                )}
                 {items.slice(0, 5).map((it) => (
                   <a
                     key={`${it.note.id}.${it.key}`}
@@ -157,7 +181,8 @@ export default function CalendarPage() {
                     title={`${displayTitle(it.note)}${it.label ? ` · ${it.label}` : ''}`}
                     onDragStart={(e) => e.dataTransfer.setData('text/thalamus-date', [it.note.id, it.key, it.endKey ?? ''].join('|'))}
                   >
-                    {noteIcon(it.note)} {it.label && <span className="muted">{it.label}: </span>}{displayTitle(it.note)}
+                    {noteIcon(it.note)} {it.note.type === 'event' && parseTime(it.note.props.time) && <b>{parseTime(it.note.props.time)} </b>}
+                    {it.label && <span className="muted">{it.label}: </span>}{displayTitle(it.note)}
                   </a>
                 ))}
                 {items.length > 5 && <div className="muted small">+{items.length - 5} daha</div>}

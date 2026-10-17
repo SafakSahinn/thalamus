@@ -49,7 +49,7 @@ export default function CalendarSettings() {
     const set = new Set(cs.fields);
     if (set.has(id)) set.delete(id);
     else set.add(id);
-    void save({ fields: [...set] }).then(() => cs.enabled && void syncCalendar());
+    void save({ fields: [...set], ...(id === 'event.date' ? { eventOff: !set.has(id) } : {}) }).then(() => cs.enabled && void syncCalendar());
   };
   const toggleReminder = (d: number) => {
     const set = new Set(cs.reminders);

@@ -3,7 +3,7 @@
 // "relation" alanları diğer notlara bağlantıdır ve grafikte kenar olarak görünür.
 
 export type BuiltinTypeId =
-  | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'lab' | 'conference' | 'note'
+  | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'lab' | 'conference' | 'event' | 'note'
   | 'word' | 'person' | 'concept' | 'daily';
 
 /** Hazır tipler ya da kullanıcı koleksiyonları ("c_…") */
@@ -140,6 +140,17 @@ export const BUILTIN_TYPES: TypeDef[] = [
       { key: 'role', label: 'Katılım', kind: 'select', options: ['Dinleyici', 'Sözlü sunum', 'Poster', 'Hakem', 'Oturum başkanı'] },
       { key: 'papers', label: 'Bildirilerim', kind: 'relation', target: ['paper'] },
       { key: 'url', label: 'Web sitesi', kind: 'url' },
+      topics,
+    ],
+  },
+  {
+    id: 'event', label: 'Etkinlik', plural: 'Etkinlikler', icon: '🗓️', color: '#1a73e8', sort: 'date',
+    props: [
+      { key: 'date', label: 'Tarih', kind: 'date', table: true },
+      { key: 'time', label: 'Saat', kind: 'text', table: true },
+      { key: 'endTime', label: 'Bitiş saati', kind: 'text' },
+      { key: 'location', label: 'Yer', kind: 'text', table: true },
+      { key: 'people', label: 'Kişiler', kind: 'relation', target: ['person'] },
       topics,
     ],
   },

@@ -71,6 +71,24 @@ describe('Google Takvim eşitlemesi', () => {
     expect((dl.body.reminders as { overrides: { minutes: number }[] }).overrides.map((r) => r.minutes)).toEqual([900, 9540]);
   });
 
+  it('saatli etkinlik ve varsayılan alanlar', async () => {
+    const { desiredEvents, calSettings, parseTime } = await import('./gcal');
+    expect(parseTime('9.05')).toBe('09:05');
+    expect(parseTime('25:00')).toBeNull();
+    const cs = calSettings({ calendar: { enabled: true, fields: ['lab.due'], reminders: [0, 1] } } as never);
+    expect(cs.fields).toContain('event.date');
+    expect(calSettings({ calendar: { enabled: true, fields: [], reminders: [], eventOff: true } } as never).fields).toEqual([]);
+    const ev = mk('aaaaaaaa-2222-3333-4444-555555555555', 'event', 'Danışman toplantısı', { date: '2026-10-20', time: '14:30', location: 'B-204' });
+    const [d] = desiredEvents([ev], cs, 'https://x/');
+    expect(d.body.summary).toBe('Danışman toplantısı');
+    expect((d.body.start as { dateTime: string }).dateTime).toBe('2026-10-20T14:30:00');
+    expect((d.body.end as { dateTime: string }).dateTime).toBe('2026-10-20T15:30:00');
+    expect(d.body.location).toBe('B-204');
+    expect((d.body.reminders as { overrides: { minutes: number }[] }).overrides.map((r) => r.minutes)).toEqual([30, 1440]);
+    const [allDay] = desiredEvents([{ ...ev, props: { date: '2026-10-20' } }], cs, 'https://x/');
+    expect(allDay.body.start).toEqual({ date: '2026-10-20' });
+  });
+
   it('oluşturur, değişmeyeni göndermez, değişeni günceller, silineni kaldırır', async () => {
     const store = await import('./store');
     const { syncCalendar } = await import('./gcal');

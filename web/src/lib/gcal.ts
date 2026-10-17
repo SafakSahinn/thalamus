@@ -19,13 +19,27 @@ export interface CalendarSettings {
   fields: string[];
   /** Kaç gün önce hatırlatılsın (sabah 09:00) */
   reminders: number[];
+  /** Kullanıcı Etkinlikler'i takvimden bilerek çıkardı (yeni varsayılan sonradan eklenmesin) */
+  eventOff?: boolean;
 }
 
-export const DEFAULT_CAL_FIELDS = ['conference.deadline', 'conference.start', 'conference.end', 'lab.date', 'lab.due', 'talk.date'];
+export const DEFAULT_CAL_FIELDS = ['event.date', 'conference.deadline', 'conference.start', 'conference.end', 'lab.date', 'lab.due', 'talk.date'];
 
-export const calSettings = (s: Settings = useStore.getState().settings): CalendarSettings => ({
-  enabled: false, fields: DEFAULT_CAL_FIELDS, reminders: [1, 7], ...(s.calendar ?? {}),
-});
+export function calSettings(s: Settings = useStore.getState().settings): CalendarSettings {
+  const cs: CalendarSettings = { enabled: false, fields: DEFAULT_CAL_FIELDS, reminders: [1, 7], ...(s.calendar ?? {}) };
+  // Etkinlikler koleksiyonu sonradan geldi: kullanıcı kapatmadıysa takvime hep gitsin
+  if (!cs.eventOff && !cs.fields.includes('event.date')) cs.fields = ['event.date', ...cs.fields];
+  return cs;
+}
+
+/** "14:30" / "9.05" → "14:30"; geçersizse null */
+export function parseTime(v: unknown): string | null {
+  const m = typeof v === 'string' ? v.trim().match(/^(\d{1,2})[:.](\d{2})$/) : null;
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
+  return `${m[1].padStart(2, '0')}:${m[2]}`;
+}
+
+const tz = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** Takvime eklenebilecek bütün tarih alanları (koleksiyon başına) */
 export function dateFields() {
@@ -78,6 +92,8 @@ export function desiredEvents(notes: Note[], cs: CalendarSettings, appUrl: strin
   const out: Desired[] = [];
   const fields = new Set(cs.fields);
   const reminders = cs.reminders.slice(0, 5).map((d) => ({ method: 'popup', minutes: Math.max(0, d * 1440 - 9 * 60) }));
+  // Saatli etkinlik: "o gün" yarım saat önce, diğerleri tam gün sayısı kadar önce
+  const timedReminders = cs.reminders.slice(0, 5).map((d) => ({ method: 'popup', minutes: d ? d * 1440 : 30 }));
   for (const n of notes) {
     if (n.deleted_at || isTemplate(n) || n.type === 'daily') continue;
     const t = typeOf(n.type);
@@ -94,13 +110,24 @@ export function desiredEvents(notes: Note[], cs: CalendarSettings, appUrl: strin
         summary = displayTitle(n);
         used.add('end');
       }
+      // Saati girilmiş etkinlik: takvimde saatli görünür
+      const time = n.type === 'event' && def.key === 'date' ? parseTime(n.props.time) : null;
+      let endTime = time ? parseTime(n.props.endTime) : null;
+      if (time && (!endTime || endTime <= time)) {
+        const [h, m] = time.split(':').map(Number);
+        endTime = h >= 23 ? '23:59' : `${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      const when = time
+        ? { start: { dateTime: `${v}T${time}:00`, timeZone: tz() }, end: { dateTime: `${v}T${endTime}:00`, timeZone: tz() } }
+        : { start: { date: v }, end: { date: end } };
+      if (n.type === 'event') summary = displayTitle(n);
       const body = {
         summary,
         description: `${t.icon} ${t.label} · Thalamus\n${appUrl}#/n/${n.id}`,
-        start: { date: v },
-        end: { date: end },
-        transparency: 'transparent',
-        reminders: { useDefault: false, overrides: reminders },
+        ...when,
+        ...(n.type === 'event' && typeof n.props.location === 'string' && n.props.location ? { location: n.props.location } : {}),
+        transparency: time ? 'opaque' : 'transparent',
+        reminders: { useDefault: false, overrides: time ? timedReminders : reminders },
         extendedProperties: { private: { thalamus: n.id, field: def.key } },
         source: { title: 'Thalamus', url: `${appUrl}#/n/${n.id}` },
       };
@@ -179,6 +206,19 @@ async function pullCalendar(state: CalState, base: string, localHash: Map<string
     if (n.props[field] !== start) {
       setProp(noteId, field, start);
       changed++;
+    }
+    // Saatli etkinlik takvimde başka saate taşındıysa (dateTime yerel saatle gelir: 2026-10-20T14:30:00+03:00)
+    if (n.type === 'event' && field === 'date' && ev.start?.dateTime) {
+      const st = ev.start.dateTime.slice(11, 16);
+      const et = ev.end?.dateTime?.slice(11, 16);
+      if (parseTime(n.props.time) !== st) {
+        setProp(noteId, 'time', st);
+        changed++;
+      }
+      if (et && parseTime(n.props.endTime) !== et) {
+        setProp(noteId, 'endTime', et);
+        changed++;
+      }
     }
     // Çok günlü konferans etkinliği: bitiş de güncellensin (Google'da bitiş tarihi hariçtir)
     if (field === 'start' && ev.end?.date) {

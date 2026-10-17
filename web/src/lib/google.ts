@@ -133,6 +133,8 @@ interface ExchangeResp {
   session: string | null;
   profile: Profile;
   announcements: boolean;
+  /** Kullanıcı listesinde ilk kez görüldü */
+  is_new?: boolean;
 }
 
 // ---------- Drive'daki oturum dosyası (giriş sırasında, verilen erişim anahtarıyla) ----------
@@ -221,7 +223,7 @@ export async function signInWithGoogle(consent = false): Promise<AuthState> {
     session,
     access_token: r.access_token,
     expires_at: Date.now() + r.expires_in * 1000,
-    is_new: isNew,
+    is_new: r.is_new ?? isNew,
     announcements: r.announcements,
     calendar: (r.scope ?? '').includes(CALENDAR_SCOPE),
   };

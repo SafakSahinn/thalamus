@@ -184,6 +184,7 @@ Deno.serve(async (req) => {
         else await db.from('users').insert({ google_sub: id.sub, email: id.email, name: id.name ?? null });
         return json({
           announcements: existing?.announcements ?? false,
+          is_new: !existing,
           access_token: t.body.access_token,
           expires_in: t.body.expires_in,
           scope: t.body.scope ?? '',

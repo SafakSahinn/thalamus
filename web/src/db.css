@@ -258,3 +258,13 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 }
 .cal-type.on { background: var(--accent-soft); color: var(--text); border-color: transparent; }
 .page.calendar-page { max-width: 1200px; }
+.calendar-page .cal-num { justify-content: flex-start; }
+.calendar-page .cal-num > .cal-add:first-of-type { margin-left: auto; }
+.calendar-page .cal-day { position: relative; }
+.cal-addmenu {
+  position: absolute; z-index: 20; top: 22px; right: 4px; display: flex; flex-direction: column; min-width: 170px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / 15%); padding: 4px;
+}
+.cal-addmenu button { text-align: left; border: none; background: none; padding: 5px 8px; border-radius: 5px; cursor: pointer; color: var(--text); font-size: 13px; }
+.cal-addmenu button:hover { background: var(--hover); }
+@media (hover: none) { .cal-add { opacity: 0.55; } }
