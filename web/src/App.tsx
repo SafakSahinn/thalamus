@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
 import CommentsPanel from './components/CommentsPanel';
+import QuickCapture from './components/QuickCapture';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
 import Welcome from './components/Welcome';
@@ -93,6 +94,7 @@ export default function App() {
       <Welcome />
       <Tour />
       <CommentsPanel />
+      <QuickCapture />
       <Shortcuts />
       <Peek />
     </div>

@@ -684,3 +684,12 @@ fieldset.lockset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .thread-reply input { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; background: var(--bg); }
 .thread-actions { display: flex; gap: 14px; }
 .danger-link { color: var(--danger) !important; }
+
+/* Paylaş → Thalamus */
+.modal.capture { width: min(460px, 100%); padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.modal.capture h3 { margin: 0; }
+.capture-url { overflow-wrap: anywhere; }
+.capture-field { display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.capture-field > span { font-weight: 600; }
+.capture-field input, .capture-field select, .capture-field textarea { border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; background: var(--bg); }
+.capture-actions { display: flex; justify-content: flex-end; gap: 8px; }

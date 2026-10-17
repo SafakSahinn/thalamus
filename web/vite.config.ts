@@ -19,6 +19,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: '.',
         scope: '.',
+        // Telefonda Paylaş menüsünde Thalamus görünsün (bkz. QuickCapture)
+        share_target: { action: './?share=1', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         background_color: '#f7f6f3',
         theme_color: '#f7f6f3',
         icons: [
