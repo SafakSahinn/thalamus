@@ -6,6 +6,7 @@ import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
 import CommentsPanel from './components/CommentsPanel';
 import { startReminders } from './lib/notify';
+import { watchTimer } from './lib/timer';
 import QuickCapture from './components/QuickCapture';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
@@ -25,6 +26,7 @@ const GraphPage = lazy(() => import('./pages/GraphPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const PdfReaderPage = lazy(() => import('./pages/PdfReaderPage'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage'));
+const StudyPage = lazy(() => import('./pages/StudyPage'));
 const DictionaryPage = lazy(() => import('./pages/DictionaryPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
@@ -51,6 +53,7 @@ export default function App() {
 
   // Uygulama içi hatırlatmalar (bildirimler açıksa)
   useEffect(() => startReminders(() => Object.values(useStore.getState().notes)), []);
+  useEffect(() => watchTimer(), []);
 
   // Herkese açık paylaşılan sayfa: giriş gerekmez
   if (route.name === 'shared') {
@@ -72,6 +75,7 @@ export default function App() {
     case 'calendar': page = <CalendarPage />; break;
     case 'pdf': page = <PdfReaderPage id={route.id} />; break;
     case 'review': page = <ReviewPage />; break;
+    case 'study': page = <StudyPage />; break;
     case 'daily': page = <DailyPage date={route.date} />; break;
     case 'dictionary': page = <DictionaryPage />; break;
     case 'settings': page = <SettingsPage />; break;

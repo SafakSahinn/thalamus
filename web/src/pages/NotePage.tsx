@@ -4,6 +4,7 @@ import MoveDialog from '../components/MoveDialog';
 import { closePeek, usePeek } from '../components/Peek';
 import ShareDialog from '../components/ShareDialog';
 import { publishShare } from '../lib/share';
+import { TimerButton } from '../components/StudyTimer';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
@@ -189,6 +190,7 @@ export default function NotePage({ id }: { id: string }) {
         {(note.type === 'paper' || pdfSources(note).length > 0) && (
           <button className="lock-badge pdf-open" title="PDF'i Thalamus içinde oku ve vurgula" onClick={() => go(`/oku/${note.id}`)}>📖 PDF'i oku</button>
         )}
+        <TimerButton note={note} />
         {locked && <button className="lock-badge" title="Kilidi aç" onClick={() => setProp(note.id, '__locked', undefined)}>🔒 Kilitli</button>}
         <span className="spacer" />
         <button className={`iconbtn ${note.pinned ? 'on' : ''}`} title={note.pinned ? 'Sabitlemeyi kaldır' : 'Kenar çubuğuna sabitle'} onClick={() => updateNote(note.id, { pinned: !note.pinned })}>📌</button>

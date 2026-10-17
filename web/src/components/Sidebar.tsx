@@ -1,3 +1,4 @@
+import { TimerPill } from './StudyTimer';
 import { dueCards, newPerDay } from '../lib/srs';
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon } from '../lib/format';
@@ -179,6 +180,8 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       <a href="#/daily" data-tour="nav-daily" className={active('#/daily')}>📅 Günlük</a>
       <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
       <ReviewLink active={active('#/tekrar')} />
+      <a href="#/calisma" className={active('#/calisma')}>⏱ Çalışma</a>
+      <TimerPill />
       <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 
       {pinned.length > 0 && (
