@@ -17,6 +17,7 @@ import NotePage from './pages/NotePage';
 import { go } from './lib/router';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const DictionaryPage = lazy(() => import('./pages/DictionaryPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
@@ -58,6 +59,7 @@ export default function App() {
     case 'note': page = <NotePage id={route.id} />; break;
     case 'collection': page = <CollectionPage type={route.type} edit={route.edit} />; break;
     case 'graph': page = <GraphPage />; break;
+    case 'calendar': page = <CalendarPage />; break;
     case 'daily': page = <DailyPage date={route.date} />; break;
     case 'dictionary': page = <DictionaryPage />; break;
     case 'settings': page = <SettingsPage />; break;

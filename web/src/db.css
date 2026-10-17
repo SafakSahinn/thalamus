@@ -249,3 +249,12 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .prose .inline-db th { background: none; font-weight: 500; color: var(--muted); font-size: 13px; }
 .prose .inline-db .tablewrap { overflow-x: auto; }
 .prose .inline-db p { margin: 0; }
+
+/* Genel takvim sayfası */
+.cal-types { margin: 10px 0 12px; }
+.cal-type {
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted); border-radius: 14px;
+  padding: 2px 10px; font-size: 13px; cursor: pointer;
+}
+.cal-type.on { background: var(--accent-soft); color: var(--text); border-color: transparent; }
+.page.calendar-page { max-width: 1200px; }

@@ -176,6 +176,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       </button>
       <a href="#/" className={active('#/')}>🏠 Ana sayfa</a>
       <a href="#/daily" className={active('#/daily')}>📅 Günlük</a>
+      <a href="#/takvim" className={active('#/takvim')}>📆 Takvim</a>
       <a href="#/graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 
       {pinned.length > 0 && (
