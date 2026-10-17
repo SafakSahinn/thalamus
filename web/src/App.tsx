@@ -4,6 +4,7 @@ import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
 import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
+import Tour from './components/Tour';
 import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
 import './lib/gcal';
@@ -74,18 +75,19 @@ export default function App() {
       <div className="scrim" onClick={() => setDrawer(false)} />
       <main>
         <header className="topbar">
-          <button className="iconbtn menu" onClick={() => setDrawer(true)} aria-label="Menü">☰</button>
+          <button className="iconbtn menu" data-tour="menu" onClick={() => setDrawer(true)} aria-label="Menü">☰</button>
           <button className="iconbtn" onClick={() => history.back()} aria-label="Geri" title="Geri">←</button>
           <button className="iconbtn" onClick={() => history.forward()} aria-label="İleri" title="İleri">→</button>
           <span className="spacer" />
-          <button className="iconbtn" onClick={openPalette} aria-label="Ara" title="Ara (Ctrl+K)">🔍</button>
-          <button className="btn small primary" onClick={() => go(`/n/${createNote('note').id}`)} title="Yeni not">+ Not</button>
+          <button className="iconbtn" data-tour="search" onClick={openPalette} aria-label="Ara" title="Ara (Ctrl+K)">🔍</button>
+          <button className="btn small primary" data-tour="new-note" onClick={() => go(`/n/${createNote('note').id}`)} title="Yeni not">+ Not</button>
         </header>
         {ready ? <Suspense fallback={<div className="page muted">Yükleniyor…</div>}>{page}</Suspense> : <div className="page muted">Yükleniyor…</div>}
       </main>
       <CommandPalette />
       <PromptHost />
       <Welcome />
+      <Tour />
       <Shortcuts />
       <Peek />
     </div>

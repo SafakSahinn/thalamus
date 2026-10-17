@@ -132,7 +132,7 @@ export default function CalendarPage() {
           </button>
         ))}
       </div>
-      <div className="calendar">
+      <div className="calendar" data-tour="calendar">
         <div className="cal-head">
           <button type="button" className="iconbtn" onClick={() => move(-1)} aria-label="Önceki ay">‹</button>
           <b className="cal-month">{MONTH.format(cursor)}</b>

@@ -152,7 +152,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
         <NewButton t={t} extraProps={newProps} />
       </div>
-      <div className="view-tabs">
+      <div className="view-tabs" data-tour="views">
         {views.map((v) => (
           <ViewTab
             key={v.id}

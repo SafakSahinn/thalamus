@@ -204,6 +204,7 @@ export default function NotePage({ id }: { id: string }) {
         <input
           key={note.id}
           className="title"
+          data-tour="title"
           defaultValue={note.title}
           placeholder="Başlık"
           autoFocus={!note.title}

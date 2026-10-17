@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CalendarSettings from '../components/CalendarSettings';
+import { startTour } from '../components/Tour';
 import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
 import { cloud } from '../lib/google';
@@ -273,6 +274,12 @@ export default function SettingsPage() {
           <a className="btn ghost" href="#/import">Notion’dan aktar</a>
         </div>
         {msg && <p className="small">{msg}</p>}
+      </section>
+
+      <section>
+        <h3>Tanıtım turu</h3>
+        <p className="muted small">Uygulamanın düğmelerini adım adım birlikte deneyen kısa tur.</p>
+        <button className="btn" onClick={() => { location.hash = '#/'; startTour(); }}>▶ Turu başlat</button>
       </section>
 
       <Feedback />

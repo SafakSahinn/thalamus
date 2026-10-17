@@ -471,7 +471,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
   const hidden = t.props.filter((d) => isEmpty(d) && !alwaysShow(note, d));
   const visible = t.props.filter((d) => showEmpty || !hidden.includes(d));
   return (
-    <div className="props">
+    <div className="props" data-tour="props">
       {visible.map((d) => (
         <div className={`prop ${d.target?.[0] === 'word' ? 'wide' : ''}`} key={d.key}>
           <label>{d.label}</label>

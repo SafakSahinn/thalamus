@@ -48,7 +48,7 @@ export default function GraphPage() {
   }, [alive]);
 
   return (
-    <div className="graph-page">
+    <div className="graph-page" data-tour="graph">
       <div className="graph-controls">
         <input className="search" placeholder="Haritada ara…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="typefilters">

@@ -59,7 +59,7 @@ export default function CalendarSettings() {
   };
 
   return (
-    <section>
+    <section data-tour="gcal">
       <h3>Google Takvim eşitlemesi</h3>
       <p className="muted small">
         Seçtiğin tarih alanları Google Takvim’inde <b>“Thalamus”</b> adlı ayrı bir takvimde etkinlik olur. Eşitleme iki yönlüdür:

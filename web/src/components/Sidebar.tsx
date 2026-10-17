@@ -176,8 +176,8 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       </button>
       <a href="#/" className={active('#/')}>🏠 Ana sayfa</a>
       <a href="#/daily" className={active('#/daily')}>📅 Günlük</a>
-      <a href="#/takvim" className={active('#/takvim')}>📆 Takvim</a>
-      <a href="#/graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
+      <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
+      <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 
       {pinned.length > 0 && (
         <>
@@ -194,7 +194,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
 
       <div className="side-h">Koleksiyonlar</div>
       {TYPES.filter((t) => t.id !== 'daily').map((t) => (
-        <a key={t.id} href={collHref(t.id)} className={active(collHref(t.id))}>
+        <a key={t.id} href={collHref(t.id)} data-tour={`coll-${t.id}`} className={active(collHref(t.id))}>
           {t.icon} {t.plural}
           <span className="cnt">{counts.get(t.id) ?? ''}</span>
         </a>
@@ -207,7 +207,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       <div className="side-foot">
         <a href="#/import" className={active('#/import')}>⬇ Notion’dan aktar</a>
         <a href="#/trash" className={active('#/trash')}>🗑 Çöp kutusu</a>
-        <a href="#/settings" className={active('#/settings')}>⚙ Ayarlar</a>
+        <a href="#/settings" data-tour="nav-settings" className={active('#/settings')}>⚙ Ayarlar</a>
         <button type="button" className="searchbtn" onClick={() => { onNav(); openShortcuts(); }}>⌨ Kısayollar <kbd>Ctrl /</kbd></button>
         <SyncBadge />
       </div>

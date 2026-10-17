@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { setAnnouncements, useStore } from '../lib/store';
+import { startTour } from './Tour';
 
 const POINTS = [
   { icon: '📚', title: 'Her şey tek yerde', text: 'Kitaplar, makaleler, dersler, filmler, söyleşiler ve günlüğün.' },
@@ -15,6 +16,7 @@ export default function Welcome() {
   const [news, setNews] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [tour, setTour] = useState(true);
   if (!welcome) return null;
 
   const start = async () => {
@@ -22,6 +24,7 @@ export default function Welcome() {
     try {
       if (news) await setAnnouncements(true);
       useStore.setState({ welcome: false });
+      if (tour) startTour();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(false);
@@ -52,6 +55,13 @@ export default function Welcome() {
           <span>
             Yeni özellikler geldiğinde ara sıra e-posta almak istiyorum
             <span className="muted small"> · İstediğin zaman Ayarlar’dan kapatabilirsin.</span>
+          </span>
+        </label>
+        <label className="welcome-news">
+          <input type="checkbox" checked={tour} onChange={(e) => setTour(e.target.checked)} />
+          <span>
+            Kısa bir tanıtım turuyla başla
+            <span className="muted small"> · Düğmeleri birlikte tek tek deneriz, istediğin an atlayabilirsin.</span>
           </span>
         </label>
         {err && <p className="err small">{err}</p>}

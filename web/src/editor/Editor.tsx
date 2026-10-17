@@ -121,7 +121,7 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
   }, [editor, find]);
 
   return (
-    <div className="editor" ref={box}>
+    <div className="editor" data-tour="editor" ref={box}>
       <BlockHandle editor={editor} container={box} />
       {find !== null && <FindBar key={find} editor={editor} initial={find} onClose={() => setFind(null)} />}
       <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to, state }) => e.isFocused && from !== to && !(state.selection as { node?: unknown }).node && !e.isActive('codeBlock') && !e.isActive('image')}>
