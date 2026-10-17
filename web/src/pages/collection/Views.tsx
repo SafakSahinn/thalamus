@@ -323,7 +323,7 @@ export function CalendarView({ t, rows, view, newProps }: ViewProps) {
               } : undefined}
             >
               <div className="cal-num">
-                {parseDay(k).getDate()}
+                <span className="cal-n">{parseDay(k).getDate()}</span>
                 {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(t.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
               </div>
               {items.slice(0, 4).map((n) => (

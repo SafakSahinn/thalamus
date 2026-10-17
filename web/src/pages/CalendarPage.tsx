@@ -25,6 +25,12 @@ interface Item {
   endKey?: string;
 }
 
+type Entry = { kind: 'g'; ev: ExtEvent; at: string } | { kind: 'n'; it: Item; at: string };
+
+const WDAY = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
+const MAX_PER_DAY = 4;
+const VIEW_KEY = 'calendarView';
+
 const HIDDEN_KEY = 'calendarHidden';
 const loadHidden = (): string[] => {
   try {
@@ -53,6 +59,26 @@ export default function CalendarPage() {
   const [extErr, setExtErr] = useState('');
   const [extLoading, setExtLoading] = useState(false);
   const [dialog, setDialog] = useState<{ ev?: ExtEvent; day?: string } | null>(null);
+  /** "+N daha" ile açılan gün */
+  const [openDay, setOpenDay] = useState<string | null>(null);
+  // Telefonda ajanda varsayılan
+  const [view, setViewState] = useState<'month' | 'agenda'>(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (v === 'month' || v === 'agenda') return v;
+    } catch {
+      /* yok say */
+    }
+    return innerWidth < 700 ? 'agenda' : 'month';
+  });
+  const setView = (v: 'month' | 'agenda') => {
+    setViewState(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* yok say */
+    }
+  };
 
   // Tarih alanı olan koleksiyonlar (günlük kendi sayfasında)
   const types = useMemo(() => TYPES.filter((t) => t.id !== 'daily' && t.props.some((p) => p.kind === 'date')), [settings]);
@@ -179,25 +205,82 @@ export default function CalendarPage() {
     if (endKey && isDay(n.props[endKey])) setProp(id, endKey, addDays(String(n.props[endKey]).slice(0, 10), delta));
   };
 
+
   const today = todayStr();
   const move = (m: number) => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + m, 1));
   const gcalOn = calSettings(settings).enabled;
 
+  /** Bir günün bütün öğeleri, saat sırasıyla (tüm gün olanlar önce) */
+  const entriesOf = (k: string): Entry[] => {
+    const g: Entry[] = (extByDay.get(k) ?? []).map((ev) => ({ kind: 'g', ev, at: ev.time && ev.date === k ? ev.time : '' }));
+    const n: Entry[] = (byDay.get(k) ?? []).map((it) => ({ kind: 'n', it, at: it.note.type === 'event' && it.key === 'date' ? parseTime(it.note.props.time) ?? '' : '' }));
+    return [...g, ...n].sort((a, b) => a.at.localeCompare(b.at));
+  };
+
+  const renderEntry = (e: Entry, k: string, wide = false) => {
+    if (e.kind === 'g') {
+      const c = calOf(e.ev.calId);
+      return (
+        <button
+          key={`g.${e.ev.calId}.${e.ev.id}`}
+          type="button"
+          className={`cal-item ${wide ? 'wide' : ''}`}
+          style={{ '--c': c?.color } as React.CSSProperties}
+          draggable={Boolean(c?.writable)}
+          title={`${e.ev.summary}${c ? ` · ${c.summary}` : ''}`}
+          onClick={() => setDialog({ ev: e.ev })}
+          onDragStart={(ev) => ev.dataTransfer.setData('text/thalamus-gevent', `${e.ev.calId}|${e.ev.id}`)}
+        >
+          {e.at && <span className="cal-time">{e.at}</span>}
+          <span className="cal-txt">{e.ev.summary}</span>
+          {wide && c && <span className="cal-src">{c.summary}</span>}
+        </button>
+      );
+    }
+    const { note, key, label, endKey } = e.it;
+    const t = typeOf(note.type);
+    return (
+      <a
+        key={`n.${note.id}.${key}`}
+        href={`#/n/${note.id}`}
+        onClick={peekClick(note.id)}
+        className={`cal-item ${wide ? 'wide' : ''}`}
+        style={{ '--c': t.color } as React.CSSProperties}
+        draggable
+        title={`${displayTitle(note)}${label ? ` · ${label}` : ''}`}
+        onDragStart={(ev) => ev.dataTransfer.setData('text/thalamus-date', [note.id, key, endKey ?? ''].join('|'))}
+      >
+        {e.at && <span className="cal-time">{e.at}</span>}
+        <span className="cal-txt">{noteIcon(note)} {label && <span className="cal-lbl">{label}: </span>}{displayTitle(note)}</span>
+        {wide && <span className="cal-src">{t.plural}</span>}
+      </a>
+    );
+  };
+
+  // Ajanda: bu ayın öğeleri olan günleri
+  const monthDays = days.filter((d) => d.getMonth() === cursor.getMonth()).map(ymd);
+
   return (
     <div className="page calendar-page">
-      <h1>📆 Takvim</h1>
+      <div className="cal-top">
+        <h1>📆 Takvim</h1>
+        <div className="seg cal-view">
+          <button type="button" className={view === 'month' ? 'on' : ''} onClick={() => setView('month')}>Ay</button>
+          <button type="button" className={view === 'agenda' ? 'on' : ''} onClick={() => setView('agenda')}>Ajanda</button>
+        </div>
+      </div>
       <p className="muted small">
-        Bütün notlarındaki tarihler: etkinlikler, son başvurular, konferanslar, teslimler, deneyler… Bir güne ＋ ile etkinlik, ▾ ile başka koleksiyondan not ekleyebilir; öğeleri başka güne sürükleyebilirsin.
-        {' '}Google Takvim eşitlemesi {gcalOn ? <b>açık</b> : <>kapalı · <a href="#/settings">Ayarlar’dan bağla</a></>}.
+        Notlarındaki bütün tarihler{cals.length ? ' ve Google takvimlerin' : ''} tek yerde. Bir günün köşesindeki ＋ ile etkinlik, ▾ ile başka bir şey eklersin; öğeleri sürükleyerek taşırsın.
+        {' '}Google Takvim eşitlemesi {gcalOn ? <><b>açık</b>.</> : <>kapalı. <a className="btn small primary cal-connect" href="#/settings">Google Takvim’i bağla</a></>}
       </p>
       <div className="chips cal-types">
         {types.map((t) => (
-          <button key={t.id} type="button" className={`cal-type ${hidden.includes(t.id) ? '' : 'on'}`} onClick={() => toggleType(t.id)} aria-pressed={!hidden.includes(t.id)}>
+          <button key={t.id} type="button" className={`cal-type ${hidden.includes(t.id) ? '' : 'on'}`} style={{ '--c': t.color } as React.CSSProperties} onClick={() => toggleType(t.id)} aria-pressed={!hidden.includes(t.id)}>
             {t.icon} {t.plural}
           </button>
         ))}
         {cals.map((c) => (
-          <button key={c.id} type="button" className={`cal-type ${hidden.includes(`g:${c.id}`) ? '' : 'on'}`} onClick={() => toggleType(`g:${c.id}`)} aria-pressed={!hidden.includes(`g:${c.id}`)}>
+          <button key={c.id} type="button" className={`cal-type ${hidden.includes(`g:${c.id}`) ? '' : 'on'}`} style={{ '--c': c.color } as React.CSSProperties} onClick={() => toggleType(`g:${c.id}`)} aria-pressed={!hidden.includes(`g:${c.id}`)}>
             <span className="ext-dot" style={{ background: c.color }} /> {c.summary}
           </button>
         ))}
@@ -205,87 +288,77 @@ export default function CalendarPage() {
       {extErr && <p className="err small">{extErr}</p>}
       <div className="calendar" data-tour="calendar">
         <div className="cal-head">
-          <button type="button" className="iconbtn" onClick={() => move(-1)} aria-label="Önceki ay">‹</button>
           <b className="cal-month">{MONTH.format(cursor)}</b>
-          <button type="button" className="iconbtn" onClick={() => move(1)} aria-label="Sonraki ay">›</button>
+          <span className="spacer" />
           <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>Bugün</button>
-          {cals.length > 0 && <button type="button" className="iconbtn" title="Google takvimlerini yenile" aria-label="Google takvimlerini yenile" disabled={extLoading} onClick={() => void loadExt()}>{extLoading ? '…' : '⟳'}</button>}
+          <button type="button" className="cal-nav" onClick={() => move(-1)} aria-label="Önceki ay">‹</button>
+          <button type="button" className="cal-nav" onClick={() => move(1)} aria-label="Sonraki ay">›</button>
+          {cals.length > 0 && <button type="button" className="cal-nav" title="Google takvimlerini yenile" aria-label="Google takvimlerini yenile" disabled={extLoading} onClick={() => void loadExt()}>{extLoading ? '…' : '⟳'}</button>}
         </div>
-        <div className="cal-grid">
-          {WEEK.map((w) => <div key={w} className="cal-wd">{w}</div>)}
-          {days.map((d) => {
-            const k = ymd(d);
-            const items = byDay.get(k) ?? [];
-            const gitems = extByDay.get(k) ?? [];
-            const room = Math.max(0, 5 - gitems.length);
-            const other = d.getMonth() !== cursor.getMonth();
-            return (
-              <div
-                key={k}
-                className={`cal-day ${other ? 'other' : ''} ${k === today ? 'today' : ''} ${over === k ? 'over' : ''}`}
-                onDragOver={(e) => { e.preventDefault(); setOver(k); }}
-                onDragLeave={() => setOver(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setOver(null);
-                  const raw = e.dataTransfer.getData('text/thalamus-date');
-                  if (raw) drop(raw, k);
-                  const g = e.dataTransfer.getData('text/thalamus-gevent');
-                  if (g) void dropExt(g, k);
-                }}
-              >
-                <div className="cal-num">
-                  {parseDay(k).getDate()}
-                  <button type="button" className="cal-add" title="Bu güne etkinlik ekle" aria-label="Bu güne ekle" onClick={() => addOn('event', k)}>＋</button>
-                  <button type="button" className="cal-add" title="Bu güne başka koleksiyondan ekle" aria-label="Başka koleksiyondan ekle" onClick={() => setAdding(adding === k ? null : k)}>▾</button>
-                </div>
-                {adding === k && (
-                  <div className="cal-addmenu" role="menu">
-                    {cals.some((c) => c.writable) && (
-                      <button type="button" role="menuitem" onClick={() => { setAdding(null); setDialog({ day: k }); }}>📅 Google Takvim etkinliği</button>
-                    )}
-                    {types.map((t) => (
-                      <button key={t.id} type="button" role="menuitem" onClick={() => addOn(t.id, k)}>{t.icon} {t.label}</button>
-                    ))}
+
+        {view === 'month' ? (
+          <div className="cal-grid">
+            {WEEK.map((w, i) => <div key={w} className={`cal-wd ${i > 4 ? 'we' : ''}`}>{w}</div>)}
+            {days.map((d, i) => {
+              const k = ymd(d);
+              const all = entriesOf(k);
+              const open = openDay === k;
+              const shown = open ? all : all.slice(0, MAX_PER_DAY);
+              const other = d.getMonth() !== cursor.getMonth();
+              return (
+                <div
+                  key={k}
+                  className={`cal-day ${other ? 'other' : ''} ${k === today ? 'today' : ''} ${over === k ? 'over' : ''} ${i % 7 > 4 ? 'we' : ''} ${open ? 'open' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); setOver(k); }}
+                  onDragLeave={() => setOver(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setOver(null);
+                    const raw = e.dataTransfer.getData('text/thalamus-date');
+                    if (raw) drop(raw, k);
+                    const g = e.dataTransfer.getData('text/thalamus-gevent');
+                    if (g) void dropExt(g, k);
+                  }}
+                >
+                  <div className="cal-num">
+                    <span className="cal-n">{parseDay(k).getDate()}</span>
+                    <button type="button" className="cal-add" title="Bu güne etkinlik ekle" aria-label="Bu güne ekle" onClick={() => addOn('event', k)}>＋</button>
+                    <button type="button" className="cal-add" title="Bu güne başka bir şey ekle" aria-label="Başka bir şey ekle" onClick={() => setAdding(adding === k ? null : k)}>▾</button>
                   </div>
-                )}
-                {gitems.slice(0, 5).map((ge) => {
-                  const c = calOf(ge.calId);
-                  return (
-                    <button
-                      key={`${ge.calId}.${ge.id}`}
-                      type="button"
-                      className="cal-item cal-gitem"
-                      style={{ borderLeftColor: c?.color }}
-                      draggable={Boolean(c?.writable)}
-                      title={`${ge.summary}${c ? ` · ${c.summary}` : ''}`}
-                      onClick={() => setDialog({ ev: ge })}
-                      onDragStart={(e) => e.dataTransfer.setData('text/thalamus-gevent', `${ge.calId}|${ge.id}`)}
-                    >
-                      {ge.time && ge.date === k && <b>{ge.time} </b>}{ge.summary}
+                  {adding === k && (
+                    <div className="cal-addmenu" role="menu">
+                      {cals.some((c) => c.writable) && (
+                        <button type="button" role="menuitem" onClick={() => { setAdding(null); setDialog({ day: k }); }}>📅 Google Takvim etkinliği</button>
+                      )}
+                      {types.map((t) => (
+                        <button key={t.id} type="button" role="menuitem" onClick={() => addOn(t.id, k)}>{t.icon} {t.label}</button>
+                      ))}
+                    </div>
+                  )}
+                  {shown.map((e) => renderEntry(e, k))}
+                  {all.length > MAX_PER_DAY && (
+                    <button type="button" className="cal-more" onClick={() => setOpenDay(open ? null : k)}>
+                      {open ? 'Daha az' : `+${all.length - MAX_PER_DAY} daha`}
                     </button>
-                  );
-                })}
-                {items.slice(0, room).map((it) => (
-                  <a
-                    key={`${it.note.id}.${it.key}`}
-                    href={`#/n/${it.note.id}`}
-                    onClick={peekClick(it.note.id)}
-                    onDoubleClick={() => openPeek(it.note.id)}
-                    className="cal-item"
-                    draggable
-                    title={`${displayTitle(it.note)}${it.label ? ` · ${it.label}` : ''}`}
-                    onDragStart={(e) => e.dataTransfer.setData('text/thalamus-date', [it.note.id, it.key, it.endKey ?? ''].join('|'))}
-                  >
-                    {noteIcon(it.note)} {it.note.type === 'event' && parseTime(it.note.props.time) && <b>{parseTime(it.note.props.time)} </b>}
-                    {it.label && <span className="muted">{it.label}: </span>}{displayTitle(it.note)}
-                  </a>
-                ))}
-                {items.length + gitems.length > 5 && <div className="muted small">+{items.length + gitems.length - Math.min(5, gitems.length) - Math.min(room, items.length)} daha</div>}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="agenda">
+            {monthDays.filter((k) => entriesOf(k).length).map((k) => (
+              <div key={k} className={`agenda-day ${k === today ? 'today' : ''} ${k < today ? 'past' : ''}`}>
+                <div className="agenda-date">
+                  <span className="agenda-n">{parseDay(k).getDate()}</span>
+                  <span className="agenda-wd">{WDAY.format(parseDay(k))}</span>
+                </div>
+                <div className="agenda-items">{entriesOf(k).map((e) => renderEntry(e, k, true))}</div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+            {!monthDays.some((k) => entriesOf(k).length) && <p className="muted">Bu ay için bir şey yok.</p>}
+          </div>
+        )}
       </div>
       {dialog && <ExtEventDialog ev={dialog.ev} day={dialog.day} cals={cals} onClose={() => setDialog(null)} onChanged={() => void loadExt()} />}
     </div>

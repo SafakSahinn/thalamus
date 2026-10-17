@@ -56,10 +56,10 @@ export default function ExternalCalendars() {
         <>
           <p className="muted small">
             Ana takvimin, CFP Calendar’ın eklediği konferanslar, ders programın… hepsi Thalamus’un <b>Takvim</b> sayfasında görünsün;
-            oradan taşıyabil, düzenleyebil, silebil ve yeni etkinlik ekleyebil. Bunun için Google senden bütün takvimlerini görme ve
+            oradan taşıyabilir, düzenleyebilir, silebilir ve yeni etkinlik ekleyebilirsin. Bunun için Google senden bütün takvimlerini görme ve
             düzenleme izni ister. Takvim verilerin sunucumuza gelmez; tarayıcın doğrudan Google’la konuşur.
           </p>
-          <button className="btn" disabled={busy} onClick={() => void connect()}>{busy ? 'Bağlanıyor…' : '🗓 Bütün takvimlerimi bağla'}</button>
+          <button className="btn primary" disabled={busy} onClick={() => void connect()}>{busy ? 'Bağlanıyor…' : '🗓 Bütün takvimlerimi bağla'}</button>
         </>
       ) : (
         <>

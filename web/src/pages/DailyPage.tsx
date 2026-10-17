@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import DatePicker from '../components/DatePicker';
 import NoteEditor from '../editor/Editor';
 import { addDays, fmtDay, parseDay } from '../lib/format';
 import { go } from '../lib/router';
@@ -89,6 +90,17 @@ export default function DailyPage({ date: d }: { date?: string }) {
   const daily = findDaily(date, notes);
   const rev = useStore((s) => (daily ? s.remoteRev[daily.id] : 0));
   const isToday = date === todayStr();
+  const routineCount = useStore((s) => s.settings.routines.length);
+  // Takvimde günlüğü olan günler; nokta rutinlerin ne kadarının yapıldığına göre koyulaşır
+  const marks = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const n of Object.values(notes)) {
+      if (n.type !== 'daily' || n.deleted_at || typeof n.props.date !== 'string') continue;
+      const done = Object.values((n.props.routines as Record<string, boolean>) ?? {}).filter(Boolean).length;
+      if (n.content || done) m.set(n.props.date, routineCount ? Math.min(1, done / routineCount) : 1);
+    }
+    return m;
+  }, [notes, routineCount]);
 
   return (
     <div className="page">
@@ -97,7 +109,8 @@ export default function DailyPage({ date: d }: { date?: string }) {
         <h1 className="daily-title">{fmtDay(date)}</h1>
         <button className="iconbtn" onClick={() => go(`/daily/${addDays(date, 1)}`)} title="Sonraki gün">›</button>
         {!isToday && <button className="btn small" onClick={() => go('/daily')}>Bugün</button>}
-        <input type="date" className="datepick" value={date} onChange={(e) => e.target.value && go(`/daily/${e.target.value}`)} />
+        <span className="spacer" />
+        <DatePicker value={date} marks={marks} label="Gün seç" onChange={(v) => go(`/daily/${v}`)} />
       </div>
       <h3>Rutinler</h3>
       <RoutineChecks date={date} />
