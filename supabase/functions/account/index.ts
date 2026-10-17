@@ -9,6 +9,7 @@
 // POST { action: "settings", access_token, announcements } → duyuru e-postası tercihi
 // POST { action: "revoke", session, access_token } → kullanıcı kaydını siler, uygulamanın Google iznini geri alır
 // GET  ?unsubscribe=<token>           → duyuru aboneliğinden çıkar
+// GET  ?pdf=<url>                     → açık arşiv PDF'i (arXiv, OpenReview, ACL…) — PDF okuyucu için
 // GET  ?image=<url>                   → kapak görseli aracısı (Google Books CORS izni vermiyor)
 // GET  ?share=<drive dosya kimliği>   → herkese açık paylaşılmış notun içeriği (girişsiz okuyucular için)
 
@@ -110,6 +111,28 @@ async function unseal(sealed: unknown): Promise<string | null> {
 const IMAGE_HOSTS = ['books.google.com', 'books.googleusercontent.com', 'covers.openlibrary.org', 'archive.org', 'upload.wikimedia.org'];
 const MAX_IMAGE = 10 * 1024 * 1024;
 
+// Açık arşivlerin PDF'leri (tarayıcı CORS yüzünden doğrudan okuyamıyor). Yalnızca bu sitelere izin verilir.
+const PDF_HOSTS = ['arxiv.org', 'openreview.net', 'aclanthology.org', 'proceedings.mlr.press', 'papers.nips.cc', 'proceedings.neurips.cc', 'jmlr.org', 'biorxiv.org', 'medrxiv.org', 'europepmc.org', 'ncbi.nlm.nih.gov'];
+const MAX_PDF = 40 * 1024 * 1024;
+
+async function proxyPdf(raw: string): Promise<Response> {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return json({ error: 'url' }, 400);
+  }
+  const allowed = (h: string) => PDF_HOSTS.some((a) => h === a || h.endsWith(`.${a}`));
+  if (!/^https?:$/.test(url.protocol) || !allowed(url.hostname)) return json({ error: 'host' }, 400);
+  url.protocol = 'https:';
+  const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': 'Thalamus/1.0 (pdf okuyucu)' } });
+  if (!r.ok || !allowed(new URL(r.url).hostname)) return json({ error: 'fetch', status: r.status }, 502);
+  if (!(r.headers.get('content-type') ?? '').includes('pdf')) return json({ error: 'type' }, 415);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  if (buf.byteLength > MAX_PDF) return json({ error: 'size' }, 413);
+  return new Response(buf, { headers: { ...cors, 'Content-Type': 'application/pdf', 'Cache-Control': 'public, max-age=86400' } });
+}
+
 async function proxyImage(raw: string): Promise<Response> {
   let url: URL;
   try {
@@ -156,6 +179,7 @@ Deno.serve(async (req) => {
 
   if (req.method === 'GET') {
     if (url.searchParams.has('image')) return proxyImage(url.searchParams.get('image')!);
+    if (url.searchParams.has('pdf')) return proxyPdf(url.searchParams.get('pdf')!);
     if (url.searchParams.has('share')) return readShare(url.searchParams.get('share')!);
     const t = url.searchParams.get('unsubscribe');
     if (t === null) return json({ error: 'method' }, 405);

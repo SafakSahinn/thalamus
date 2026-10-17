@@ -6,6 +6,7 @@ export type Route =
   | { name: 'collection'; type: string; edit?: boolean }
   | { name: 'graph' }
   | { name: 'calendar' }
+  | { name: 'pdf'; id: string }
   | { name: 'daily'; date?: string }
   | { name: 'dictionary' }
   | { name: 'settings' }
@@ -21,6 +22,7 @@ export function parse(hash: string): Route {
     case 'c': return parts[1] ? { name: 'collection', type: parts[1], edit: parts[2] === 'edit' } : { name: 'home' };
     case 'graph': return { name: 'graph' };
     case 'takvim': return { name: 'calendar' };
+    case 'oku': return parts[1] ? { name: 'pdf', id: parts[1] } : { name: 'home' };
     case 'daily': return { name: 'daily', date: parts[1] };
     case 'dictionary': return { name: 'dictionary' };
     case 'settings': return { name: 'settings' };

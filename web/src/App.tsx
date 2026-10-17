@@ -23,6 +23,7 @@ import { go } from './lib/router';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const PdfReaderPage = lazy(() => import('./pages/PdfReaderPage'));
 const DictionaryPage = lazy(() => import('./pages/DictionaryPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
@@ -68,6 +69,7 @@ export default function App() {
     case 'collection': page = <CollectionPage type={route.type} edit={route.edit} />; break;
     case 'graph': page = <GraphPage />; break;
     case 'calendar': page = <CalendarPage />; break;
+    case 'pdf': page = <PdfReaderPage id={route.id} />; break;
     case 'daily': page = <DailyPage date={route.date} />; break;
     case 'dictionary': page = <DictionaryPage />; break;
     case 'settings': page = <SettingsPage />; break;

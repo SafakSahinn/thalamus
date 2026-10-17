@@ -1,0 +1,74 @@
+// PDF vurguları: makale (ya da herhangi bir) notun gizli alanında (props.__highlights) durur; her vurgu notun
+// içine de alıntı olarak eklenir, böylece okuduğun yerler notunda birikir.
+
+import { fmtNum } from './format';
+import { walk } from './links';
+import { refreshEditor, setProp, uid, updateNote, useStore } from './store';
+import { fileRefs, type Note } from './types';
+
+export type HlColor = 'yellow' | 'green' | 'blue' | 'pink';
+
+export interface Highlight {
+  id: string;
+  /** PDF kaynağı (aynı notta birden çok PDF olabilir) */
+  src: string;
+  page: number;
+  /** Sayfaya göre oransal dikdörtgenler [x, y, w, h] (0–1) */
+  rects: [number, number, number, number][];
+  text: string;
+  color: HlColor;
+  comment?: string;
+  created_at: string;
+}
+
+export const highlightsOf = (noteId: string): Highlight[] => {
+  const v = useStore.getState().notes[noteId]?.props.__highlights;
+  return Array.isArray(v) ? (v as Highlight[]) : [];
+};
+
+/** Vurguyu kaydet ve notun sonuna alıntı olarak ekle */
+export function addHighlight(noteId: string, h: Omit<Highlight, 'id' | 'created_at'>): Highlight {
+  const full: Highlight = { ...h, id: uid(), created_at: new Date().toISOString() };
+  setProp(noteId, '__highlights', [...highlightsOf(noteId), full]);
+  const n = useStore.getState().notes[noteId];
+  if (n) {
+    const doc = (n.content as { type: string; content?: unknown[] } | null) ?? { type: 'doc', content: [] };
+    const quote = {
+      type: 'blockquote',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: `${h.text} ` }, { type: 'text', text: `(s. ${fmtNum(h.page)})`, marks: [{ type: 'italic' }] }] }],
+    };
+    const extra = h.comment ? [{ type: 'paragraph', content: [{ type: 'text', text: h.comment }] }] : [];
+    updateNote(noteId, { content: { ...doc, content: [...(doc.content ?? []), quote, ...extra] } });
+    refreshEditor(noteId);
+  }
+  return full;
+}
+
+export function removeHighlight(noteId: string, id: string) {
+  setProp(noteId, '__highlights', highlightsOf(noteId).filter((h) => h.id !== id));
+}
+
+export const HL_COLORS: { id: HlColor; label: string; css: string }[] = [
+  { id: 'yellow', label: 'Sarı', css: 'rgba(255, 212, 0, 0.38)' },
+  { id: 'green', label: 'Yeşil', css: 'rgba(52, 199, 89, 0.32)' },
+  { id: 'blue', label: 'Mavi', css: 'rgba(64, 140, 255, 0.30)' },
+  { id: 'pink', label: 'Pembe', css: 'rgba(255, 92, 160, 0.30)' },
+];
+
+/** Notun PDF kaynakları: PDF alanı, Dosyalar alanları, içerikteki PDF dosya blokları */
+export function pdfSources(n: Note): { src: string; label: string }[] {
+  const out: { src: string; label: string }[] = [];
+  const add = (src: unknown, label: string) => {
+    if (typeof src === 'string' && src && !out.some((x) => x.src === src)) out.push({ src, label });
+  };
+  if (typeof n.props.pdf === 'string') add(n.props.pdf, 'PDF alanı');
+  for (const [k, v] of Object.entries(n.props)) {
+    for (const f of fileRefs(v)) if (/\.pdf$/i.test(f.name)) add(f.src, f.name || k);
+  }
+  walk(n.content, (x) => {
+    const a = x.attrs as { src?: string; name?: string } | undefined;
+    if (x.type === 'fileBlock' && a?.src && /\.pdf$/i.test(a.name ?? a.src)) add(a.src, a.name ?? 'PDF');
+  });
+  return out;
+}
+

@@ -10,6 +10,7 @@ import NoteEditor from '../editor/Editor';
 import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
 import { fillPaper } from '../lib/paperImport';
+import { pdfSources } from '../lib/highlights';
 import { citeOf, formatCite, toBibtex } from '../lib/bibtex';
 import { parseIdent } from '../lib/scholar';
 import { linkVia, snippetAround } from '../lib/links';
@@ -184,6 +185,9 @@ export default function NotePage({ id }: { id: string }) {
         {openComments.length > 0 && <button className="lock-badge" title="Yorumları göster" onClick={() => showComments(note.id)}>💬 {openComments.length}</button>}
         {note.type === 'paper' && !note.props.__cite && typeof note.props.doi === 'string' && parseIdent(note.props.doi) && (
           <button className="lock-badge" title="DOI/arXiv'den başlık, yazarlar, yıl, özet…" onClick={() => void fillPaper(note.id, note.props.doi as string).catch((e: Error) => alert(e.message))}>🔎 Bilgileri doldur</button>
+        )}
+        {(note.type === 'paper' || pdfSources(note).length > 0) && (
+          <button className="lock-badge pdf-open" title="PDF'i Thalamus içinde oku ve vurgula" onClick={() => go(`/oku/${note.id}`)}>📖 PDF'i oku</button>
         )}
         {locked && <button className="lock-badge" title="Kilidi aç" onClick={() => setProp(note.id, '__locked', undefined)}>🔒 Kilitli</button>}
         <span className="spacer" />
