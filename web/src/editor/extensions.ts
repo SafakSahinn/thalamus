@@ -17,6 +17,7 @@ import { createNote, resolveFileUrl, uploadFile } from '../lib/store';
 import { Bookmark, Callout, Column, Columns, columnsContent, DateChip, Embed, FileBlock, Mermaid, Toc } from './blocks';
 import { CodeBlock } from './CodeBlock';
 import { CollectionBlock } from './CollectionBlock';
+import { newSyncedId, SyncedBlock, syncedList } from './SyncedBlock';
 import { FindReplace } from './FindReplace';
 import { Mention } from './Mention';
 import { suggestConfig, type Entry } from './suggest';
@@ -144,6 +145,21 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
   { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
   { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
+  { icon: '↻', label: 'Senkron blok (yeni)', keys: 'synced senkron esitlenen ortak blok kopya', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'syncedBlock', attrs: { sid: newSyncedId() } }).run() },
+  { icon: '↻', label: 'Senkron blok (mevcut)', keys: 'synced senkron esitlenen ortak blok kopya yapistir mevcut', action: (e, r) => {
+    e.chain().focus().deleteRange(r).run();
+    const list = syncedList();
+    void promptText('Hangi senkron blok?', '', {
+      hint: list.length
+        ? `Senkron bloğun üstündeki “Kimliği kopyala”ya basıp buraya yapıştır ya da ilk kelimelerini yaz. Son bloklar: ${list.slice(0, 5).map((x) => `“${x.label}”`).join(', ')}`
+        : 'Henüz senkron blok yok. Önce / → “Senkron blok (yeni)” ile bir tane oluştur.',
+    }).then((v) => {
+      const q = v?.trim().toLocaleLowerCase('tr');
+      if (!q) return;
+      const hit = list.find((x) => x.sid === v!.trim()) ?? list.find((x) => x.label.toLocaleLowerCase('tr').startsWith(q)) ?? list.find((x) => x.label.toLocaleLowerCase('tr').includes(q));
+      if (hit) e.chain().focus().insertContent({ type: 'syncedBlock', attrs: { sid: hit.sid } }).run();
+    });
+  } },
   { icon: '🗂', label: 'Sayfa içinde koleksiyon', keys: 'veritabani database tablo pano koleksiyon inline liste', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'collectionView' }).run() },
   { icon: '☰', label: 'İçindekiler', keys: 'toc icindekiler basliklar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'toc' }).run() },
   { icon: '🔀', label: 'Diyagram (Mermaid)', keys: 'mermaid diyagram akis sema flowchart graph', action: (e, r) => {
@@ -244,6 +260,7 @@ export function baseExtensions(): AnyExtension[] {
     Embed,
     DateChip,
     CollectionBlock,
+    SyncedBlock,
     Youtube.configure({ nocookie: true, modestBranding: true, HTMLAttributes: { class: 'yt' } }),
     TaskList,
     TaskItem.configure({ nested: true }),

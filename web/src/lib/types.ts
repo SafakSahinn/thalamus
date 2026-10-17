@@ -364,6 +364,8 @@ export interface Settings {
   types?: TypeSettings;
   /** Koleksiyon başına kayıtlı görünümler */
   views?: Record<string, SavedView[]>;
+  /** Senkron blokların içerikleri (bkz. editor/SyncedBlock.tsx) */
+  synced?: Record<string, { content: unknown; updated_at: string }>;
   /** Koleksiyon başına otomasyon kuralları (bkz. automations.ts) */
   automations?: Record<string, import('./automations').Rule[]>;
   /** Koleksiyon başına varsayılan şablon kimliği */

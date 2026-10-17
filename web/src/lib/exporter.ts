@@ -17,7 +17,7 @@ export function download(name: string, data: Blob | string, type = 'text/markdow
 }
 
 export function exportNoteMd(note: Note) {
-  const md = noteToMarkdown(note, { notes: useStore.getState().notes });
+  const md = noteToMarkdown(note, { notes: useStore.getState().notes, synced: useStore.getState().settings.synced });
   download(`${safeName(displayTitle(note))}.md`, md);
 }
 
@@ -59,7 +59,7 @@ export async function exportAllZip(onProgress?: (done: number, total: number) =>
     for (let i = 2; used.has(path.toLocaleLowerCase('tr')); i++) path = `${folder}/${base} (${i}).md`;
     used.add(path.toLocaleLowerCase('tr'));
     // Notun klasöründen eklere göreli yol
-    zip.file(path, noteToMarkdown(n, { notes, asset: (src) => (assetPath.has(src) ? `../${assetPath.get(src)}` : null) }));
+    zip.file(path, noteToMarkdown(n, { notes, synced: useStore.getState().settings.synced, asset: (src) => (assetPath.has(src) ? `../${assetPath.get(src)}` : null) }));
     onProgress?.(++done, total);
   }
   let missing = 0;

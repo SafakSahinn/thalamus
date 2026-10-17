@@ -14,6 +14,8 @@ interface PMNode {
 
 export interface MdCtx {
   notes: Record<string, Note>;
+  /** Senkron blok içerikleri (dışa aktarımda yerine yazılır) */
+  synced?: Record<string, { content: unknown }>;
   /** gd:// veya local:// adresini dışa aktarımdaki göreli yola çevirir (yoksa adı yazılır) */
   asset?: (src: string) => string | null;
 }
@@ -89,6 +91,10 @@ function block(n: PMNode, ctx: MdCtx): string {
     case 'image': return image(n, ctx);
     case 'blockMath': return `$$\n${String(n.attrs?.latex ?? '')}\n$$`;
     case 'callout': return `> ${String(n.attrs?.emoji ?? '💡')} ${blocks(n.content, ctx).split('\n').join('\n> ')}`;
+    case 'syncedBlock': {
+      const c = ctx.synced?.[String(n.attrs?.sid ?? '')]?.content as PMNode | undefined;
+      return c ? blocks(c.content, ctx) : '';
+    }
     case 'details': {
       const [summary, body] = n.content ?? [];
       const lv = Number(n.attrs?.level) || 0;
