@@ -1,14 +1,18 @@
-// Thalamus yardımcı işlevi. DURUMSUZ: veritabanı kullanmaz, hiçbir şey kaydetmez.
-// Notlar ve oturum kullanıcının kendi Google Drive'ında durur; burada yalnızca istemci sırrı
-// (GOOGLE_CLIENT_SECRET) ve oturum şifreleme anahtarı (TOKEN_ENC_KEY) gerektiren işler yapılır.
+// Thalamus yardımcı işlevi. Notlar, oturum anahtarı ve paylaşımlar kullanıcının kendi Google Drive'ında durur.
+// Sunucuda yalnızca kullanıcı listesi tutulur (users: e-posta, ad, ilk/son giriş, duyuru tercihi);
+// burada ayrıca istemci sırrı (GOOGLE_CLIENT_SECRET) ve oturum şifreleme anahtarı (TOKEN_ENC_KEY) gerektiren işler yapılır.
 //
 // POST { action: "exchange", code }  → erişim anahtarı + profil; Google yeni kalıcı anahtar verdiyse onun
 //                                       şifreli hali ("session"). İstemci bunu Drive'ındaki Thalamus/session.json'a yazar;
 //                                       yeni cihazda oradan okuyup getirir, böylece izin ekranı bir daha çıkmaz.
 // POST { action: "refresh", session } → yeni erişim anahtarı (eski istemciler için refresh_token da kabul edilir)
-// POST { action: "revoke", session }  → uygulamanın Google iznini geri alır (hesabı silme)
+// POST { action: "settings", access_token, announcements } → duyuru e-postası tercihi
+// POST { action: "revoke", session, access_token } → kullanıcı kaydını siler, uygulamanın Google iznini geri alır
+// GET  ?unsubscribe=<token>           → duyuru aboneliğinden çıkar
 // GET  ?image=<url>                   → kapak görseli aracısı (Google Books CORS izni vermiyor)
 // GET  ?share=<drive dosya kimliği>   → herkese açık paylaşılmış notun içeriği (girişsiz okuyucular için)
+
+import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +28,30 @@ const env = (k: string) => {
   if (!v) throw new Error(`${k} tanımlı değil`);
   return v;
 };
+
+const admin = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
+
+/** Erişim token'ını Google'a sorarak doğrular; başka bir uygulamaya ait token'ları reddeder. */
+async function verifyAccess(token: unknown): Promise<{ sub: string; email: string } | null> {
+  if (typeof token !== 'string' || !token) return null;
+  const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`);
+  if (!r.ok) return null;
+  const info = await r.json();
+  if (info.aud !== env('GOOGLE_CLIENT_ID') || !info.sub) return null;
+  return { sub: info.sub, email: info.email ?? '' };
+}
+
+/** Google izin geri alma; başarılıysa ya da anahtar zaten geçersizse true */
+async function revokeToken(token: string): Promise<boolean> {
+  const r = await fetch('https://oauth2.googleapis.com/revoke', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token }),
+  });
+  if (r.ok) return true;
+  const b = await r.json().catch(() => ({}));
+  return b.error === 'invalid_token';
+}
 
 interface IdClaims {
   sub: string;
@@ -129,7 +157,14 @@ Deno.serve(async (req) => {
   if (req.method === 'GET') {
     if (url.searchParams.has('image')) return proxyImage(url.searchParams.get('image')!);
     if (url.searchParams.has('share')) return readShare(url.searchParams.get('share')!);
-    return json({ error: 'method' }, 405);
+    const t = url.searchParams.get('unsubscribe');
+    if (t === null) return json({ error: 'method' }, 405);
+    if (/^[0-9a-f-]{36}$/i.test(t)) await admin().from('users').update({ announcements: false }).eq('unsubscribe_token', t);
+    return new Response(
+      '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Thalamus</title>' +
+        '<body style="font-family:system-ui;padding:40px;text-align:center"><h2>Abonelikten çıktın</h2><p>Artık Thalamus duyuru e-postaları almayacaksın.</p></body>',
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+    );
   }
   if (req.method !== 'POST') return json({ error: 'method' }, 405);
 
@@ -143,7 +178,12 @@ Deno.serve(async (req) => {
         if (!String(t.body.scope ?? '').includes(DRIVE_SCOPE)) return json({ error: 'drive_scope_missing' }, 400);
         const id = decodeIdToken(t.body.id_token);
         if (!id?.sub || !id.email) return json({ error: 'no_identity' }, 400);
+        const db = admin();
+        const { data: existing } = await db.from('users').select('announcements').eq('google_sub', id.sub).maybeSingle();
+        if (existing) await db.from('users').update({ email: id.email, name: id.name ?? null, last_active_at: new Date().toISOString() }).eq('google_sub', id.sub);
+        else await db.from('users').insert({ google_sub: id.sub, email: id.email, name: id.name ?? null });
         return json({
+          announcements: existing?.announcements ?? false,
           access_token: t.body.access_token,
           expires_in: t.body.expires_in,
           scope: t.body.scope ?? '',
@@ -158,6 +198,8 @@ Deno.serve(async (req) => {
         if (!rt) return json({ error: 'revoked' }, 401);
         const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: rt });
         if (!t.ok) return json({ error: t.body.error === 'invalid_grant' ? 'revoked' : 'refresh_failed' }, t.body.error === 'invalid_grant' ? 401 : 400);
+        const id = decodeIdToken(t.body.id_token);
+        if (id?.sub) await admin().from('users').update({ last_active_at: new Date().toISOString() }).eq('google_sub', id.sub);
         return json({
           access_token: t.body.access_token,
           expires_in: t.body.expires_in,
@@ -165,12 +207,20 @@ Deno.serve(async (req) => {
           ...(legacy ? { session: await seal(legacy) } : {}),
         });
       }
+      case 'settings': {
+        const who = await verifyAccess(body.access_token);
+        if (!who) return json({ error: 'unauthorized' }, 401);
+        await admin().from('users').update({ announcements: body.announcements === true }).eq('google_sub', who.sub);
+        return json({ ok: true });
+      }
       case 'revoke': {
-        const rt = await unseal(body.session);
-        const token = rt ?? (typeof body.access_token === 'string' ? body.access_token : null);
-        if (!token) return json({ error: 'session' }, 400);
+        const who = await verifyAccess(body.access_token);
+        if (!who) return json({ error: 'unauthorized' }, 401);
+        await admin().from('users').delete().eq('google_sub', who.sub);
         // Kalıcı anahtar geri alınınca bütün cihazlardaki oturumlar kapanır
-        await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' });
+        const rt = (await unseal(body.session)) ?? (typeof body.refresh_token === 'string' ? body.refresh_token : null);
+        const ok = (rt ? await revokeToken(rt) : false) || (await revokeToken(body.access_token));
+        if (!ok) return json({ error: 'revoke_failed' }, 502);
         return json({ ok: true });
       }
       default:

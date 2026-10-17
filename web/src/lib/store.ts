@@ -13,6 +13,7 @@ interface State {
   ready: boolean;
   /** Google hesabı; undefined: henüz bilinmiyor, null: giriş yapılmamış */
   account: Profile | null | undefined;
+  announcements: boolean;
   /** Yeni kayıt olan kullanıcıya bir kez gösterilen karşılama */
   welcome: boolean;
   settings: Settings;
@@ -34,6 +35,7 @@ export const useStore = create<State>(() => ({
   notes: {},
   ready: false,
   account: cloud ? undefined : null,
+  announcements: false,
   welcome: false,
   settings: DEFAULT_SETTINGS,
   sync: { status: cloud ? 'idle' : 'local', pending: 0 },
@@ -61,7 +63,7 @@ export async function initLocal() {
 /** Açılışta kayıtlı Google oturumunu yükler. */
 export async function initAuth() {
   const a = await loadAuth();
-  set({ account: a?.profile ?? null });
+  set({ account: a?.profile ?? null, announcements: a?.announcements ?? false });
 }
 
 /** Girişten sonra: başka bir hesabın yerel verisi kaldıysa temizle. */
@@ -72,7 +74,7 @@ export async function onSignedIn(a: AuthState) {
     await setMeta('auth', a);
   }
   await setMeta('ownerSub', a.profile.sub);
-  set({ account: a.profile, welcome: Boolean(a.is_new) });
+  set({ account: a.profile, announcements: Boolean(a.announcements), welcome: Boolean(a.is_new) });
 }
 
 // ---------- yerel değişiklikler ----------
@@ -610,7 +612,7 @@ export async function signOut() {
   location.reload();
 }
 
-/** Uygulamanın Google iznini geri alır (bütün cihazlarda oturum kapanır); istenirse Drive'daki Thalamus klasörünü de siler. */
+/** Kullanıcı kaydını siler ve uygulamanın Google iznini geri alır (bütün cihazlarda oturum kapanır); istenirse Drive'daki Thalamus klasörünü de siler. */
 export async function deleteAccount(alsoDrive: boolean) {
   const token = await accessToken();
   if (alsoDrive) {
@@ -620,10 +622,17 @@ export async function deleteAccount(alsoDrive: boolean) {
     });
   } else await removeSessionFile(token);
   const a = await loadAuth();
-  await callFn({ action: 'revoke', session: a?.session, access_token: token });
+  await callFn({ action: 'revoke', session: a?.session, refresh_token: a?.refresh_token, access_token: token });
   await clearAll();
   location.hash = '#/';
   location.reload();
+}
+
+export async function setAnnouncements(v: boolean) {
+  await callFn({ action: 'settings', access_token: await accessToken(), announcements: v });
+  set({ announcements: v });
+  const a = await loadAuth();
+  if (a) await setMeta('auth', { ...a, announcements: v });
 }
 
 // ---------- herkese açık paylaşım dosyaları ----------

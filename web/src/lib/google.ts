@@ -34,6 +34,8 @@ export interface AuthState {
   access_token: string;
   /** ms */
   expires_at: number;
+  /** Duyuru e-postası almak istiyor */
+  announcements?: boolean;
   /** Bu girişte hesap ilk kez oluşturuldu (hoş geldin penceresi için) */
   is_new?: boolean;
   /** Google Takvim izni verildi */
@@ -130,6 +132,7 @@ interface ExchangeResp {
   expires_in: number;
   session: string | null;
   profile: Profile;
+  announcements: boolean;
 }
 
 // ---------- Drive'daki oturum dosyası (giriş sırasında, verilen erişim anahtarıyla) ----------
@@ -219,6 +222,7 @@ export async function signInWithGoogle(consent = false): Promise<AuthState> {
     access_token: r.access_token,
     expires_at: Date.now() + r.expires_in * 1000,
     is_new: isNew,
+    announcements: r.announcements,
     calendar: (r.scope ?? '').includes(CALENDAR_SCOPE),
   };
   await setMeta('auth', state);

@@ -4,7 +4,7 @@ import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
 import { cloud } from '../lib/google';
 import {
-  deleteAccount, getAttachMode, insertNotes, saveSettings, signOut, syncNow, uid, useStore,
+  deleteAccount, getAttachMode, insertNotes, saveSettings, setAnnouncements, signOut, syncNow, uid, useStore,
   type AttachMode,
 } from '../lib/store';
 import { getCoverMode, type CoverMode } from '../lib/covers';
@@ -81,7 +81,7 @@ function DeleteAccount({ email }: { email: string }) {
         <button className="btn danger" onClick={() => setOpen(true)}>Hesabımı sil…</button>
       ) : (
         <div className="danger-box">
-          <p>Uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır. Bizde zaten senin hakkında saklanan bir kayıt yok.</p>
+          <p>Kullanıcı kaydın (e-posta, ad, giriş zamanları) silinir, uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır.</p>
           <label className="small">
             <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} />
             <span>Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil</span>
@@ -112,6 +112,8 @@ function download(name: string, text: string, type = 'application/json') {
 
 export default function SettingsPage() {
   const account = useStore((s) => s.account);
+  const announcements = useStore((s) => s.announcements);
+  const [annErr, setAnnErr] = useState('');
   const [attach, setAttach] = useState<AttachMode>(getAttachMode());
   const [coverMode, setCoverMode] = useState<CoverMode>(getCoverMode());
   const sync = useStore((s) => s.sync);
@@ -191,6 +193,18 @@ export default function SettingsPage() {
           <p className="muted">Bulut ayarlanmadı: notlar yalnızca bu tarayıcıda tutuluyor. Düzenli olarak yedek almayı unutma.</p>
         )}
       </section>
+
+      {cloud && account && (
+        <section>
+          <h3>E-posta bildirimleri</h3>
+          <label className="small">
+            <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x: unknown) => setAnnErr(String(x))); }} />
+            <span>Yenilikler hakkında ara sıra e-posta al</span>
+          </label>
+          <p className="muted small">{announcements ? 'Açık: yeni özellikler duyurulduğunda e-posta alırsın. Her e-postada abonelikten çıkma bağlantısı da olur.' : 'Kapalı: Thalamus sana duyuru e-postası göndermez.'}</p>
+          {annErr && <p className="err small">{annErr}</p>}
+        </section>
+      )}
 
       {cloud && account && <CalendarSettings />}
 
