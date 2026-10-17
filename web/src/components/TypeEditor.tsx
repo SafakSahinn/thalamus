@@ -4,7 +4,7 @@ import { ROLLUP_FNS } from '../lib/compute';
 import { checkFormula, FUNCTION_NAMES } from '../lib/formula';
 import { go } from '../lib/router';
 import {
-  addProp, deleteCollection, PROP_KINDS, removeProp, renameOption, reorderProps, restoreProp, updateCollection, updateProp,
+  addProp, deleteCollection, PROP_KINDS, removeProp, renameOption, reorderProps, restoreProp, updateCollection, updateProp, setDependencies, setSubItems,
 } from '../lib/schema';
 import { useStore } from '../lib/store';
 import { editableType, isBuiltinProp, isBuiltinType, STATUS_GROUPS, TYPES, typeOf, type PropDef, type StatusGroup } from '../lib/types';
@@ -228,6 +228,16 @@ export default function TypeEditor({ typeId, onClose }: { typeId: string; onClos
           {t.props.map((p, i) => <PropRow key={p.key} typeId={typeId} def={p} hidden={hiddenKeys.has(p.key)} index={i} keys={keys} />)}
         </div>
         <AddProp typeId={typeId} />
+
+        <h4>Gelişmiş</h4>
+        <label className="te-opt">
+          <input type="checkbox" checked={Boolean(t.subItems)} onChange={(e) => void setSubItems(typeId, e.target.checked)} />
+          <span><b>Alt öğeler</b><span className="muted small"> · Bir kaydın altına alt kayıtlar ekle (ör. projenin görevleri); tabloda iç içe görünür.</span></span>
+        </label>
+        <label className="te-opt">
+          <input type="checkbox" checked={Boolean(t.blockedBy)} onChange={(e) => void setDependencies(typeId, e.target.checked)} />
+          <span><b>Bağımlılıklar</b><span className="muted small"> · “Şu bitmeden bu başlamaz” bağları; zaman çizelgesinde ok olarak çizilir, çakışanlar kırmızı olur.</span></span>
+        </label>
 
         {custom && (
           <div className="te-danger">

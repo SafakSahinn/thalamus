@@ -3,7 +3,7 @@
 
 import { assignUids, saveSettings, uid, updateNote, useStore } from './store';
 import {
-  EMPTY_TYPE_SETTINGS, isBuiltinType, type PropDef, type PropOverride, type TypeDef, type TypeSettings,
+  EMPTY_TYPE_SETTINGS, isBuiltinType, typeOf, type PropDef, type PropOverride, type TypeDef, type TypeSettings,
 } from './types';
 
 const short = () => uid().replace(/-/g, '').slice(0, 8);
@@ -40,7 +40,7 @@ export async function createCollection(label: string, icon = '🗂️', color = 
   return id;
 }
 
-export async function updateCollection(id: string, patch: Partial<Pick<TypeDef, 'label' | 'plural' | 'icon' | 'color' | 'cover'>>) {
+export async function updateCollection(id: string, patch: Partial<Pick<TypeDef, 'label' | 'plural' | 'icon' | 'color' | 'cover' | 'subItems' | 'blockedBy'>>) {
   const ts = current();
   if (isBuiltinType(id)) {
     ts.overrides[id] = { ...(ts.overrides[id] ?? {}), ...patch };
@@ -49,6 +49,27 @@ export async function updateCollection(id: string, patch: Partial<Pick<TypeDef, 
     if (t) Object.assign(t, patch);
   }
   await commit(ts);
+}
+
+/**
+ * Alt öğeler (Notion'daki gibi): koleksiyona kendine bağlanan bir "Üst öğe" alanı eklenir, tersi "Alt öğeler" olur.
+ * Kapatınca alan ve veriler kalır, yalnızca iç içe gösterim kapanır.
+ */
+export async function setSubItems(typeId: string, on: boolean) {
+  if (!on) return updateCollection(typeId, { subItems: undefined });
+  const t = typeOf(typeId);
+  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && p.backLabel === 'Alt öğeler' && p.target?.[0] === typeId);
+  const key = existing?.key ?? (await addProp(typeId, { label: 'Üst öğe', kind: 'relation', target: [typeId], backLabel: 'Alt öğeler' }));
+  await updateCollection(typeId, { subItems: key });
+}
+
+/** Bağımlılıklar: "Bekledikleri" (bunlar bitmeden başlayamaz) alanı; tersi "Engelledikleri". Zaman çizelgesinde ok olarak çizilir. */
+export async function setDependencies(typeId: string, on: boolean) {
+  if (!on) return updateCollection(typeId, { blockedBy: undefined });
+  const t = typeOf(typeId);
+  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && p.backLabel === 'Engelledikleri' && p.target?.[0] === typeId);
+  const key = existing?.key ?? (await addProp(typeId, { label: 'Bekledikleri', kind: 'relation', target: [typeId], backLabel: 'Engelledikleri' }));
+  await updateCollection(typeId, { blockedBy: key });
 }
 
 /** Kullanıcı koleksiyonunu siler; içindeki notlar "Notlar"a taşınır (silinmez). */

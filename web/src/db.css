@@ -358,3 +358,14 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .ext-actions .spacer { flex: 1; }
 .cal-connect { margin-left: 4px; text-decoration: none; }
 .filter-join { width: 56px; flex: none; }
+.te-opt { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; cursor: pointer; } .te-opt input { margin-top: 4px; accent-color: var(--accent); }
+/* Alt öğeler */
+.sub-toggle { border: none; background: none; color: var(--muted); cursor: pointer; width: 18px; height: 18px; padding: 0; flex: none; font-size: 11px; transition: transform 0.15s; border-radius: 4px; }
+.sub-toggle:hover { background: var(--hover); color: var(--text); }
+.sub-toggle.open { transform: rotate(90deg); }
+.sub-toggle.empty { opacity: 0.3; }
+.sub-row .tname { background: color-mix(in srgb, var(--panel) 50%, transparent); }
+/* Zaman çizelgesi bağımlılık okları */
+.tl-deps { position: absolute; top: 0; pointer-events: none; z-index: 1; overflow: visible; }
+.tl-deps path { fill: none; stroke: var(--muted); stroke-width: 1.5; opacity: 0.8; }
+.tl-deps path.bad { stroke: var(--danger); opacity: 1; stroke-dasharray: 4 3; }

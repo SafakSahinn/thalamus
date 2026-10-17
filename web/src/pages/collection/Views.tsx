@@ -3,7 +3,7 @@ import { displayTitle, noteIcon, parseDay, relTime } from '../../lib/format';
 import { go } from '../../lib/router';
 import { deleteNote, duplicateNote, setProp, todayStr, updateNote, useStore } from '../../lib/store';
 import { createDefault } from '../../lib/templates';
-import type { Note, PropDef, SavedView, TypeDef } from '../../lib/types';
+import { relationIds, type Note, type PropDef, type SavedView, type TypeDef } from '../../lib/types';
 import { groupNotes, type Group } from '../../lib/views';
 import { openPeek, peekClick } from '../../components/Peek';
 import { Cell, Cover, EditCell } from './Cells';
@@ -22,9 +22,20 @@ void go;
 
 // ---------- tablo ----------
 
-function TitleCell({ n }: { n: Note }) {
+interface Nest {
+  /** Üst öğe alanının anahtarı */
+  key: string;
+  open: Set<string>;
+  toggle: (id: string) => void;
+  addChild: (parent: string) => void;
+}
+
+function TitleCell({ n, depth = 0, kids = 0, nest }: { n: Note; depth?: number; kids?: number; nest?: Nest }) {
   return (
-    <div className="tname-cell">
+    <div className="tname-cell" style={depth ? { paddingLeft: depth * 22 } : undefined}>
+      {nest && (
+        <button type="button" className={`sub-toggle ${kids ? '' : 'empty'} ${nest.open.has(n.id) ? 'open' : ''}`} onClick={() => nest.toggle(n.id)} title={kids ? `${kids} alt öğe` : 'Alt öğe yok'} aria-label="Alt öğeleri aç/kapat">▸</button>
+      )}
       <span className="ticon">{noteIcon(n)}</span>
       <input
         key={n.id}
@@ -33,24 +44,39 @@ function TitleCell({ n }: { n: Note }) {
         onBlur={(e) => e.target.value !== n.title && updateNote(n.id, { title: e.target.value })}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
+      {nest && <button type="button" className="open-btn" onClick={() => nest.addChild(n.id)} title="Alt öğe ekle">＋</button>}
       <button type="button" className="open-btn" onClick={() => open(n.id)} title="Yan panelde aç (Ctrl ile tam sayfa)">Aç</button>
     </div>
   );
 }
 
-function TableRows({ rows, cols, sel, toggle }: { rows: Note[]; cols: PropDef[]; sel: Set<string>; toggle: (id: string, e: React.MouseEvent | React.ChangeEvent) => void }) {
-  return (
-    <>
-      {rows.map((n) => (
-        <tr key={n.id} className={sel.has(n.id) ? 'row-sel' : ''}>
-          <td className="sel-cell"><input type="checkbox" className="check" checked={sel.has(n.id)} onChange={(e) => toggle(n.id, e)} aria-label="Seç" /></td>
-          <td className="tname">{n.type === 'daily' ? <a href={`#/n/${n.id}`}>{displayTitle(n)}</a> : <TitleCell n={n} />}</td>
-          {cols.map((c) => <td key={c.key}><EditCell note={n} def={c} /></td>)}
-          <td className="muted small nowrap">{relTime(n.updated_at)}</td>
-        </tr>
-      ))}
-    </>
-  );
+function TableRows({ rows, cols, sel, toggle, nest }: { rows: Note[]; cols: PropDef[]; sel: Set<string>; toggle: (id: string, e: React.MouseEvent | React.ChangeEvent) => void; nest?: Nest }) {
+  // Alt öğeler açıksa: bu listedeki üst öğesi de listede olanlar onun altında gösterilir
+  const ids = new Set(rows.map((r) => r.id));
+  const children = new Map<string, Note[]>();
+  const top: Note[] = [];
+  for (const r of rows) {
+    const parent = nest ? relationIds(r.props[nest.key]).find((x) => ids.has(x) && x !== r.id) : undefined;
+    if (parent) children.set(parent, [...(children.get(parent) ?? []), r]);
+    else top.push(r);
+  }
+  const row = (n: Note, depth: number, seen: Set<string>): React.ReactNode[] => {
+    const kids = children.get(n.id) ?? [];
+    const out: React.ReactNode[] = [
+      <tr key={n.id} className={`${sel.has(n.id) ? 'row-sel' : ''} ${depth ? 'sub-row' : ''}`}>
+        <td className="sel-cell"><input type="checkbox" className="check" checked={sel.has(n.id)} onChange={(e) => toggle(n.id, e)} aria-label="Seç" /></td>
+        <td className="tname">{n.type === 'daily' ? <a href={`#/n/${n.id}`}>{displayTitle(n)}</a> : <TitleCell n={n} depth={depth} kids={kids.length} nest={nest} />}</td>
+        {cols.map((c) => <td key={c.key}><EditCell note={n} def={c} /></td>)}
+        <td className="muted small nowrap">{relTime(n.updated_at)}</td>
+      </tr>,
+    ];
+    if (nest?.open.has(n.id) && !seen.has(n.id)) {
+      const next = new Set(seen).add(n.id); // döngüye karşı
+      for (const k of kids) out.push(...row(k, depth + 1, next));
+    }
+    return out;
+  };
+  return <>{top.flatMap((n) => row(n, 0, new Set()))}</>;
 }
 
 /** Seçili satırlara toplu işlem */
@@ -111,6 +137,18 @@ export function TableView({ t, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
+  const [openSub, setOpenSub] = useState<Set<string>>(new Set());
+  const nest: Nest | undefined = t.subItems
+    ? {
+        key: t.subItems,
+        open: openSub,
+        toggle: (id) => setOpenSub((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; }),
+        addChild: (parent) => {
+          setOpenSub((s) => new Set(s).add(parent));
+          openPeek(createDefault(t.id, { ...newProps(), [t.subItems!]: [parent] }).id);
+        },
+      }
+    : undefined;
   const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
   const cols = t.props.filter((p) => !hidden.has(p.key));
   const gdef = view.groupBy ? t.props.find((p) => p.key === view.groupBy) : undefined;
@@ -154,7 +192,7 @@ export function TableView({ t, rows, view, newProps }: ViewProps) {
               {gdef && (
                 <tr className="group-row"><td colSpan={cols.length + 3}><b>{g.label}</b> <span className="muted small">{g.notes.length}</span></td></tr>
               )}
-              <TableRows rows={g.notes} cols={cols} sel={sel} toggle={toggle} />
+              <TableRows rows={g.notes} cols={cols} sel={sel} toggle={toggle} nest={nest} />
               <tr className="add-row"><td colSpan={cols.length + 3}><button type="button" className="linkbtn muted small" onClick={() => add(g)}>＋ Yeni</button></td></tr>
             </tbody>
           ))}
@@ -349,6 +387,42 @@ const dayNum = (s: string) => Math.round(new Date(`${s}T12:00:00`).getTime() / 8
 const fromNum = (n: number) => ymd(new Date(n * 864e5));
 const MONTH_SHORT = new Intl.DateTimeFormat('tr-TR', { month: 'short', year: '2-digit' });
 
+const TL_SCALE_H = 26;
+const TL_ROW_H = 34;
+
+/** Bağımlılık okları: "beklenen" çubuğun sonundan "bekleyen"in başına. Bekleyen, beklediği bitmeden başlıyorsa kırmızı. */
+function DependencyArrows({ dated, depKey, min, px, width }: { dated: { n: Note; s: number; e: number }[]; depKey: string; min: number; px: number; width: number }) {
+  const row = new Map(dated.map((x, i) => [x.n.id, i]));
+  const arrows: { d: string; bad: boolean; key: string }[] = [];
+  dated.forEach((b, i) => {
+    for (const id of relationIds(b.n.props[depKey])) {
+      const j = row.get(id);
+      if (j === undefined) continue;
+      const a = dated[j];
+      const x1 = (a.e + 1 - min) * px;
+      const y1 = TL_SCALE_H + j * TL_ROW_H + TL_ROW_H / 2;
+      const x2 = (b.s - min) * px;
+      const y2 = TL_SCALE_H + i * TL_ROW_H + TL_ROW_H / 2;
+      const bend = Math.max(14, Math.abs(x2 - x1) / 2);
+      arrows.push({ key: `${id}>${b.n.id}`, bad: b.s <= a.e, d: `M${x1},${y1} C${x1 + bend},${y1} ${x2 - bend},${y2} ${x2 - 2},${y2}` });
+    }
+  });
+  if (!arrows.length) return null;
+  return (
+    <svg className="tl-deps" style={{ left: 220, width, height: TL_SCALE_H + dated.length * TL_ROW_H }} aria-hidden="true">
+      <defs>
+        <marker id="tl-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)" /></marker>
+        <marker id="tl-arrow-bad" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--danger)" /></marker>
+      </defs>
+      {arrows.map((a) => (
+        <path key={a.key} d={a.d} className={a.bad ? 'bad' : ''} markerEnd={`url(#${a.bad ? 'tl-arrow-bad' : 'tl-arrow'})`}>
+          {a.bad && <title>Çakışma: beklediği iş bitmeden başlıyor</title>}
+        </path>
+      ))}
+    </svg>
+  );
+}
+
 export function TimelineView({ t, rows, view, newProps }: ViewProps) {
   const [scale, setScale] = useState<Scale>(() => (localStorage.getItem('tlScale') as Scale) || 'hafta');
   const [drag, setDrag] = useState<{ id: string; mode: 'move' | 'end'; x0: number; s0: number; e0: number; dx: number } | null>(null);
@@ -404,7 +478,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
             <button key={k} className={scale === k ? 'on' : ''} onClick={() => { setScale(k); localStorage.setItem('tlScale', k); }}>{k[0].toLocaleUpperCase('tr') + k.slice(1)}</button>
           ))}
         </div>
-        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}</span>
+        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}{t.blockedBy ? ' · oklar bağımlılıkları gösterir (kırmızı: çakışma)' : ''}</span>
       </div>
       <div className="tl-scroll" ref={(el) => {
         if (el && !el.dataset.done) {
@@ -417,6 +491,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
             {marks.map((m) => <span key={m.x} className="tl-month" style={{ left: m.x }}>{m.label}</span>)}
             <span className="tl-today" style={{ left: (today - min) * px }} title="Bugün" />
           </div>
+          {t.blockedBy && <DependencyArrows dated={dated.map((x) => ({ ...x, ...shift(x, x.n.id) }))} depKey={t.blockedBy} min={min} px={px} width={width} />}
           {dated.map((x) => {
             const p = shift(x, x.n.id);
             return (

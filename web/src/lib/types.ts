@@ -52,6 +52,8 @@ export interface PropDef {
   statusGroups?: Record<string, StatusGroup>;
   /** Benzersiz numara: önek, ör. "DENEY" → DENEY-12 */
   prefix?: string;
+  /** İlişkinin hedef koleksiyonda görünecek ters alanının adı (ör. "Üst öğe" → "Alt öğeler") */
+  backLabel?: string;
   /** İki yönlü ilişkinin ters tarafı: değeri saklanmaz, "type" tipindeki notların "key" alanından hesaplanır */
   back?: { type: TypeId; key: string };
 }
@@ -67,6 +69,10 @@ export interface TypeDef {
   cover?: string;
   /** Koleksiyonun varsayılan sıralama alanı */
   sort?: string;
+  /** Alt öğeler açıksa: "üst öğe" ilişki alanının anahtarı (tabloda iç içe satırlar) */
+  subItems?: string;
+  /** Bağımlılıklar açıksa: "beklediği" ilişki alanının anahtarı (zaman çizelgesinde oklar) */
+  blockedBy?: string;
 }
 
 const topics: PropDef = { key: 'topics', label: 'Konular', kind: 'relation', target: ['concept'], table: true };
@@ -234,7 +240,7 @@ export interface TypeSettings {
   /** Hazır tiplere eklenen alanlar */
   extra: Record<string, PropDef[]>;
   /** Hazır tiplerde ad/simge/alan değişiklikleri */
-  overrides: Record<string, { label?: string; plural?: string; icon?: string; color?: string; props?: Record<string, PropOverride>; order?: string[] }>;
+  overrides: Record<string, { label?: string; plural?: string; icon?: string; color?: string; props?: Record<string, PropOverride>; order?: string[]; subItems?: string; blockedBy?: string }>;
 }
 
 export const EMPTY_TYPE_SETTINGS: TypeSettings = { custom: [], extra: {}, overrides: {} };
@@ -253,7 +259,7 @@ function applyOverrides(t: TypeDef, ts: TypeSettings, keepHidden: boolean): Type
     };
     props = [...props].sort((a, b) => idx(a.key) - idx(b.key));
   }
-  return { ...t, label: o.label ?? t.label, plural: o.plural ?? t.plural, icon: o.icon ?? t.icon, color: o.color ?? t.color, props };
+  return { ...t, label: o.label ?? t.label, plural: o.plural ?? t.plural, icon: o.icon ?? t.icon, color: o.color ?? t.color, props, subItems: o.subItems ?? t.subItems, blockedBy: o.blockedBy ?? t.blockedBy };
 }
 
 /** Ters ilişki alanının anahtarı: "~<kaynak tip>.<kaynak alan>" */
@@ -270,7 +276,7 @@ function withBacks(types: TypeDef[]): TypeDef[] {
     for (const s of types) {
       const rels = s.props.filter((p) => p.kind === 'relation' && !p.back && p.target?.includes(t.id));
       for (const p of rels) {
-        const label = s.id === t.id ? `${p.label} (geri)` : rels.length > 1 ? `${s.plural} · ${p.label}` : s.plural;
+        const label = p.backLabel ?? (s.id === t.id ? `${p.label} (geri)` : rels.length > 1 ? `${s.plural} · ${p.label}` : s.plural);
         backs.push({ key: backKey(s.id, p.key), label, kind: 'relation', target: [s.id], back: { type: s.id, key: p.key } });
       }
     }
