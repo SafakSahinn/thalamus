@@ -5,10 +5,11 @@ import { closePeek, usePeek } from '../components/Peek';
 import ShareDialog from '../components/ShareDialog';
 import { publishShare } from '../lib/share';
 import { TimerButton } from '../components/StudyTimer';
+import WritingBar from '../components/WritingBar';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
-import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
+import { displayTitle, relTime } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
 import { fillPaper } from '../lib/paperImport';
 import { pdfSources } from '../lib/highlights';
@@ -154,7 +155,6 @@ export default function NotePage({ id }: { id: string }) {
   const small = note.props.__small === true;
   const locked = note.props.__locked === true;
   const font = typeof note.props.__font === 'string' ? (note.props.__font as string) : undefined;
-  const stats = textStats(note.text ?? '');
   const comments = Array.isArray(note.props.__comments) ? (note.props.__comments as Comment[]) : [];
   const openComments = comments.filter((c) => !c.resolved);
   const t = typeOf(note.type);
@@ -180,9 +180,6 @@ export default function NotePage({ id }: { id: string }) {
         <Crumbs note={note} />
         <a className="typechip" href={`#/c/${note.type}`} style={{ '--c': t.color } as React.CSSProperties}>{t.icon} {t.label}</a>
         <span className="muted small">düzenlendi {relTime(note.updated_at)}</span>
-        {stats.words > 0 && (
-          <span className="muted small note-stats" title={`${fmtNum(stats.chars)} karakter · yaklaşık ${stats.minutes} dk okuma`}>· {fmtNum(stats.words)} kelime</span>
-        )}
         {openComments.length > 0 && <button className="lock-badge" title="Yorumları göster" onClick={() => showComments(note.id)}>💬 {openComments.length}</button>}
         {note.type === 'paper' && !note.props.__cite && typeof note.props.doi === 'string' && parseIdent(note.props.doi) && (
           <button className="lock-badge" title="DOI/arXiv'den başlık, yazarlar, yıl, özet…" onClick={() => void fillPaper(note.id, note.props.doi as string).catch((e: Error) => alert(e.message))}>🔎 Bilgileri doldur</button>
@@ -292,6 +289,7 @@ export default function NotePage({ id }: { id: string }) {
           </div>
         )}
       </div>
+      {!locked && !isTemplate(note) && <WritingBar note={note} />}
     </div>
   );
 }

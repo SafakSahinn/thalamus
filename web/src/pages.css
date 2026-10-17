@@ -129,3 +129,19 @@
 :root[data-theme='dark'] .study-bar span { background: #3987e5; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .study-bar span { background: #3987e5; } }
 @media (max-width: 560px) { .study-kpis b { font-size: 16px; } .study-row { grid-template-columns: 1fr auto; } .study-row .study-bar { display: none; } }
+
+/* Yazma modu: alt sayaç, hedef, odak */
+.writing-bar { position: sticky; bottom: 0; margin-top: 24px; background: var(--bg); border-top: 1px solid var(--border); font-size: 12.5px; z-index: 5; }
+.wb-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 7px 2px; font-variant-numeric: tabular-nums; }
+.wb-row .spacer { flex: 1; }
+.wb-row .linkbtn { font-size: 12.5px; }
+.wb-plus { color: #1e8e3e; }
+.wb-progress { height: 3px; background: var(--hover); }
+.wb-progress span { display: block; height: 100%; background: var(--accent); transition: width 0.3s; }
+.wb-progress.done span { background: #1e8e3e; }
+body.focus-mode .sidebar, body.focus-mode .topbar, body.focus-mode .note-head, body.focus-mode .lockset,
+body.focus-mode .subpages, body.focus-mode .backlinks, body.focus-mode .localgraph, body.focus-mode .note-foot,
+body.focus-mode .decor-actions, body.focus-mode .page-cover, body.focus-mode .timer-pill { display: none !important; }
+body.focus-mode .note-page { max-width: 720px; margin: 0 auto; padding-top: 12vh; }
+body.focus-mode .writing-bar { opacity: 0.35; transition: opacity 0.2s; }
+body.focus-mode .writing-bar:hover { opacity: 1; }
