@@ -2,6 +2,7 @@
 
 import JSZip from 'jszip';
 import { displayTitle } from './format';
+import { noteToLatex } from './latex';
 import { noteToMarkdown, safeName } from './markdown';
 import { resolveFileUrl, useStore } from './store';
 import { isTemplate } from './templates';
@@ -19,6 +20,34 @@ export function download(name: string, data: Blob | string, type = 'text/markdow
 export function exportNoteMd(note: Note) {
   const md = noteToMarkdown(note, { notes: useStore.getState().notes, synced: useStore.getState().settings.synced });
   download(`${safeName(displayTitle(note))}.md`, md);
+}
+
+/**
+ * Notu LaTeX olarak indir: main.tex + refs.bib (atıf yapılan makaleler) + figures/ (görseller), tek .zip.
+ * Overleaf'e doğrudan yüklenebilir.
+ */
+export async function exportNoteLatex(note: Note): Promise<{ cited: number; figures: number }> {
+  const zip = new JSZip();
+  const figs = new Map<string, string>();
+  for (const src of assetsOf(note)) {
+    if (!/\.(png|jpe?g|pdf)$/i.test(src) && !/^(gd|local):/.test(src)) continue;
+    try {
+      const blob = await (await fetch(await resolveFileUrl(src))).blob();
+      const ext = blob.type.includes('png') ? 'png' : blob.type.includes('jpeg') ? 'jpg' : '';
+      if (!ext) continue;
+      const path = `figures/sekil${figs.size + 1}.${ext}`;
+      zip.file(path, blob);
+      figs.set(src, path);
+    } catch {
+      /* görsel alınamadı: yer tutucu kalır */
+    }
+  }
+  const s = useStore.getState();
+  const r = noteToLatex(note, { notes: s.notes, synced: s.settings.synced, figure: (src) => figs.get(src) ?? null });
+  zip.file('main.tex', r.tex);
+  if (r.bib) zip.file('refs.bib', r.bib);
+  download(`${safeName(displayTitle(note))}-latex.zip`, await zip.generateAsync({ type: 'blob' }));
+  return { cited: r.cited, figures: figs.size };
 }
 
 /** Notta geçen ekler (gd:// veya local://) */

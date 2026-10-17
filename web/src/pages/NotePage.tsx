@@ -16,7 +16,7 @@ import { parseIdent } from '../lib/scholar';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
 import { createNote, deleteNote, duplicateNote, restoreNote, setProp, updateNote, useIndex, useStore } from '../lib/store';
-import { exportNoteMd, printNote } from '../lib/exporter';
+import { exportNoteLatex, exportNoteMd, printNote } from '../lib/exporter';
 import { applyTemplate, isTemplate, saveAsTemplate, templatesFor } from '../lib/templates';
 import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 
@@ -222,6 +222,7 @@ export default function NotePage({ id }: { id: string }) {
               <button className="btn small" onClick={() => { const c = duplicateNote(note.id); setMenu(false); if (c) go(`/n/${c.id}`); }}>⧉ Çoğalt</button>
               {note.type !== 'daily' && <button className="btn small" onClick={() => { setShowMove(true); setMenu(false); }}>↪ Başka sayfanın altına taşı</button>}
               <button className="btn small" onClick={() => { exportNoteMd(note); setMenu(false); }}>⬇ Markdown olarak indir</button>
+              <button className="btn small" title="main.tex + refs.bib + şekiller (Overleaf'e yüklenebilir)" onClick={() => { void exportNoteLatex(note); setMenu(false); }}>⬇ LaTeX olarak indir</button>
               <button className="btn small" onClick={() => { setMenu(false); setTimeout(printNote, 50); }}>🖨 Yazdır / PDF</button>
               {!isTemplate(note) && note.type !== 'daily' && (
                 <button className="btn small" onClick={() => { const tpl = saveAsTemplate(note); setMenu(false); go(`/n/${tpl.id}`); }}>🧩 Şablon olarak kaydet</button>
