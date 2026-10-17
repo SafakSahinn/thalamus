@@ -23,7 +23,7 @@ function RelationPick({ def, value, onChange }: { def: PropDef; value: string[];
           <button type="button" className="x" onClick={() => onChange(value.filter((x) => x !== id))} aria-label="Kaldır">×</button>
         </span>
       ))}
-      <select value="" onChange={(e) => e.target.value && onChange([...value, e.target.value])} aria-label={def.label}>
+      <select value="" onChange={(e) => e.target.value && onChange(def.single ? [e.target.value] : [...value, e.target.value])} aria-label={def.label}>
         <option value="">+ {typeOf(target).label} seç…</option>
         {options.filter((n) => !value.includes(n.id)).map((n) => <option key={n.id} value={n.id}>{displayTitle(n)}</option>)}
       </select>

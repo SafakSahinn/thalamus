@@ -214,11 +214,12 @@ export function assignUids(type: string, key: string) {
 function setBackRelation(id: string, key: string, value: unknown) {
   const [srcType, srcKey] = key.slice(1).split('.');
   const want = new Set(relationIds(value));
+  const single = Boolean(typeOf(srcType).props.find((p) => p.key === srcKey)?.single);
   for (const n of Object.values(get().notes)) {
     if (n.type !== srcType || n.deleted_at) continue;
     const ids = relationIds(n.props[srcKey]);
     const has = ids.includes(id);
-    if (want.has(n.id) && !has) setProp(n.id, srcKey, [...ids, id]);
+    if (want.has(n.id) && !has) setProp(n.id, srcKey, single ? [id] : [...ids, id]);
     else if (!want.has(n.id) && has) setProp(n.id, srcKey, ids.filter((x) => x !== id));
   }
 }

@@ -104,6 +104,7 @@ export async function updateProp(typeId: string, key: string, patch: Partial<Pro
     if (patch.label !== undefined) po.label = patch.label;
     if (patch.options !== undefined) po.options = patch.options;
     if (patch.table !== undefined) po.table = patch.table;
+    if ('single' in patch) po.single = patch.single;
     o.props = { ...(o.props ?? {}), [key]: po };
   }
   await commit(ts);

@@ -31,6 +31,18 @@ describe('iki yönlü ilişki', () => {
     expect(notes()[lab.id].props[back.key]).toBeUndefined();
   });
 
+  it('tek kayıt sınırlı ilişkide ters taraftan ekleme öncekinin yerine geçer', async () => {
+    const { updateProp } = await import('./schema');
+    await updateProp('paper', 'course', { single: true });
+    const a = createNote('course', 'A dersi');
+    const b = createNote('course', 'B dersi');
+    const p = createNote('paper', 'Makale', { course: [a.id] });
+    const back = typeOf('course').props.find((x) => x.key === backKey('paper', 'course'))!;
+    setProp(b.id, back.key, [p.id]);
+    expect(useStore.getState().notes[p.id].props.course).toEqual([b.id]);
+    await updateProp('paper', 'course', { single: undefined });
+  });
+
   it('aynı tipe birden çok ilişki varsa etikette alan adı da yazar, kendine ilişki "(geri)" olur', () => {
     const paperBacks = typeOf('paper').props.filter((p) => p.back);
     expect(paperBacks.map((p) => p.label)).toContain('Atıf yaptığı yayınlar (geri)');

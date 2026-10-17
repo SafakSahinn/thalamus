@@ -100,7 +100,7 @@ function RelationInput({ note, def }: { note: Note; def: PropDef }) {
   const total = options.length + (canCreate ? 1 : 0);
 
   const add = (id: string) => {
-    setProp(note.id, def.key, [...ids, id]);
+    setProp(note.id, def.key, def.single ? [id] : [...ids, id]);
     setQ('');
     setSel(0);
   };
@@ -121,7 +121,7 @@ function RelationInput({ note, def }: { note: Note; def: PropDef }) {
       <span className="relinput">
         <input
           value={q}
-          placeholder={linked.length ? '+' : `${TYPE_MAP[targets[0]].label} ekle…`}
+          placeholder={linked.length ? (def.single ? 'değiştir…' : '+') : `${TYPE_MAP[targets[0]].label} ekle…`}
           onChange={(e) => {
             setQ(e.target.value);
             setOpen(true);

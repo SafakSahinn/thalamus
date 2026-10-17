@@ -52,6 +52,8 @@ export interface PropDef {
   statusGroups?: Record<string, StatusGroup>;
   /** Benzersiz numara: önek, ör. "DENEY" → DENEY-12 */
   prefix?: string;
+  /** İlişki en fazla bir kayda bağlanabilir (Notion'daki "1 sayfa sınırı") */
+  single?: boolean;
   /** İlişkinin hedef koleksiyonda görünecek ters alanının adı (ör. "Üst öğe" → "Alt öğeler") */
   backLabel?: string;
   /** İki yönlü ilişkinin ters tarafı: değeri saklanmaz, "type" tipindeki notların "key" alanından hesaplanır */
@@ -229,6 +231,7 @@ export const BUILTIN_TYPES: TypeDef[] = [
 
 export interface PropOverride {
   label?: string;
+  single?: boolean;
   options?: string[];
   table?: boolean;
   hidden?: boolean;
