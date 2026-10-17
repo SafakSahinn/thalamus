@@ -6,6 +6,26 @@ import { relationIds, typeOf, type Note, type PropDef } from './types';
 
 const MAX_DEPTH = 4;
 
+// Ters ilişki dizini: notlar değişmedikçe yeniden kurulmaz
+const backCache = new WeakMap<Record<string, Note>, Map<string, Map<string, string[]>>>();
+
+/** "type" tipindeki notlardan "key" alanında bu nota bağlananlar */
+export function backIds(note: Note, back: { type: string; key: string }, notes: Record<string, Note>): string[] {
+  let byKey = backCache.get(notes);
+  if (!byKey) backCache.set(notes, (byKey = new Map()));
+  const k = `${back.type}.${back.key}`;
+  let idx = byKey.get(k);
+  if (!idx) {
+    idx = new Map();
+    for (const n of Object.values(notes)) {
+      if (n.type !== back.type || n.deleted_at) continue;
+      for (const id of relationIds(n.props[back.key])) idx.set(id, [...(idx.get(id) ?? []), n.id]);
+    }
+    byKey.set(k, idx);
+  }
+  return idx.get(note.id) ?? [];
+}
+
 function findProp(note: Note, name: string): PropDef | undefined {
   const props = typeOf(note.type).props;
   const n = norm(name);
@@ -14,6 +34,7 @@ function findProp(note: Note, name: string): PropDef | undefined {
 
 /** Bir notun alan değeri (hesaplananlar dahil). Formül hatasında { error } döner. */
 export function propValue(note: Note, def: PropDef, notes: Record<string, Note>, depth = 0): unknown {
+  if (def.back) return backIds(note, def.back, notes);
   switch (def.kind) {
     case 'created':
       return note.created_at;
@@ -43,7 +64,7 @@ export function propValue(note: Note, def: PropDef, notes: Record<string, Note>,
       if (!r) return '';
       const rel = typeOf(note.type).props.find((p) => p.key === r.relation);
       if (!rel) return { error: 'Bağlantı alanı bulunamadı' };
-      const targets = relationIds(note.props[r.relation]).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
+      const targets = relationIds(propValue(note, rel, notes, depth + 1)).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
       const values = targets.map((t) => {
         if (r.prop === '__title') return t.title;
         const p = typeOf(t.type).props.find((x) => x.key === r.prop);

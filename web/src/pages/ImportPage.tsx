@@ -107,7 +107,7 @@ export default function ImportPage() {
           <p>Bulunan: <b>{parsed.databases.length}</b> veritabanı, <b>{parsed.pages.length}</b> sayfa, <b>{parsed.assets.size}</b> dosya.</p>
           {parsed.databases.map((db) => {
             const m = maps[db.key];
-            const props = TYPE_MAP[m.type].props;
+            const props = TYPE_MAP[m.type].props.filter((p) => !p.back);
             return (
               <section key={db.key} className="dbmap">
                 <div className="row">

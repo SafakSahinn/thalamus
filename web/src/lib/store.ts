@@ -4,7 +4,7 @@ import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText } from './links';
-import { applyTypeSettings, DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
+import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
 
@@ -114,8 +114,14 @@ export function createNote(
     id: uid(), type, title, props, content, text: plainText(content), links: [],
     pinned: false, created_at: t, updated_at: t, deleted_at: null,
   };
+  // Ters ilişki alanları saklanmaz: kaynak notlara yazılır
+  const backs = Object.keys(props).filter(isBackKey);
+  if (backs.length) {
+    n.props = Object.fromEntries(Object.entries(props).filter(([k]) => !isBackKey(k)));
+  }
   n.links = computeLinks(n);
   commit([n]);
+  for (const k of backs) setProp(n.id, k, props[k]);
   return n;
 }
 
@@ -142,10 +148,24 @@ export function updateNote(id: string, patch: NotePatch) {
 export function setProp(id: string, key: string, value: unknown) {
   const old = get().notes[id];
   if (!old) return;
+  if (isBackKey(key)) return setBackRelation(id, key, value);
   const props = { ...old.props };
   if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) delete props[key];
   else props[key] = value;
   updateNote(id, { props });
+}
+
+/** Ters ilişki alanı düzenlendi: değeri saklamak yerine kaynak notların ilişki alanlarını güncelle */
+function setBackRelation(id: string, key: string, value: unknown) {
+  const [srcType, srcKey] = key.slice(1).split('.');
+  const want = new Set(relationIds(value));
+  for (const n of Object.values(get().notes)) {
+    if (n.type !== srcType || n.deleted_at) continue;
+    const ids = relationIds(n.props[srcKey]);
+    const has = ids.includes(id);
+    if (want.has(n.id) && !has) setProp(n.id, srcKey, [...ids, id]);
+    else if (!want.has(n.id) && has) setProp(n.id, srcKey, ids.filter((x) => x !== id));
+  }
 }
 
 /** Açık editörün içeriği dışarıdan değiştiğinde (şablon, geçmişten geri yükleme) yeniden yüklensin */

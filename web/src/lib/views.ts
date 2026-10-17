@@ -167,7 +167,7 @@ export function groupNotes(rows: Note[], def: PropDef, notes: Record<string, Not
     map.get(k)!.push(n);
   };
   for (const n of rows) {
-    const v = n.props[def.key];
+    const v = def.back ? propValue(n, def, notes) : n.props[def.key];
     if (def.kind === 'checkbox') push(v ? 'true' : 'false', n);
     else if (def.kind === 'relation' || def.kind === 'multiselect') {
       const ids = def.kind === 'relation' ? relationIds(v) : Array.isArray(v) ? (v as string[]) : [];

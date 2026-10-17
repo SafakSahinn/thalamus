@@ -44,7 +44,7 @@ export function NoteChip({ note }: { note: Note }) {
 function RelationInput({ note, def }: { note: Note; def: PropDef }) {
   const notes = useStore((s) => s.notes);
   const { alive } = useIndex();
-  const ids = relationIds(note.props[def.key]);
+  const ids = relationIds(propValue(note, def, notes));
   const linked = ids.map((id) => notes[id]).filter((n): n is Note => Boolean(n && !n.deleted_at));
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -462,10 +462,11 @@ function ExtraProps({ note }: { note: Note }) {
 
 export default function PropertyPanel({ note }: { note: Note }) {
   const t = typeOf(note.type);
+  const notes = useStore((s) => s.notes);
   const [showEmpty, setShowEmpty] = useState(false);
   const isEmpty = (d: PropDef) => {
     if (['formula', 'rollup', 'created', 'updated'].includes(d.kind)) return false;
-    const v = note.props[d.key];
+    const v = d.back ? propValue(note, d, notes) : note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };
   const hidden = t.props.filter((d) => isEmpty(d) && !alwaysShow(note, d));

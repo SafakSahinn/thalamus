@@ -31,6 +31,8 @@ export interface PropDef {
   rollup?: { relation: string; prop: string; fn: RollupFn };
   /** Kullanıcının eklediği alan (silinebilir) */
   custom?: boolean;
+  /** İki yönlü ilişkinin ters tarafı: değeri saklanmaz, "type" tipindeki notların "key" alanından hesaplanır */
+  back?: { type: TypeId; key: string };
 }
 
 export interface TypeDef {
@@ -233,14 +235,36 @@ function applyOverrides(t: TypeDef, ts: TypeSettings, keepHidden: boolean): Type
   return { ...t, label: o.label ?? t.label, plural: o.plural ?? t.plural, icon: o.icon ?? t.icon, color: o.color ?? t.color, props };
 }
 
+/** Ters ilişki alanının anahtarı: "~<kaynak tip>.<kaynak alan>" */
+export const backKey = (type: string, key: string) => `~${type}.${key}`;
+export const isBackKey = (key: string) => key.startsWith('~');
+
+/**
+ * İki yönlü ilişkiler (Notion'daki gibi): bir tipteki her bağlantı alanı, hedef tipte bir ters alan olarak da görünür.
+ * Ör. Makale → "Ders" alanı, Ders sayfasında "Makaleler" alanı olur. Ters alanlar saklanmaz; düzenlenince kaynak notlar güncellenir.
+ */
+function withBacks(types: TypeDef[]): TypeDef[] {
+  return types.map((t) => {
+    const backs: PropDef[] = [];
+    for (const s of types) {
+      const rels = s.props.filter((p) => p.kind === 'relation' && !p.back && p.target?.includes(t.id));
+      for (const p of rels) {
+        const label = s.id === t.id ? `${p.label} (geri)` : rels.length > 1 ? `${s.plural} · ${p.label}` : s.plural;
+        backs.push({ key: backKey(s.id, p.key), label, kind: 'relation', target: [s.id], back: { type: s.id, key: p.key } });
+      }
+    }
+    return backs.length ? { ...t, props: [...t.props, ...backs] } : t;
+  });
+}
+
 /** Güncel tip listesi (hazır + kullanıcı). ES modül canlı bağlaması sayesinde her yerde güncel kalır. */
-export let TYPES: TypeDef[] = BUILTIN_TYPES;
+export let TYPES: TypeDef[] = withBacks(BUILTIN_TYPES);
 export let TYPE_MAP: Record<string, TypeDef> = Object.fromEntries(TYPES.map((t) => [t.id, t]));
 let typeSettings: TypeSettings = EMPTY_TYPE_SETTINGS;
 
 export function applyTypeSettings(ts: TypeSettings | undefined) {
   typeSettings = ts ?? EMPTY_TYPE_SETTINGS;
-  TYPES = [...BUILTIN_TYPES.map((t) => applyOverrides(t, typeSettings, false)), ...typeSettings.custom.map((t) => applyOverrides(t, typeSettings, false))];
+  TYPES = withBacks([...BUILTIN_TYPES.map((t) => applyOverrides(t, typeSettings, false)), ...typeSettings.custom.map((t) => applyOverrides(t, typeSettings, false))]);
   TYPE_MAP = Object.fromEntries(TYPES.map((t) => [t.id, t]));
 }
 

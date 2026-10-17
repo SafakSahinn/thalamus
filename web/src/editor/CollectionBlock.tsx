@@ -36,10 +36,10 @@ function CollectionView({ node, updateAttributes, editor }: ReactNodeViewProps) 
   // Buradan eklenen not bu sayfaya bağlansın
   const newProps = () => {
     if (!t || !onlyLinked || !noteId) return {};
-    const rel = t.props.find((p) => p.kind === 'relation' && here && p.target?.includes(here.type));
+    const rel = t.props.find((p) => p.kind === 'relation' && !p.back && here && p.target?.includes(here.type));
     return rel ? { [rel.key]: [noteId] } : { parent: [noteId] };
   };
-  const linkVia = t && here ? t.props.find((p) => p.kind === 'relation' && p.target?.includes(here.type))?.label : undefined;
+  const linkVia = t && here ? t.props.find((p) => p.kind === 'relation' && !p.back && p.target?.includes(here.type))?.label : undefined;
   const Render = RENDER[kind] ?? TableView;
 
   return (

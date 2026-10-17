@@ -190,7 +190,7 @@ export type ColTarget = string; // prop anahtarı | 'new' | 'extra' | 'skip' | '
 
 export function guessColumn(col: string, type: TypeId, sample: string[]): ColTarget {
   const c = norm(col);
-  const props = TYPE_MAP[type].props;
+  const props = TYPE_MAP[type].props.filter((p) => !p.back);
   const direct = props.find((p) => norm(p.label) === c || p.key === c);
   if (direct) return direct.key;
   for (const p of props) if (SYN[p.key]?.includes(c)) return p.key;

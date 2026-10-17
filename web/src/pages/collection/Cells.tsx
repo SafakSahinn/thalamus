@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Chip, ComputedValue, NoteChip, PropValue, Stars } from '../../components/PropertyPanel';
+import { propValue } from '../../lib/compute';
 import { fmtDate } from '../../lib/format';
 import { resolveFileUrl, useStore } from '../../lib/store';
 import { relationIds, type Note, type PropDef } from '../../lib/types';
@@ -8,7 +9,7 @@ import { relationIds, type Note, type PropDef } from '../../lib/types';
 export function Cell({ note, def }: { note: Note; def: PropDef }) {
   const notes = useStore((s) => s.notes);
   if (['formula', 'rollup', 'created', 'updated'].includes(def.kind)) return <ComputedValue note={note} def={def} />;
-  const v = note.props[def.key];
+  const v = def.back ? propValue(note, def, notes) : note.props[def.key];
   if (v === undefined || v === null || v === '') return null;
   switch (def.kind) {
     case 'email': return <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
