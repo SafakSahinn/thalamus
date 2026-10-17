@@ -79,7 +79,7 @@ export default function DictionaryPage() {
 
   let letter = '';
   return (
-    <div className="page wide">
+    <div className="page wide" data-tour="dictionary">
       <div className="coll-head">
         <h1>🔤 Sözlük <span className="count">{words.length}</span></h1>
         <span className="spacer" />

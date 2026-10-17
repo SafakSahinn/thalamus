@@ -175,7 +175,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
         🔍 Ara / oluştur <kbd>Ctrl K</kbd>
       </button>
       <a href="#/" className={active('#/')}>🏠 Ana sayfa</a>
-      <a href="#/daily" className={active('#/daily')}>📅 Günlük</a>
+      <a href="#/daily" data-tour="nav-daily" className={active('#/daily')}>📅 Günlük</a>
       <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
       <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 

@@ -13,7 +13,7 @@ const POINTS = [
 export default function Welcome() {
   const welcome = useStore((s) => s.welcome);
   const name = useStore((s) => s.account?.name);
-  const [news, setNews] = useState(true);
+  const [news, setNews] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [tour, setTour] = useState(true);

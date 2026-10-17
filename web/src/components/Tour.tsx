@@ -38,6 +38,16 @@ const STEPS: Step[] = [
     text: <>Notun alanları: türü (kitap, makale, ders…), konular ve bağlantılar. Türünü değiştirirsen o koleksiyonun alanları gelir.</>,
   },
   {
+    target: 'nav-daily',
+    sidebar: true,
+    text: <>Soldan <b>Günlük</b>’e tıkla.</>,
+    until: (r) => r.name === 'daily',
+  },
+  {
+    target: 'routines',
+    text: <>Her gün için bir günlük sayfası açılır. Üstteki <b>rutinlerini</b> (ör. okuma, spor) işaretlersin; altta ne kadar düzenli gittiğini gösteren bir ısı haritası birikir. Rutinleri <b>Ayarlar</b>’dan değiştirebilirsin.</>,
+  },
+  {
     target: 'coll-book',
     sidebar: true,
     text: <>Kitaplar, makaleler, dersler, deneyler… her biri bir <b>koleksiyon</b>. Soldan <b>Kitaplar</b>’a tıkla.</>,
@@ -46,6 +56,16 @@ const STEPS: Step[] = [
   {
     target: 'views',
     text: <>Bir koleksiyonu tablo, galeri, pano ya da takvim olarak görebilir; süzüp sıralayabilirsin. <b>+ Yeni</b> ile kayıt eklerken kitap kapağını da otomatik bulur.</>,
+  },
+  {
+    target: 'coll-word',
+    sidebar: true,
+    text: <>Şimdi soldan <b>Sözlük</b>’e tıkla.</>,
+    until: (r) => r.name === 'dictionary',
+  },
+  {
+    target: 'dictionary',
+    text: <>Okurken bir kelime eklediğinde (not içinde <b>Kelimeler</b> alanından) burada toplanır ve hangi kitap, makale ya da derslerde geçtiği görünür. Aynı kelime farklı kaynaklarda geçse de tek kayıttır; tekrar kartlarıyla çalışabilirsin.</>,
   },
   {
     target: 'nav-calendar',
@@ -83,7 +103,12 @@ const STEPS: Step[] = [
   },
   {
     target: '',
-    text: <>Hazırsın! Notların Google Drive’ındaki <b>Thalamus</b> klasöründe güvende. Bu turu istediğin zaman <b>Ayarlar</b>’dan yeniden başlatabilirsin.</>,
+    text: (
+      <>
+        Hazırsın! Notların Google Drive’ındaki <b>Thalamus</b> klasöründe güvende.
+        <br />Sol menünün altında ayrıca <b>Notion’dan aktar</b>, <b>Çöp kutusu</b> ve <b>Kısayollar</b> (Ctrl /) var. Bu turu istediğin zaman <b>Ayarlar</b>’dan yeniden başlatabilirsin.
+      </>
+    ),
   },
 ];
 

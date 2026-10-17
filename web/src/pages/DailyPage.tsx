@@ -20,7 +20,7 @@ export function RoutineChecks({ date, compact }: { date: string; compact?: boole
   };
   if (!routines.length) return <p className="muted small">Rutin tanımlı değil. <a href="#/settings">Ayarlar</a>’dan ekleyebilirsin.</p>;
   return (
-    <div className={`routines ${compact ? 'compact' : ''}`}>
+    <div className={`routines ${compact ? 'compact' : ''}`} data-tour="routines">
       {routines.map((r) => (
         <button key={r.id} className={`routine ${checks[r.id] ? 'done' : ''}`} onClick={() => toggle(r)}>
           <span className="ric">{r.icon}</span> {r.label} {checks[r.id] && <span className="tick">✓</span>}
