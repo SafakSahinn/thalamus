@@ -4,6 +4,7 @@ import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
 import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
+import CommentsPanel from './components/CommentsPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
 import Welcome from './components/Welcome';
@@ -91,6 +92,7 @@ export default function App() {
       <PromptHost />
       <Welcome />
       <Tour />
+      <CommentsPanel />
       <Shortcuts />
       <Peek />
     </div>

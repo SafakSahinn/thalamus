@@ -8,6 +8,7 @@ import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
 import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
+import { openComments as showComments, type Comment } from '../lib/comments';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
 import { createNote, deleteNote, duplicateNote, restoreNote, setProp, updateNote, useIndex, useStore } from '../lib/store';
@@ -149,10 +150,13 @@ export default function NotePage({ id }: { id: string }) {
   const locked = note.props.__locked === true;
   const font = typeof note.props.__font === 'string' ? (note.props.__font as string) : undefined;
   const stats = textStats(note.text ?? '');
+  const comments = Array.isArray(note.props.__comments) ? (note.props.__comments as Comment[]) : [];
+  const openComments = comments.filter((c) => !c.resolved);
   const t = typeOf(note.type);
 
   return (
     <div className={`page note-page ${wide ? 'wide' : ''} ${small ? 'small-text' : ''} ${font ? `font-${font}` : ''} ${locked ? 'locked' : ''}`}>
+      {openComments.length > 0 && <style>{`${openComments.map((c) => `[data-comment="${c.id}"]`).join(',')}{background:var(--comment-bg);border-bottom:2px solid var(--comment-line);cursor:pointer}`}</style>}
       {showHistory && <HistoryDialog note={note} onClose={() => setShowHistory(false)} />}
       {showShare && <ShareDialog note={note} onClose={() => setShowShare(false)} />}
       {showMove && <MoveDialog note={note} onClose={() => setShowMove(false)} />}
@@ -174,6 +178,7 @@ export default function NotePage({ id }: { id: string }) {
         {stats.words > 0 && (
           <span className="muted small note-stats" title={`${fmtNum(stats.chars)} karakter · yaklaşık ${stats.minutes} dk okuma`}>· {fmtNum(stats.words)} kelime</span>
         )}
+        {openComments.length > 0 && <button className="lock-badge" title="Yorumları göster" onClick={() => showComments(note.id)}>💬 {openComments.length}</button>}
         {locked && <button className="lock-badge" title="Kilidi aç" onClick={() => setProp(note.id, '__locked', undefined)}>🔒 Kilitli</button>}
         <span className="spacer" />
         <button className={`iconbtn ${note.pinned ? 'on' : ''}`} title={note.pinned ? 'Sabitlemeyi kaldır' : 'Kenar çubuğuna sabitle'} onClick={() => updateNote(note.id, { pinned: !note.pinned })}>📌</button>
@@ -181,6 +186,7 @@ export default function NotePage({ id }: { id: string }) {
           <button className="iconbtn" onClick={() => setMenu((m) => !m)} title="Diğer">⋯</button>
           {menu && (
             <div className="dropdown" onMouseLeave={() => setMenu(false)}>
+              <button className="btn small" onClick={() => { showComments(note.id); setMenu(false); }}>💬 Yorumlar{comments.length ? ` (${openComments.length})` : ''}</button>
               <label className="muted small">Sayfa</label>
               <label className="menu-check"><input type="checkbox" checked={wide} onChange={(e) => setProp(note.id, '__wide', e.target.checked || undefined)} /> Tam genişlik</label>
               <label className="menu-check"><input type="checkbox" checked={small} onChange={(e) => setProp(note.id, '__small', e.target.checked || undefined)} /> Küçük yazı</label>

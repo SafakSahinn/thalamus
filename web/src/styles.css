@@ -660,3 +660,27 @@ fieldset.lockset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .uid { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
 .file-chip { border: none; cursor: pointer; font: inherit; color: var(--text); }
 .files-input { gap: 6px; }
+
+/* Yorumlar */
+:root { --comment-bg: rgba(255, 196, 0, 0.18); --comment-line: rgba(230, 160, 0, 0.75); }
+:root[data-theme='dark'] { --comment-bg: rgba(255, 196, 0, 0.14); --comment-line: rgba(255, 196, 0, 0.6); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --comment-bg: rgba(255, 196, 0, 0.14); --comment-line: rgba(255, 196, 0, 0.6); } }
+.comments-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(360px, 100vw); z-index: 55; background: var(--bg);
+  border-left: 1px solid var(--border); box-shadow: -8px 0 30px rgb(0 0 0 / 10%); padding: 14px 16px 24px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;
+}
+.comments-head { display: flex; align-items: center; gap: 8px; }
+.comments-head .spacer { flex: 1; }
+.comment-new { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.comment-new textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; resize: vertical; }
+.thread { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--panel); }
+.thread.focused { border-color: var(--comment-line); box-shadow: 0 0 0 2px var(--comment-bg); }
+.thread.resolved { opacity: 0.65; }
+.thread-quote { border: none; border-left: 3px solid var(--comment-line); background: var(--comment-bg); text-align: left; font: inherit; font-size: 13px; color: var(--text); padding: 4px 8px; border-radius: 0 6px 6px 0; cursor: pointer; }
+.thread-msg { display: flex; flex-direction: column; gap: 2px; }
+.thread-msg.reply { padding-left: 12px; border-left: 2px solid var(--border); }
+.thread-text { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.thread-reply input { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; background: var(--bg); }
+.thread-actions { display: flex; gap: 14px; }
+.danger-link { color: var(--danger) !important; }

@@ -8,6 +8,8 @@ import BlockHandle from './BlockHandle';
 import { BG_COLORS, TEXT_COLORS } from './colors';
 import { editorExtensions, insertFile } from './extensions';
 import FindBar from './FindBar';
+import { addComment, commentsOf, openComments } from '../lib/comments';
+import { uid } from '../lib/store';
 
 interface Props {
   /** Değiştiğinde editör yeniden kurulur */
@@ -44,6 +46,13 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
           if (!files.length) return false;
           files.forEach((f) => void insertFile(editorRef.current!, f));
           return true;
+        },
+        // Metindeki yoruma tıklayınca yorum paneli o yorumla açılır
+        handleClick: (_view, _pos, event) => {
+          const id = (event.target as HTMLElement | null)?.closest?.('[data-comment]')?.getAttribute('data-comment');
+          if (!id || !noteId || !commentsOf(noteId).some((c) => c.id === id && !c.resolved)) return false;
+          openComments(noteId, id);
+          return false;
         },
         handleDrop: (view, event) => {
           const files = [...(event.dataTransfer?.files ?? [])];
@@ -139,6 +148,18 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
         <button className={state.code ? 'on' : ''} onClick={() => editor.chain().focus().toggleCode().run()} title="Kod">{'</>'}</button>
         <button className={state.link ? 'on' : ''} onClick={() => void setLink()} title="Bağlantı">🔗</button>
         <button onClick={toMath} title="Seçimi formüle çevir">∑</button>
+        {noteId && (
+          <button title="Yorum ekle" onClick={async () => {
+            const { from, to } = editor.state.selection;
+            const quote = editor.state.doc.textBetween(from, to, ' ').trim();
+            const text = await promptText('Yorum', '', { multiline: true, hint: quote ? `“${quote.slice(0, 80)}${quote.length > 80 ? '…' : ''}” hakkında` : undefined });
+            if (!text?.trim()) return;
+            const id = uid();
+            editor.chain().focus().setTextSelection({ from, to }).setMark('comment', { id }).run();
+            addComment(noteId, text.trim(), quote, id);
+            openComments(noteId, id);
+          }}>💬</button>
+        )}
         <span className="bubble-colors">
           <button className={colors ? 'on' : ''} onClick={() => setColors(!colors)} title="Renk">A<small>▾</small></button>
           {colors && (

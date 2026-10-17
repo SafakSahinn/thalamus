@@ -19,6 +19,7 @@ import { CodeBlock } from './CodeBlock';
 import { CollectionBlock } from './CollectionBlock';
 import { newSyncedId, SyncedBlock, syncedList } from './SyncedBlock';
 import { ButtonBlock } from './ButtonBlock';
+import { CommentMark } from '../lib/comments';
 import { FindReplace } from './FindReplace';
 import { Mention } from './Mention';
 import { suggestConfig, type Entry } from './suggest';
@@ -264,6 +265,7 @@ export function baseExtensions(): AnyExtension[] {
     CollectionBlock,
     SyncedBlock,
     ButtonBlock,
+    CommentMark,
     Youtube.configure({ nocookie: true, modestBranding: true, HTMLAttributes: { class: 'yt' } }),
     TaskList,
     TaskItem.configure({ nested: true }),
