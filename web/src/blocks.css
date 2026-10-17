@@ -174,3 +174,12 @@ video.media-player { max-height: 70vh; background: #000; }
 .button-edit input, .button-edit select { border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; background: var(--bg); }
 .button-template { width: 100%; border: 1px dashed var(--border); border-radius: 8px; padding: 4px 10px; background: var(--bg); box-sizing: border-box; }
 .button-template .prose { min-height: 3em; padding-bottom: 4px; }
+
+/* Kaynakça bloğu */
+.bib-block { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin: 0.8em 0; background: var(--panel); }
+.bib-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.bib-head .spacer { flex: 1; }
+.bib-list { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.bib-list.apa li { padding-left: 2em; text-indent: -2em; }
+.bib-list a { color: var(--text); text-decoration: none; }
+.bib-list a:hover { text-decoration: underline; }

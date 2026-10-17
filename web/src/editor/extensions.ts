@@ -19,6 +19,7 @@ import { CodeBlock } from './CodeBlock';
 import { CollectionBlock } from './CollectionBlock';
 import { newSyncedId, SyncedBlock, syncedList } from './SyncedBlock';
 import { ButtonBlock } from './ButtonBlock';
+import { BibliographyBlock } from './BibliographyBlock';
 import { CommentMark } from '../lib/comments';
 import { FindReplace } from './FindReplace';
 import { Mention } from './Mention';
@@ -147,6 +148,7 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
   { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
   { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
   { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
+  { icon: '📚', label: 'Kaynakça', keys: 'kaynakca bibliography references atif ieee apa bibtex', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'bibliography' }).run() },
   { icon: '▶', label: 'Düğme', keys: 'button dugme sablon ekle tekrar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'buttonBlock' }).run() },
   { icon: '↻', label: 'Senkron blok (yeni)', keys: 'synced senkron esitlenen ortak blok kopya', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'syncedBlock', attrs: { sid: newSyncedId() } }).run() },
   { icon: '↻', label: 'Senkron blok (mevcut)', keys: 'synced senkron esitlenen ortak blok kopya yapistir mevcut', action: (e, r) => {
@@ -265,6 +267,7 @@ export function baseExtensions(): AnyExtension[] {
     CollectionBlock,
     SyncedBlock,
     ButtonBlock,
+    BibliographyBlock,
     CommentMark,
     Youtube.configure({ nocookie: true, modestBranding: true, HTMLAttributes: { class: 'yt' } }),
     TaskList,

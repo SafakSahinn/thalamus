@@ -91,6 +91,8 @@ function block(n: PMNode, ctx: MdCtx): string {
     case 'image': return image(n, ctx);
     case 'blockMath': return `$$\n${String(n.attrs?.latex ?? '')}\n$$`;
     case 'callout': return `> ${String(n.attrs?.emoji ?? '💡')} ${blocks(n.content, ctx).split('\n').join('\n> ')}`;
+    case 'bibliography':
+      return '_(Kaynakça bloğu: Thalamus’ta görüntülenir)_';
     case 'syncedBlock': {
       const c = ctx.synced?.[String(n.attrs?.sid ?? '')]?.content as PMNode | undefined;
       return c ? blocks(c.content, ctx) : '';

@@ -10,6 +10,7 @@ import NoteEditor from '../editor/Editor';
 import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
 import { fillPaper } from '../lib/paperImport';
+import { citeOf, formatCite, toBibtex } from '../lib/bibtex';
 import { parseIdent } from '../lib/scholar';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
@@ -192,6 +193,13 @@ export default function NotePage({ id }: { id: string }) {
           {menu && (
             <div className="dropdown" onMouseLeave={() => setMenu(false)}>
               <button className="btn small" onClick={() => { showComments(note.id); setMenu(false); }}>💬 Yorumlar{comments.length ? ` (${openComments.length})` : ''}</button>
+              {note.type === 'paper' && (
+                <>
+                  <button className="btn small" onClick={() => { void navigator.clipboard.writeText(formatCite(citeOf(note, useStore.getState().notes), 'ieee')); setMenu(false); }}>📋 Atıfı kopyala (IEEE)</button>
+                  <button className="btn small" onClick={() => { void navigator.clipboard.writeText(formatCite(citeOf(note, useStore.getState().notes), 'apa')); setMenu(false); }}>📋 Atıfı kopyala (APA)</button>
+                  <button className="btn small" onClick={() => { void navigator.clipboard.writeText(toBibtex(citeOf(note, useStore.getState().notes))); setMenu(false); }}>📋 BibTeX kopyala</button>
+                </>
+              )}
               <label className="muted small">Sayfa</label>
               <label className="menu-check"><input type="checkbox" checked={wide} onChange={(e) => setProp(note.id, '__wide', e.target.checked || undefined)} /> Tam genişlik</label>
               <label className="menu-check"><input type="checkbox" checked={small} onChange={(e) => setProp(note.id, '__small', e.target.checked || undefined)} /> Küçük yazı</label>

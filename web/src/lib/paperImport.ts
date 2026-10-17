@@ -44,6 +44,13 @@ const abstractDoc = (meta: CiteMeta) => (meta.abstract
   ? { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Özet' }] }, { type: 'paragraph', content: [{ type: 'text', text: meta.abstract }] }] }
   : null);
 
+/** Atıf bilgisinden makale notu (aynı DOI/arXiv ya da aynı başlıkta varsa onu döndürür) */
+export function createPaperFromMeta(meta: CiteMeta, extra: Record<string, unknown> = {}): { note: Note; existed: boolean } {
+  const old = findPaper(meta) ?? Object.values(useStore.getState().notes).find((n) => n.type === 'paper' && !n.deleted_at && keyName(n.title) === keyName(meta.title));
+  if (old) return { note: old, existed: true };
+  return { note: createNote('paper', meta.title, { ...propsFrom(meta, personIds(meta)), ...extra }, abstractDoc(meta)), existed: false };
+}
+
 /** DOI ya da arXiv kimliğinden yeni makale notu (zaten varsa onu döndürür) */
 export async function importPaper(input: string, extra: Record<string, unknown> = {}): Promise<{ note: Note; existed: boolean }> {
   const ident = parseIdent(input);

@@ -157,7 +157,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
         <h1>{t.icon} {t.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
-        {t.id === 'paper' && <PaperImportButton extraProps={newProps} />}
+        {t.id === 'paper' && <PaperImportButton extraProps={newProps} rows={rows} />}
         <NewButton t={t} extraProps={newProps} />
       </div>
       <div className="view-tabs" data-tour="views">
