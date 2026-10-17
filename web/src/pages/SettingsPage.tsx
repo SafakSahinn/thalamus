@@ -4,7 +4,7 @@ import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
 import { cloud } from '../lib/google';
 import {
-  deleteAccount, getAttachMode, insertNotes, saveSettings, sendFeedback, setAnnouncements, signOut, syncNow, uid, useStore,
+  deleteAccount, getAttachMode, insertNotes, saveSettings, signOut, syncNow, uid, useStore,
   type AttachMode,
 } from '../lib/store';
 import { getCoverMode, type CoverMode } from '../lib/covers';
@@ -46,28 +46,13 @@ function Routines() {
 }
 
 function Feedback() {
-  const [text, setText] = useState('');
-  const [state, setState] = useState<'idle' | 'busy' | 'sent' | string>('idle');
-  const send = async () => {
-    setState('busy');
-    try {
-      await sendFeedback(text);
-      setText('');
-      setState('sent');
-    } catch (e) {
-      const code = (e as { code?: string }).code;
-      setState(code === 'rate_limited' ? 'Bugün çok fazla mesaj gönderdin, yarın tekrar dene.' : e instanceof Error ? e.message : String(e));
-    }
-  };
   return (
     <section>
       <h3>Geri bildirim</h3>
-      <p className="muted small">Bir hata mı buldun, bir özellik mi istiyorsun? Doğrudan geliştiriciye iletilir.</p>
-      <textarea className="feedback" rows={3} value={text} maxLength={5000} placeholder="Mesajın…" onChange={(e) => { setText(e.target.value); if (state !== 'busy') setState('idle'); }} />
+      <p className="muted small">Bir hata mı buldun, bir özellik mi istiyorsun? E-postayla yazabilir ya da GitHub’da kayıt açabilirsin.</p>
       <div className="row">
-        <button className="btn" disabled={!text.trim() || state === 'busy'} onClick={() => void send()}>{state === 'busy' ? 'Gönderiliyor…' : 'Gönder'}</button>
-        {state === 'sent' && <span className="ok small">Teşekkürler, iletildi.</span>}
-        {!['idle', 'busy', 'sent'].includes(state) && <span className="err small">{state}</span>}
+        <a className="btn" href="mailto:getthalamus@gmail.com?subject=Thalamus%20geri%20bildirim">✉ E-posta gönder</a>
+        <a className="btn ghost" href="https://github.com/SafakSahinn/thalamus/issues" target="_blank" rel="noopener noreferrer">GitHub’da kayıt aç ↗</a>
       </div>
     </section>
   );
@@ -96,7 +81,7 @@ function DeleteAccount({ email }: { email: string }) {
         <button className="btn danger" onClick={() => setOpen(true)}>Hesabımı sil…</button>
       ) : (
         <div className="danger-box">
-          <p>Thalamus hesap kaydın silinir, uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır.</p>
+          <p>Uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır. Bizde zaten senin hakkında saklanan bir kayıt yok.</p>
           <label className="small">
             <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} />
             <span>Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil</span>
@@ -127,10 +112,8 @@ function download(name: string, text: string, type = 'application/json') {
 
 export default function SettingsPage() {
   const account = useStore((s) => s.account);
-  const announcements = useStore((s) => s.announcements);
   const [attach, setAttach] = useState<AttachMode>(getAttachMode());
   const [coverMode, setCoverMode] = useState<CoverMode>(getCoverMode());
-  const [annErr, setAnnErr] = useState('');
   const sync = useStore((s) => s.sync);
   const notes = useStore((s) => s.notes);
   const settings = useStore((s) => s.settings);
@@ -209,18 +192,6 @@ export default function SettingsPage() {
         )}
       </section>
 
-      {cloud && account && (
-        <section>
-          <h3>E-posta bildirimleri</h3>
-          <label className="small">
-            <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x) => setAnnErr(String(x))); }} />
-            <span>Yenilikler hakkında ara sıra e-posta al</span>
-          </label>
-          <p className="muted small">{announcements ? 'Açık: yeni özellikler duyurulduğunda e-posta alırsın. Her e-postada abonelikten çıkma bağlantısı da olur.' : 'Kapalı: Thalamus sana duyuru e-postası göndermez.'}</p>
-          {annErr && <p className="err small">{annErr}</p>}
-        </section>
-      )}
-
       {cloud && account && <CalendarSettings />}
 
       {cloud && (
@@ -290,11 +261,11 @@ export default function SettingsPage() {
         {msg && <p className="small">{msg}</p>}
       </section>
 
-      {cloud && account && <Feedback />}
+      <Feedback />
 
       {cloud && account && <DeleteAccount email={account.email} />}
 
-      <p className="muted small"><a href="#/gizlilik">Gizlilik ve KVKK</a> · <a href="#/kosullar">Kullanım Koşulları</a></p>
+      <p className="muted small"><a href="privacy.html">Gizlilik ve KVKK</a> · <a href="terms.html">Kullanım Koşulları</a></p>
 
       <section>
         <h3>Uygulama olarak yükle</h3>

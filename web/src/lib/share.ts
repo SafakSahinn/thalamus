@@ -1,10 +1,11 @@
-// Herkese açık paylaşım: notun bir kopyası Supabase'e yazılır (yalnızca paylaşılan notlar),
-// içindeki Drive görselleri "bağlantıya sahip olan görebilir" yapılır.
+// Herkese açık paylaşım: notun okunabilir bir kopyası kullanıcının Drive'ındaki Thalamus klasörüne
+// "bağlantıya sahip olan görebilir" ayarlı bir dosya olarak yazılır; bağlantı o dosyanın kimliğidir.
+// İçindeki Drive görselleri de herkese açık yapılır. Sunucuda hiçbir şey saklanmaz.
 
 import { propValue, showValue } from './compute';
 import { displayTitle, noteIcon } from './format';
-import { accessToken, callFn, fnUrl } from './google';
-import { publicFile, setProp, unpublicFile, useStore } from './store';
+import { fnUrl } from './google';
+import { publicFile, removeShareFile, setProp, unpublicFile, useStore, writeShareFile } from './store';
 import { relationIds, typeOf, type Note } from './types';
 
 interface PMNode {
@@ -57,17 +58,19 @@ export async function publishShare(note: Note): Promise<string> {
   const notes = useStore.getState().notes;
   const files = new Set<string>((note.props.__shareFiles as string[] | undefined) ?? []);
   const content = await publicContent(note.content, files);
-  const r = await callFn<{ id: string }>({
-    action: 'share', access_token: await accessToken(), note_id: note.id,
-    title: displayTitle(note), icon: noteIcon(note), props: publicProps(note, notes), content,
-  });
-  if (note.props.__share !== r.id) setProp(note.id, '__share', r.id);
+  const page: SharedPage & { thalamus_share: 1 } = {
+    thalamus_share: 1, title: displayTitle(note), icon: noteIcon(note), props: publicProps(note, notes), content,
+    updated_at: new Date().toISOString(),
+  };
+  if (JSON.stringify(page).length > 1_900_000) throw new Error('Not paylaşmak için çok büyük.');
+  const id = await writeShareFile(note.props.__share, note.id, page.title, page);
+  if (note.props.__share !== id) setProp(note.id, '__share', id);
   if (files.size) setProp(note.id, '__shareFiles', [...files]);
-  return r.id;
+  return id;
 }
 
 export async function unpublishShare(note: Note) {
-  await callFn({ action: 'unshare', access_token: await accessToken(), note_id: note.id });
+  await removeShareFile(note.props.__share);
   for (const id of (note.props.__shareFiles as string[] | undefined) ?? []) await unpublicFile(id).catch(() => undefined);
   setProp(note.id, '__share', undefined);
   setProp(note.id, '__shareFiles', undefined);
@@ -81,16 +84,11 @@ export interface SharedPage {
   updated_at: string;
 }
 
-/** Herkese açık sayfayı oku (giriş gerekmez) */
+/** Herkese açık sayfayı oku (giriş gerekmez). Paylaşım kaldırılmışsa null. */
 export async function loadShare(id: string): Promise<SharedPage | null> {
-  const base = fnUrl.replace(/\/functions\/v1\/account$/, '');
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  const r = await fetch(`${base}/rest/v1/rpc/get_share`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ share_id: id }),
-  });
+  const r = await fetch(`${fnUrl}?share=${encodeURIComponent(id)}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+  if (r.status === 404) return null;
   if (!r.ok) throw new Error('Sayfa yüklenemedi');
-  const rows = (await r.json()) as SharedPage[];
-  return rows[0] ?? null;
+  return (await r.json()) as SharedPage;
 }

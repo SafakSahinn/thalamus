@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db';
 import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
-import { accessToken, callFn, cloud as cloudConfigured, loadAuth, type AuthState, type Profile } from './google';
+import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText } from './links';
 import { applyTypeSettings, DEFAULT_SETTINGS, type Note, type Settings, type TypeId } from './types';
@@ -13,7 +13,6 @@ interface State {
   ready: boolean;
   /** Google hesabı; undefined: henüz bilinmiyor, null: giriş yapılmamış */
   account: Profile | null | undefined;
-  announcements: boolean;
   /** Yeni kayıt olan kullanıcıya bir kez gösterilen karşılama */
   welcome: boolean;
   settings: Settings;
@@ -35,7 +34,6 @@ export const useStore = create<State>(() => ({
   notes: {},
   ready: false,
   account: cloud ? undefined : null,
-  announcements: false,
   welcome: false,
   settings: DEFAULT_SETTINGS,
   sync: { status: cloud ? 'idle' : 'local', pending: 0 },
@@ -63,7 +61,7 @@ export async function initLocal() {
 /** Açılışta kayıtlı Google oturumunu yükler. */
 export async function initAuth() {
   const a = await loadAuth();
-  set({ account: a?.profile ?? null, announcements: a?.announcements ?? false });
+  set({ account: a?.profile ?? null });
 }
 
 /** Girişten sonra: başka bir hesabın yerel verisi kaldıysa temizle. */
@@ -74,7 +72,7 @@ export async function onSignedIn(a: AuthState) {
     await setMeta('auth', a);
   }
   await setMeta('ownerSub', a.profile.sub);
-  set({ account: a.profile, announcements: a.announcements, welcome: Boolean(a.is_new) });
+  set({ account: a.profile, welcome: Boolean(a.is_new) });
 }
 
 // ---------- yerel değişiklikler ----------
@@ -612,7 +610,7 @@ export async function signOut() {
   location.reload();
 }
 
-/** Hesap kaydını siler ve Google iznini geri alır; istenirse Drive'daki Thalamus klasörünü de siler. */
+/** Uygulamanın Google iznini geri alır (bütün cihazlarda oturum kapanır); istenirse Drive'daki Thalamus klasörünü de siler. */
 export async function deleteAccount(alsoDrive: boolean) {
   const token = await accessToken();
   if (alsoDrive) {
@@ -620,22 +618,41 @@ export async function deleteAccount(alsoDrive: boolean) {
     if (f) await api.remove(f.root).catch((e) => {
       if (!isNotFound(e)) throw e;
     });
-  }
-  await callFn({ action: 'delete', access_token: token });
+  } else await removeSessionFile(token);
+  const a = await loadAuth();
+  await callFn({ action: 'revoke', session: a?.session, access_token: token });
   await clearAll();
   location.hash = '#/';
   location.reload();
 }
 
-export async function setAnnouncements(v: boolean) {
-  await callFn({ action: 'settings', access_token: await accessToken(), announcements: v });
-  set({ announcements: v });
-  const a = await loadAuth();
-  if (a) await setMeta('auth', { ...a, announcements: v });
+// ---------- herkese açık paylaşım dosyaları ----------
+// Paylaşılan not, Thalamus klasöründe "bağlantıya sahip olan görebilir" ayarlı bir JSON dosyasıdır; bağlantı onun kimliğidir.
+
+/** Drive dosya kimliği mi (eski sürümlerin kısa paylaşım kimliklerinden ayırmak için) */
+export const isDriveShareId = (id: unknown): id is string => typeof id === 'string' && id.length > 20;
+
+export async function writeShareFile(existing: unknown, noteId: string, title: string, data: unknown): Promise<string> {
+  const props = { thalamus: 'share', noteId };
+  if (isDriveShareId(existing)) {
+    try {
+      await api.updateJson(existing, data, props);
+      return existing;
+    } catch (e) {
+      if (!isNotFound(e)) throw e;
+    }
+  }
+  const f = await getFolders();
+  const id = await api.createJson(f.root, `Paylaşılan - ${title.slice(0, 80) || 'not'}.json`, data, props);
+  await api.setPublic?.(id, true);
+  return id;
 }
 
-export async function sendFeedback(message: string) {
-  await callFn({ action: 'feedback', access_token: await accessToken(), message });
+export async function removeShareFile(id: unknown) {
+  if (!isDriveShareId(id)) return;
+  await api.remove(id).catch((e) => {
+    if (!isNotFound(e)) throw e;
+  });
 }
 
 // ---------- dosyalar (görsel, PDF) ----------

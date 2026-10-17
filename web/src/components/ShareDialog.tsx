@@ -52,7 +52,7 @@ export default function ShareDialog({ note, onClose }: { note: Note; onClose: ()
           <>
             <p>Notun bir kopyası herkese açık bir bağlantıyla yayınlanır. Bağlantıyı bilen herkes notu görebilir, düzenleyemez.</p>
             <ul className="muted small">
-              <li>Yayınlanan kopya Thalamus sunucusunda tutulur; paylaşımı kaldırınca silinir.</li>
+              <li>Yayınlanan kopya Drive’ındaki Thalamus klasörüne “bağlantıya sahip olan görebilir” ayarlı bir dosya olarak yazılır; paylaşımı kaldırınca silinir.</li>
               <li>Nottaki Drive görselleri ve dosyaları “bağlantıya sahip olan görebilir” yapılır.</li>
               <li>Yalnızca bu cihazda saklanan dosyalar paylaşılmaz. Bağlantı verdiğin diğer notlar paylaşılmaz.</li>
             </ul>

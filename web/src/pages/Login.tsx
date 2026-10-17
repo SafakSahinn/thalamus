@@ -55,8 +55,8 @@ export default function Login() {
         )}
         {err && <p className="err small">{err}</p>}
         <p className="muted small">
-          Devam ederek <a href="#/kosullar">Kullanım Koşulları</a>’nı kabul etmiş olursun. Hesabın için yalnızca e-posta adresin,
-          kayıt tarihin ve son kullanım zamanın tutulur: <a href="#/gizlilik">Gizlilik ve KVKK Aydınlatma Metni</a>.
+          Devam ederek <a href="terms.html">Kullanım Koşulları</a>’nı kabul etmiş olursun. Bizde senin hakkında hiçbir kayıt
+          tutulmaz; notların ve oturumun kendi Google Drive’ında durur: <a href="privacy.html">Gizlilik ve KVKK Aydınlatma Metni</a>.
         </p>
       </div>
     </div>
