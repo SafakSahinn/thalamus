@@ -19,9 +19,11 @@ interface Props {
   rev?: number;
   /** Alt sayfa oluştururken üst sayfa */
   noteId?: string | null;
+  /** Sayfa kilitliyse yalnızca okunur */
+  readOnly?: boolean;
 }
 
-export default function NoteEditor({ docKey, content, onChange, placeholder, rev, noteId = null }: Props) {
+export default function NoteEditor({ docKey, content, onChange, placeholder, rev, noteId = null, readOnly = false }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [colors, setColors] = useState(false);
   const onChangeRef = useRef(onChange);
@@ -62,6 +64,10 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
     },
     [docKey],
   );
+  useEffect(() => {
+    if (editor && editor.isEditable === readOnly) editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
+
   const editorRef = useRef(editor);
   editorRef.current = editor;
 

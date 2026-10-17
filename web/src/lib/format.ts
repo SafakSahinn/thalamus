@@ -4,6 +4,14 @@ const dateFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long'
 const dayFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
 
 /** "2026-10-16" → Date (yerel saat) */
+/** Metin istatistikleri: kelime, karakter (boşluklu) ve dakika cinsinden okuma süresi (dakikada ~200 kelime) */
+export function textStats(text: string) {
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  return { words, chars: text.length, minutes: Math.max(1, Math.round(words / 200)) };
+}
+const nf = new Intl.NumberFormat('tr-TR');
+export const fmtNum = (n: number) => nf.format(n);
+
 export const parseDay = (s: string) => {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1);

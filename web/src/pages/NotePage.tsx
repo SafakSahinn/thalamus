@@ -7,10 +7,10 @@ import { publishShare } from '../lib/share';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
-import { displayTitle, relTime } from '../lib/format';
+import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
-import { createNote, deleteNote, duplicateNote, restoreNote, updateNote, useIndex, useStore } from '../lib/store';
+import { createNote, deleteNote, duplicateNote, restoreNote, setProp, updateNote, useIndex, useStore } from '../lib/store';
 import { exportNoteMd, printNote } from '../lib/exporter';
 import { applyTemplate, isTemplate, saveAsTemplate, templatesFor } from '../lib/templates';
 import { relationIds, TYPES, typeOf, type Note, type TypeId } from '../lib/types';
@@ -143,10 +143,16 @@ export default function NotePage({ id }: { id: string }) {
   const [graphOpen, setGraphOpen] = useState(() => localStorage.getItem('localGraph') !== '0');
 
   if (!note) return <div className="page"><p className="muted">{ready ? 'Not bulunamadı.' : 'Yükleniyor…'}</p></div>;
+  // Sayfa ayarları (Notion'daki gibi): notun gizli alanlarında saklanır
+  const wide = note.props.__wide === true;
+  const small = note.props.__small === true;
+  const locked = note.props.__locked === true;
+  const font = typeof note.props.__font === 'string' ? (note.props.__font as string) : undefined;
+  const stats = textStats(note.text ?? '');
   const t = typeOf(note.type);
 
   return (
-    <div className="page note-page">
+    <div className={`page note-page ${wide ? 'wide' : ''} ${small ? 'small-text' : ''} ${font ? `font-${font}` : ''} ${locked ? 'locked' : ''}`}>
       {showHistory && <HistoryDialog note={note} onClose={() => setShowHistory(false)} />}
       {showShare && <ShareDialog note={note} onClose={() => setShowShare(false)} />}
       {showMove && <MoveDialog note={note} onClose={() => setShowMove(false)} />}
@@ -165,12 +171,25 @@ export default function NotePage({ id }: { id: string }) {
         <Crumbs note={note} />
         <a className="typechip" href={`#/c/${note.type}`} style={{ '--c': t.color } as React.CSSProperties}>{t.icon} {t.label}</a>
         <span className="muted small">düzenlendi {relTime(note.updated_at)}</span>
+        {stats.words > 0 && (
+          <span className="muted small note-stats" title={`${fmtNum(stats.chars)} karakter · yaklaşık ${stats.minutes} dk okuma`}>· {fmtNum(stats.words)} kelime</span>
+        )}
+        {locked && <button className="lock-badge" title="Kilidi aç" onClick={() => setProp(note.id, '__locked', undefined)}>🔒 Kilitli</button>}
         <span className="spacer" />
         <button className={`iconbtn ${note.pinned ? 'on' : ''}`} title={note.pinned ? 'Sabitlemeyi kaldır' : 'Kenar çubuğuna sabitle'} onClick={() => updateNote(note.id, { pinned: !note.pinned })}>📌</button>
         <div className="menuwrap">
           <button className="iconbtn" onClick={() => setMenu((m) => !m)} title="Diğer">⋯</button>
           {menu && (
             <div className="dropdown" onMouseLeave={() => setMenu(false)}>
+              <label className="muted small">Sayfa</label>
+              <label className="menu-check"><input type="checkbox" checked={wide} onChange={(e) => setProp(note.id, '__wide', e.target.checked || undefined)} /> Tam genişlik</label>
+              <label className="menu-check"><input type="checkbox" checked={small} onChange={(e) => setProp(note.id, '__small', e.target.checked || undefined)} /> Küçük yazı</label>
+              <label className="menu-check"><input type="checkbox" checked={locked} onChange={(e) => setProp(note.id, '__locked', e.target.checked || undefined)} /> Sayfayı kilitle</label>
+              <div className="seg menu-seg" role="group" aria-label="Yazı tipi">
+                {([['', 'Varsayılan'], ['serif', 'Serif'], ['mono', 'Kod']] as const).map(([v, l]) => (
+                  <button key={v} type="button" className={(font ?? '') === v ? 'on' : ''} style={{ fontFamily: v === 'serif' ? 'Georgia, serif' : v === 'mono' ? 'ui-monospace, monospace' : undefined }} onClick={() => setProp(note.id, '__font', v || undefined)}>{l}</button>
+                ))}
+              </div>
               <label className="muted small">Tipi değiştir</label>
               <select value={note.type} onChange={(e) => { updateNote(note.id, { type: e.target.value as TypeId }); setMenu(false); }}>
                 {TYPES.map((x) => <option key={x.id} value={x.id}>{x.icon} {x.label}</option>)}
@@ -205,6 +224,7 @@ export default function NotePage({ id }: { id: string }) {
           key={note.id}
           className="title"
           data-tour="title"
+          readOnly={locked}
           defaultValue={note.title}
           placeholder="Başlık"
           autoFocus={!note.title}
@@ -212,14 +232,17 @@ export default function NotePage({ id }: { id: string }) {
         />
       )}
 
-      <PropertyPanel note={note} />
-      {!note.content && !isTemplate(note) && note.type !== 'daily' && <TemplateStarter note={note} />}
+      <fieldset className="lockset" disabled={locked}>
+        <PropertyPanel note={note} />
+      </fieldset>
+      {!locked && !note.content && !isTemplate(note) && note.type !== 'daily' && <TemplateStarter note={note} />}
 
       <NoteEditor
         docKey={note.id}
         noteId={note.id}
         content={note.content}
         rev={rev}
+        readOnly={locked}
         onChange={(doc) => updateNote(note.id, { content: doc })}
       />
 

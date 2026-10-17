@@ -640,3 +640,14 @@ a.rowlink:hover { background: var(--hover); }
 .dp-day.sel .dp-dot { background: #fff; }
 .dp-dot.inline { position: static; display: inline-block; margin: 0 3px 1px 0; vertical-align: middle; opacity: 1; }
 .dp-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+
+/* Sayfa ayarları */
+.note-page.small-text .prose { font-size: 14px; }
+.note-page.font-serif .prose, .note-page.font-serif .title { font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
+.note-page.font-mono .prose, .note-page.font-mono .title { font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; }
+fieldset.lockset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.lock-badge { border: 1px solid var(--border); background: var(--panel); color: var(--muted); border-radius: 999px; padding: 1px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+.lock-badge:hover { color: var(--text); background: var(--hover); }
+.menu-check { display: flex !important; align-items: center; gap: 8px; font-size: 13px; padding: 3px 2px; cursor: pointer; color: var(--text) !important; }
+.menu-seg { margin: 4px 0 8px; }
+.note-stats { cursor: default; }

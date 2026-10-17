@@ -7,7 +7,7 @@ interface PMNode {
   content?: PMNode[];
 }
 
-const BLOCKS = new Set(['paragraph', 'heading', 'listItem', 'taskItem', 'blockquote', 'codeBlock', 'tableCell', 'tableHeader', 'blockMath']);
+const BLOCKS = new Set(['paragraph', 'heading', 'listItem', 'taskItem', 'blockquote', 'codeBlock', 'tableCell', 'tableHeader', 'blockMath', 'detailsSummary', 'callout', 'column']);
 
 export function walk(node: unknown, fn: (n: PMNode) => void) {
   if (!node || typeof node !== 'object') return;
