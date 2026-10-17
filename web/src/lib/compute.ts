@@ -115,6 +115,8 @@ export const ROLLUP_FNS: { id: string; label: string }[] = [
 /** Görüntülemek için metne çevir */
 export function showValue(v: unknown): string {
   if (v && typeof v === 'object' && 'error' in (v as object)) return `⚠ ${(v as { error: string }).error}`;
+  // Dosyalar alanı: dosya adları
+  if (Array.isArray(v) && v.length && v.every((x) => x && typeof x === 'object' && 'src' in x)) return v.map((x) => (x as { name: string }).name).join(', ');
   if (typeof v === 'boolean') return v ? '✓' : '✗';
   return toStr(v);
 }

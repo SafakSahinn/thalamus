@@ -12,7 +12,24 @@ export type TypeId = BuiltinTypeId | (string & {});
 export type PropKind =
   | 'text' | 'longtext' | 'number' | 'date' | 'url' | 'email' | 'phone'
   | 'select' | 'multiselect' | 'rating' | 'relation' | 'checkbox'
-  | 'formula' | 'rollup' | 'created' | 'updated';
+  | 'formula' | 'rollup' | 'created' | 'updated' | 'files' | 'uid';
+
+/** Durum alanı grupları (Notion'daki gibi): yapılacak / sürüyor / bitti */
+export type StatusGroup = 'todo' | 'doing' | 'done';
+export const STATUS_GROUPS: { id: StatusGroup; label: string }[] = [
+  { id: 'todo', label: 'Yapılacak' },
+  { id: 'doing', label: 'Sürüyor' },
+  { id: 'done', label: 'Bitti' },
+];
+
+/** Dosyalar alanının bir öğesi (src: gd://… ya da local://…) */
+export interface FileRef {
+  src: string;
+  name: string;
+}
+/** Benzersiz numaranın gösterimi: önek-numara */
+export const uidText = (def: Pick<PropDef, 'prefix'>, v: unknown) => (typeof v === 'number' ? `${def.prefix ? `${def.prefix}-` : ''}${v}` : '');
+export const fileRefs = (v: unknown): FileRef[] => (Array.isArray(v) ? v.filter((x): x is FileRef => Boolean(x && typeof x === 'object' && 'src' in x)) : []);
 
 export type RollupFn = 'count' | 'sum' | 'avg' | 'min' | 'max' | 'list' | 'checked' | 'percent_checked' | 'earliest' | 'latest';
 
@@ -31,6 +48,10 @@ export interface PropDef {
   rollup?: { relation: string; prop: string; fn: RollupFn };
   /** Kullanıcının eklediği alan (silinebilir) */
   custom?: boolean;
+  /** Durum alanı: seçeneklerin grupları (bu alan bir "Durum" seçimidir) */
+  statusGroups?: Record<string, StatusGroup>;
+  /** Benzersiz numara: önek, ör. "DENEY" → DENEY-12 */
+  prefix?: string;
   /** İki yönlü ilişkinin ters tarafı: değeri saklanmaz, "type" tipindeki notların "key" alanından hesaplanır */
   back?: { type: TypeId; key: string };
 }

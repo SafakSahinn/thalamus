@@ -131,6 +131,15 @@ export function noteToMarkdown(note: Note, ctx: MdCtx): string {
     const v = propValue(note, def, ctx.notes);
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;
     const key = yaml(def.label);
+    if (def.kind === 'uid') {
+      lines.push(`${key}: ${yaml(`${def.prefix ? `${def.prefix}-` : ''}${v}`)}`);
+      continue;
+    }
+    if (def.kind === 'files') {
+      const names = (v as { name: string }[]).map((f) => f.name);
+      lines.push(`${key}:`, ...names.map((x) => `  - ${yaml(x)}`));
+      continue;
+    }
     if (def.kind === 'relation') {
       const titles = relationIds(v).map((id) => ctx.notes[id]).filter(Boolean).map((n) => `[[${displayTitle(n)}]]`);
       if (titles.length) lines.push(`${key}:`, ...titles.map((x) => `  - ${yaml(x)}`));

@@ -651,3 +651,12 @@ fieldset.lockset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .menu-check { display: flex !important; align-items: center; gap: 8px; font-size: 13px; padding: 3px 2px; cursor: pointer; color: var(--text) !important; }
 .menu-seg { margin: 4px 0 8px; }
 .note-stats { cursor: default; }
+
+/* Durum alanı */
+.chip.status-todo { background: color-mix(in srgb, var(--muted) 18%, var(--bg)); color: var(--text); }
+.status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.75; margin: 0 5px 1px 0; vertical-align: middle; }
+.chip-select.status-todo { background: color-mix(in srgb, var(--muted) 18%, var(--bg)); }
+.status-group { font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 1px 4px; background: var(--bg); color: var(--text); }
+.uid { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.file-chip { border: none; cursor: pointer; font: inherit; color: var(--text); }
+.files-input { gap: 6px; }

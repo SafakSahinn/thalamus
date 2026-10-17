@@ -1,7 +1,7 @@
 // Koleksiyon ve alan düzenleme: ayarlardaki TypeSettings üzerinde değişiklik yapar
 // (ayarlar Drive ile eşitlendiği için bütün cihazlara yayılır).
 
-import { saveSettings, uid, updateNote, useStore } from './store';
+import { assignUids, saveSettings, uid, updateNote, useStore } from './store';
 import {
   EMPTY_TYPE_SETTINGS, isBuiltinType, type PropDef, type PropOverride, type TypeDef, type TypeSettings,
 } from './types';
@@ -68,6 +68,7 @@ export async function addProp(typeId: string, def: Omit<PropDef, 'key' | 'custom
   const key = `p_${short()}`;
   propList(ts, typeId).push({ ...def, key, custom: true });
   await commit(ts);
+  if (def.kind === 'uid') assignUids(typeId, key);
   return key;
 }
 
@@ -118,7 +119,9 @@ export async function reorderProps(typeId: string, keys: string[]) {
 /** Seçenek adını değiştirir ve o seçeneği kullanan notları da günceller. */
 export async function renameOption(typeId: string, def: PropDef, from: string, to: string) {
   const options = (def.options ?? []).map((o) => (o === from ? to : o));
-  await updateProp(typeId, def.key, { options });
+  // Durum alanında seçeneğin grubu da yeni ada taşınır
+  const statusGroups = def.statusGroups ? Object.fromEntries(Object.entries(def.statusGroups).map(([k, g]) => [k === from ? to : k, g])) : undefined;
+  await updateProp(typeId, def.key, statusGroups ? { options, statusGroups } : { options });
   for (const n of Object.values(useStore.getState().notes)) {
     if (n.type !== typeId) continue;
     const v = n.props[def.key];
@@ -127,10 +130,11 @@ export async function renameOption(typeId: string, def: PropDef, from: string, t
   }
 }
 
-export const PROP_KINDS: { id: PropDef['kind']; label: string; icon: string }[] = [
+export const PROP_KINDS: { id: PropDef['kind'] | 'status'; label: string; icon: string }[] = [
   { id: 'text', label: 'Metin', icon: 'Aa' },
   { id: 'longtext', label: 'Uzun metin', icon: '¶' },
   { id: 'number', label: 'Sayı', icon: '#' },
+  { id: 'status', label: 'Durum', icon: '◐' },
   { id: 'select', label: 'Seçim', icon: '◉' },
   { id: 'multiselect', label: 'Çoklu seçim', icon: '☰' },
   { id: 'date', label: 'Tarih', icon: '📅' },
@@ -140,6 +144,8 @@ export const PROP_KINDS: { id: PropDef['kind']; label: string; icon: string }[] 
   { id: 'email', label: 'E-posta', icon: '✉' },
   { id: 'phone', label: 'Telefon', icon: '📞' },
   { id: 'relation', label: 'Bağlantı (başka notlar)', icon: '↗' },
+  { id: 'files', label: 'Dosyalar', icon: '📎' },
+  { id: 'uid', label: 'Benzersiz numara', icon: '№' },
   { id: 'formula', label: 'Formül', icon: 'Σ' },
   { id: 'rollup', label: 'Toplama (rollup)', icon: '∑' },
   { id: 'created', label: 'Oluşturulma zamanı', icon: '🕓' },

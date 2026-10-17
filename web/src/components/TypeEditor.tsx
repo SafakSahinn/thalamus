@@ -7,7 +7,7 @@ import {
   addProp, deleteCollection, PROP_KINDS, removeProp, renameOption, reorderProps, restoreProp, updateCollection, updateProp,
 } from '../lib/schema';
 import { useStore } from '../lib/store';
-import { editableType, isBuiltinProp, isBuiltinType, TYPES, typeOf, type PropDef } from '../lib/types';
+import { editableType, isBuiltinProp, isBuiltinType, STATUS_GROUPS, TYPES, typeOf, type PropDef, type StatusGroup } from '../lib/types';
 import { Chip } from './PropertyPanel';
 import { promptText } from './Prompt';
 
@@ -16,12 +16,23 @@ const kindLabel = (k: string) => PROP_KINDS.find((x) => x.id === k);
 function OptionsEditor({ typeId, def }: { typeId: string; def: PropDef }) {
   const [add, setAdd] = useState('');
   const opts = def.options ?? [];
-  const save = (options: string[]) => void updateProp(typeId, def.key, { options });
+  const groups = def.statusGroups;
+  const save = (options: string[], g = groups) => {
+    if (!g) return void updateProp(typeId, def.key, { options });
+    // Durum alanı: yeni seçenek "Yapılacak" grubuna girer, kaldırılanın grubu silinir
+    const next = Object.fromEntries(options.map((o) => [o, g[o] ?? 'todo'])) as typeof g;
+    void updateProp(typeId, def.key, { options, statusGroups: next });
+  };
   return (
     <div className="opt-editor">
       {opts.map((o, i) => (
         <span key={o} className="opt">
-          <Chip text={o} />
+          <Chip text={o} def={def} />
+          {groups && (
+            <select className="status-group" value={groups[o] ?? 'todo'} title="Grup" onChange={(e) => save(opts, { ...groups, [o]: e.target.value as StatusGroup })}>
+              {STATUS_GROUPS.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+            </select>
+          )}
           <button type="button" title="Yeniden adlandır (notlar da güncellenir)" onClick={async () => {
             const v = await promptText('Seçeneğin yeni adı', o, { hint: 'Bu seçeneği kullanan bütün notlar da güncellenir.' });
             if (v?.trim() && v.trim() !== o) await renameOption(typeId, def, o, v.trim());
@@ -94,7 +105,7 @@ function RollupEditor({ typeId, def }: { typeId: string; def: PropDef }) {
 
 function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: PropDef; hidden: boolean; index: number; keys: string[] }) {
   const [open, setOpen] = useState(false);
-  const k = kindLabel(def.kind);
+  const k = def.statusGroups ? kindLabel('status') : kindLabel(def.kind);
   const builtin = isBuiltinProp(typeId, def.key);
   const move = (d: number) => {
     const x = [...keys];
@@ -102,7 +113,7 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
     x.splice(index + d, 0, m);
     void reorderProps(typeId, x);
   };
-  const hasDetails = ['select', 'multiselect', 'formula', 'rollup', 'relation'].includes(def.kind);
+  const hasDetails = ['select', 'multiselect', 'formula', 'rollup', 'relation', 'uid'].includes(def.kind);
   return (
     <div className={`prop-row ${hidden ? 'hidden-prop' : ''}`}>
       <div className="row">
@@ -125,6 +136,13 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
         <div className="prop-details">
           {(def.kind === 'select' || def.kind === 'multiselect') && <OptionsEditor typeId={typeId} def={def} />}
           {def.kind === 'formula' && <FormulaEditor typeId={typeId} def={def} />}
+          {def.kind === 'uid' && (
+            <div className="row">
+              <span className="small muted">Önek:</span>
+              <input defaultValue={def.prefix ?? ''} placeholder="ör. DENEY" style={{ width: 120 }} onBlur={(e) => e.target.value.trim() !== (def.prefix ?? '') && void updateProp(typeId, def.key, { prefix: e.target.value.trim().toLocaleUpperCase('tr') || undefined })} />
+              <span className="small muted">Görünüm: {def.prefix ? `${def.prefix}-1, ${def.prefix}-2…` : '1, 2, 3…'}</span>
+            </div>
+          )}
           {def.kind === 'rollup' && <RollupEditor typeId={typeId} def={def} />}
           {def.kind === 'relation' && (
             <div className="row">
@@ -142,12 +160,16 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
 
 function AddProp({ typeId }: { typeId: string }) {
   const [label, setLabel] = useState('');
-  const [kind, setKind] = useState<PropDef['kind']>('text');
+  const [kind, setKind] = useState<PropDef['kind'] | 'status'>('text');
   const [target, setTarget] = useState('note');
   const add = async () => {
     if (!label.trim()) return;
-    const def: Omit<PropDef, 'key' | 'custom'> = { label: label.trim(), kind, table: true };
+    const def: Omit<PropDef, 'key' | 'custom'> = { label: label.trim(), kind: kind === 'status' ? 'select' : kind, table: true };
     if (kind === 'select' || kind === 'multiselect') def.options = [];
+    if (kind === 'status') {
+      def.options = ['Başlanmadı', 'Sürüyor', 'Tamamlandı'];
+      def.statusGroups = { Başlanmadı: 'todo', Sürüyor: 'doing', Tamamlandı: 'done' };
+    }
     if (kind === 'relation') def.target = [target];
     if (kind === 'formula') def.formula = '';
     await addProp(typeId, def);
@@ -156,7 +178,7 @@ function AddProp({ typeId }: { typeId: string }) {
   return (
     <div className="row add-prop">
       <input className="grow" value={label} placeholder="Yeni alan adı" onChange={(e) => setLabel(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void add()} />
-      <select value={kind} onChange={(e) => setKind(e.target.value as PropDef['kind'])}>
+      <select value={kind} onChange={(e) => setKind(e.target.value as PropDef['kind'] | 'status')}>
         {PROP_KINDS.map((k) => <option key={k.id} value={k.id}>{k.icon} {k.label}</option>)}
       </select>
       {kind === 'relation' && (

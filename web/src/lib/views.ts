@@ -20,9 +20,18 @@ const EMPTY_OPS: OpDef[] = [
 
 export function opsFor(def: PropDef | 'title'): OpDef[] {
   const kind = def === 'title' ? 'text' : def.kind;
+  if (def !== 'title' && def.statusGroups) {
+    return [
+      { id: 'is', label: 'şu olan' }, { id: 'is_not', label: 'şu olmayan' },
+      { id: 'not_done', label: 'bitmemiş', noValue: true }, { id: 'done', label: 'bitmiş', noValue: true }, ...EMPTY_OPS,
+    ];
+  }
   switch (kind) {
+    case 'files':
+      return EMPTY_OPS;
     case 'number':
     case 'rating':
+    case 'uid':
       return [
         { id: 'eq', label: '=' }, { id: 'neq', label: '≠' }, { id: 'gt', label: '>' }, { id: 'lt', label: '<' },
         { id: 'gte', label: '≥' }, { id: 'lte', label: '≤' }, ...EMPTY_OPS,
@@ -86,6 +95,11 @@ export function matches(n: Note, f: ViewFilter, t: TypeDef, notes: Record<string
     case 'has': {
       if (def !== 'title' && def.kind === 'relation') return relationIds(v).includes(String(val));
       return Array.isArray(v) && v.map(String).includes(String(val));
+    }
+    case 'done':
+    case 'not_done': {
+      const g = def !== 'title' && def.statusGroups && typeof v === 'string' ? def.statusGroups[v] : undefined;
+      return f.op === 'done' ? g === 'done' : g !== 'done';
     }
     case 'not_has': return !(Array.isArray(v) && v.map(String).includes(String(val)));
     case 'eq': return !isEmpty(v) && toNum(v) === toNum(val);

@@ -3,7 +3,7 @@ import { Chip, ComputedValue, NoteChip, PropValue, Stars } from '../../component
 import { propValue } from '../../lib/compute';
 import { fmtDate } from '../../lib/format';
 import { resolveFileUrl, useStore } from '../../lib/store';
-import { relationIds, type Note, type PropDef } from '../../lib/types';
+import { fileRefs, relationIds, uidText, type Note, type PropDef } from '../../lib/types';
 
 /** Salt okunur hücre görünümü */
 export function Cell({ note, def }: { note: Note; def: PropDef }) {
@@ -14,7 +14,12 @@ export function Cell({ note, def }: { note: Note; def: PropDef }) {
   switch (def.kind) {
     case 'email': return <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
     case 'phone': return <a href={`tel:${v}`} onClick={(e) => e.stopPropagation()}>{String(v)}</a>;
-    case 'select': return <Chip text={String(v)} />;
+    case 'select': return <Chip text={String(v)} def={def} />;
+    case 'uid': return <span className="uid">{uidText(def, v)}</span>;
+    case 'files': {
+      const f = fileRefs(v);
+      return f.length ? <span className="muted">📎 {f.length === 1 ? f[0].name : `${f.length} dosya`}</span> : null;
+    }
     case 'multiselect': return <>{(v as string[]).map((x) => <Chip key={x} text={x} />)}</>;
     case 'rating': return <Stars value={Number(v)} />;
     case 'date': return <>{fmtDate(v)}</>;

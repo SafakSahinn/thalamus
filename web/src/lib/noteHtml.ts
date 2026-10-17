@@ -77,7 +77,7 @@ function block(n: PMNode): string {
 export function publicProps(note: Note, notes: Record<string, Note>, skip: (def: PropDef) => boolean = () => false) {
   const out: { label: string; value: string }[] = [];
   for (const def of typeOf(note.type).props) {
-    if (skip(def)) continue;
+    if (skip(def) || def.kind === 'files') continue; // dosyalar paylaşılmaz
     if (def.kind === 'url' && /^(gd|local):/.test(String(note.props[def.key] ?? ''))) continue;
     const v = propValue(note, def, notes);
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;

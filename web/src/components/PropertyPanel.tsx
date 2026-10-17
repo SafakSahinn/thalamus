@@ -15,10 +15,50 @@ import { displayTitle, optionHue, noteIcon } from '../lib/format';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
 import { createNote, indexOf, resolveFileUrl, setProp, uploadFile, useIndex, useStore } from '../lib/store';
-import { relationIds, typeOf, TYPE_MAP, type Note, type PropDef } from '../lib/types';
+import { fileRefs, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
 
-export function Chip({ text }: { text: string }) {
-  return <span className="chip" style={{ '--h': optionHue(text) } as React.CSSProperties}>{text}</span>;
+/** Seçenek rengi: Durum alanında gruba göre (yapılacak gri, sürüyor mavi, bitti yeşil), diğerlerinde ada göre */
+export function chipStyle(text: string, def?: PropDef): { className: string; style: React.CSSProperties } {
+  const g = def?.statusGroups?.[text];
+  if (g === 'todo') return { className: 'chip status-todo', style: {} };
+  if (g) return { className: `chip status-${g}`, style: { '--h': g === 'doing' ? 212 : 142 } as React.CSSProperties };
+  return { className: 'chip', style: { '--h': optionHue(text) } as React.CSSProperties };
+}
+
+export function Chip({ text, def }: { text: string; def?: PropDef }) {
+  const { className, style } = chipStyle(text, def);
+  return <span className={className} style={style}>{def?.statusGroups && <span className="status-dot" />}{text}</span>;
+}
+
+/** Dosyalar alanı: birden çok dosya ekle, aç, kaldır */
+function FilesInput({ note, def }: { note: Note; def: PropDef }) {
+  const files = fileRefs(note.props[def.key]);
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const add = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setBusy(true);
+    try {
+      const added: FileRef[] = [];
+      for (const f of [...list]) added.push({ src: await uploadFile(f, f.name), name: f.name });
+      setProp(note.id, def.key, [...fileRefs(useStore.getState().notes[note.id]?.props[def.key]), ...added]);
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = '';
+    }
+  };
+  return (
+    <div className="relation files-input">
+      {files.map((f) => (
+        <span key={f.src} className="relchip">
+          <button type="button" className="notechip file-chip" title="Aç" onClick={() => void resolveFileUrl(f.src).then((u) => window.open(u, '_blank', 'noopener'))}>📎 {f.name}</button>
+          <button className="x" title="Kaldır" onClick={() => setProp(note.id, def.key, files.filter((x) => x.src !== f.src))}>×</button>
+        </span>
+      ))}
+      <button type="button" className="btn small" disabled={busy} onClick={() => input.current?.click()}>{busy ? 'Yükleniyor…' : '+ Dosya ekle'}</button>
+      <input ref={input} type="file" multiple hidden onChange={(e) => void add(e.target.files)} />
+    </div>
+  );
 }
 
 export function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
@@ -412,9 +452,13 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
       return <input type="checkbox" className="check" checked={Boolean(v)} onChange={(e) => setProp(note.id, def.key, e.target.checked || undefined)} />;
     case 'rating':
       return <Stars value={Number(v) || 0} onChange={(x) => setProp(note.id, def.key, x || undefined)} />;
+    case 'files':
+      return <FilesInput note={note} def={def} />;
+    case 'uid':
+      return <span className="computed uid">{uidText(def, v) || <span className="muted">—</span>}</span>;
     case 'select':
       return (
-        <select value={(v as string) ?? ''} onChange={(e) => setProp(note.id, def.key, e.target.value)} className={v ? 'chip-select' : ''} style={v ? ({ '--h': optionHue(v as string) } as React.CSSProperties) : undefined}>
+        <select value={(v as string) ?? ''} onChange={(e) => setProp(note.id, def.key, e.target.value)} className={v ? `chip-select ${chipStyle(v as string, def).className.replace('chip', '')}` : ''} style={v ? chipStyle(v as string, def).style : undefined}>
           <option value="">—</option>
           {def.options?.map((o) => <option key={o} value={o}>{o}</option>)}
           {typeof v === 'string' && v && !def.options?.includes(v) && <option value={v}>{v}</option>}
@@ -465,7 +509,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
   const notes = useStore((s) => s.notes);
   const [showEmpty, setShowEmpty] = useState(false);
   const isEmpty = (d: PropDef) => {
-    if (['formula', 'rollup', 'created', 'updated'].includes(d.kind)) return false;
+    if (['formula', 'rollup', 'created', 'updated', 'uid'].includes(d.kind)) return false;
     const v = d.back ? propValue(note, d, notes) : note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };

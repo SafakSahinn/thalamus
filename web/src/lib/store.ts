@@ -4,7 +4,7 @@ import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText } from './links';
-import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, type Note, type Settings, type TypeId } from './types';
+import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
 
@@ -114,6 +114,10 @@ export function createNote(
     id: uid(), type, title, props, content, text: plainText(content), links: [],
     pinned: false, created_at: t, updated_at: t, deleted_at: null,
   };
+  // Benzersiz numara alanları: koleksiyondaki en büyük numaranın bir fazlası (silinenler dahil, numara tekrar kullanılmaz)
+  for (const def of typeOf(type).props) {
+    if (def.kind === 'uid' && typeof n.props[def.key] !== 'number') n.props = { ...n.props, [def.key]: nextUid(type, def.key) };
+  }
   // Ters ilişki alanları saklanmaz: kaynak notlara yazılır
   const backs = Object.keys(props).filter(isBackKey);
   if (backs.length) {
@@ -153,6 +157,19 @@ export function setProp(id: string, key: string, value: unknown) {
   if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) delete props[key];
   else props[key] = value;
   updateNote(id, { props });
+}
+
+function nextUid(type: string, key: string): number {
+  let max = 0;
+  for (const n of Object.values(get().notes)) if (n.type === type && typeof n.props[key] === 'number') max = Math.max(max, n.props[key] as number);
+  return max + 1;
+}
+
+/** Yeni eklenen benzersiz numara alanı: mevcut notlara oluşturulma sırasıyla numara ver */
+export function assignUids(type: string, key: string) {
+  let next = nextUid(type, key);
+  const list = Object.values(get().notes).filter((n) => n.type === type && typeof n.props[key] !== 'number').sort((a, b) => a.created_at.localeCompare(b.created_at));
+  for (const n of list) updateNote(n.id, { props: { ...n.props, [key]: next++ } });
 }
 
 /** Ters ilişki alanı düzenlendi: değeri saklamak yerine kaynak notların ilişki alanlarını güncelle */
