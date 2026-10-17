@@ -1,47 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
 import { norm } from '../lib/links';
+import { go } from '../lib/router';
 import { findByTitle } from '../lib/search';
 import { createNote, setProp, useIndex, useStore } from '../lib/store';
 import { TYPE_MAP, type Note } from '../lib/types';
 
 const LANGS = TYPE_MAP.word.props.find((p) => p.key === 'language')!.options!;
-
-function Review({ words, onClose }: { words: Note[]; onClose: () => void }) {
-  const pool = useMemo(() => [...words].sort(() => Math.random() - 0.5), [words]);
-  const [i, setI] = useState(0);
-  const [shown, setShown] = useState(false);
-  const notes = useStore((s) => s.notes);
-  const { backlinks } = useIndex();
-  if (!pool.length) return <div className="review"><p>Tekrar edilecek kelime yok 🎉</p><button className="btn" onClick={onClose}>Kapat</button></div>;
-  const w = notes[pool[i % pool.length].id];
-  const next = (learned: boolean) => {
-    if (learned) setProp(w.id, 'learned', true);
-    setShown(false);
-    setI(i + 1);
-  };
-  const src = (backlinks.get(w.id) ?? []).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
-  return (
-    <div className="review">
-      <div className="muted small">{(i % pool.length) + 1} / {pool.length}</div>
-      <div className="review-word">{w.title}</div>
-      {shown ? (
-        <>
-          <div className="review-meaning">{(w.props.meaning as string) || <span className="muted">anlamı girilmemiş</span>}</div>
-          {typeof w.props.example === 'string' && <div className="review-example">“{w.props.example}”</div>}
-          {src.length > 0 && <div className="review-src">{src.map((n) => <NoteChip key={n.id} note={n} />)}</div>}
-          <div className="row center">
-            <button className="btn" onClick={() => next(false)}>Tekrar sor</button>
-            <button className="btn primary" onClick={() => next(true)}>Öğrendim ✓</button>
-          </div>
-        </>
-      ) : (
-        <button className="btn primary" onClick={() => setShown(true)}>Anlamını göster</button>
-      )}
-      <button className="linkbtn" onClick={onClose}>Tekrarı bitir</button>
-    </div>
-  );
-}
 
 export default function DictionaryPage() {
   const { alive, backlinks } = useIndex();
@@ -49,7 +14,6 @@ export default function DictionaryPage() {
   const [q, setQ] = useState('');
   const [lang, setLang] = useState('');
   const [state, setState] = useState<'' | 'new' | 'learned'>('');
-  const [review, setReview] = useState(false);
   const [w, setW] = useState('');
   const [m, setM] = useState('');
   const [l, setL] = useState(() => localStorage.getItem('lastLang') ?? 'İngilizce');
@@ -75,7 +39,6 @@ export default function DictionaryPage() {
     wRef.current?.focus();
   };
 
-  if (review) return <div className="page"><Review words={words.filter((x) => !x.props.learned)} onClose={() => setReview(false)} /></div>;
 
   let letter = '';
   return (
@@ -83,7 +46,7 @@ export default function DictionaryPage() {
       <div className="coll-head">
         <h1>🔤 Sözlük <span className="count">{words.length}</span></h1>
         <span className="spacer" />
-        <button className="btn" onClick={() => setReview(true)}>🃏 Kelime tekrarı</button>
+        <button className="btn" onClick={() => go('/tekrar')}>🧠 Tekrar et</button>
       </div>
       <p className="muted small">Kitaplarda, makalelerde ve filmlerde eklediğin bütün kelimeler burada toplanır. Aynı kelime birden çok kaynakta geçiyorsa hepsi yanında görünür ve haritada birbirine bağlanır.</p>
       <div className="wordrow add big">

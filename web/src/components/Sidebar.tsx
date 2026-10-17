@@ -1,7 +1,8 @@
+import { dueCards, newPerDay } from '../lib/srs';
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon } from '../lib/format';
 import type { Route } from '../lib/router';
-import { setProp, useIndex, useStore, type SyncStatus } from '../lib/store';
+import { setProp, todayStr, useIndex, useStore, type SyncStatus } from '../lib/store';
 import { relationIds, TYPES, type Note } from '../lib/types';
 import { createCollection } from '../lib/schema';
 import { go } from '../lib/router';
@@ -177,6 +178,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       <a href="#/" className={active('#/')}>🏠 Ana sayfa</a>
       <a href="#/daily" data-tour="nav-daily" className={active('#/daily')}>📅 Günlük</a>
       <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
+      <ReviewLink active={active('#/tekrar')} />
       <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 
       {pinned.length > 0 && (
@@ -213,4 +215,14 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       </div>
     </nav>
   );
+}
+
+/** Kenar çubuğu: bugün tekrar edilecek kart sayısıyla */
+function ReviewLink({ active }: { active: string }) {
+  const notes = useStore((s) => s.notes);
+  const n = useMemo(() => {
+    const { due, fresh } = dueCards(Object.values(notes), todayStr(), newPerDay());
+    return due.length + fresh.length;
+  }, [notes]);
+  return <a href="#/tekrar" className={active}>🧠 Tekrar{n > 0 && <span className="cnt due-cnt">{n}</span>}</a>;
 }

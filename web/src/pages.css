@@ -85,3 +85,28 @@
 .pdf-tools { position: fixed; z-index: 40; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 18%); }
 .pdf-sw { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); cursor: pointer; }
 @media (max-width: 800px) { .pdf-side { display: none; } .pdf-num { right: 4px; } }
+
+/* Aralıklı tekrar */
+.review-page { max-width: 720px; }
+.review-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.review-top .spacer { flex: 1; }
+.review-top select { border: 1px solid var(--border); border-radius: 6px; padding: 2px 4px; }
+.review-progress { height: 4px; background: var(--hover); border-radius: 2px; overflow: hidden; margin: 6px 0 18px; }
+.review-progress span { display: block; height: 100%; background: var(--accent); transition: width 0.25s; }
+.review-card { border: 1px solid var(--border); border-radius: 16px; background: var(--panel); padding: 28px 24px; min-height: 220px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.review-card .review-word { font-size: 2rem; font-weight: 700; }
+.review-show { margin-top: 10px; }
+.review-show kbd { font-size: 10px; opacity: 0.8; margin-left: 6px; }
+.card-back { display: flex; flex-direction: column; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-top: 14px; width: 100%; }
+.review-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.grade { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; background: var(--bg); cursor: pointer; font: inherit; color: var(--text); }
+.grade kbd { font-size: 10px; color: var(--muted); }
+.grade.again { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+.grade.again b { color: var(--danger); }
+.grade.good b { color: var(--ok); }
+.grade.easy b { color: var(--accent); }
+.grade:hover { background: var(--hover); }
+.review-help { margin-top: 18px; }
+.review-done { text-align: center; padding: 40px 10px; }
+.review-big { font-size: 3rem; }
+.due-cnt { background: var(--accent); color: #fff !important; border-radius: 999px; padding: 0 7px; font-size: 11px; }
