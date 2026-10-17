@@ -106,7 +106,7 @@ const STEPS: Step[] = [
     text: (
       <>
         Hazırsın! Notların Google Drive’ındaki <b>Thalamus</b> klasöründe güvende.
-        <br />Sol menünün altında ayrıca <b>Notion’dan aktar</b>, <b>Çöp kutusu</b> ve <b>Kısayollar</b> (Ctrl /) var. Bu turu istediğin zaman <b>Ayarlar</b>’dan yeniden başlatabilirsin.
+        <br />Sol menünün altında ayrıca <b>İçe aktar</b> (Notion, Obsidian, Markdown), <b>Çöp kutusu</b> ve <b>Kısayollar</b> (Ctrl /) var. Bu turu istediğin zaman <b>Ayarlar</b>’dan yeniden başlatabilirsin.
       </>
     ),
   },

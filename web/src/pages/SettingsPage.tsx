@@ -283,7 +283,7 @@ export default function SettingsPage() {
           <button className="btn" onClick={() => void exportZip()} disabled={Boolean(zipBusy)}>{zipBusy ?? 'Markdown olarak indir (.zip)'}</button>
           <button className="btn" onClick={exportJson}>Yedeği indir (.json)</button>
           <button className="btn" onClick={importJson}>Yedekten geri yükle</button>
-          <a className="btn" href="#/import">Notion’dan aktar</a>
+          <a className="btn" href="#/import">İçe aktar (Notion, Obsidian, Markdown)</a>
         </div>
         {msg && <p className="small">{msg}</p>}
       </section>

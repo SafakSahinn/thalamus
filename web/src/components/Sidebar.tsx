@@ -205,7 +205,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       }}>＋ Yeni koleksiyon</button>
 
       <div className="side-foot">
-        <a href="#/import" className={active('#/import')}>⬇ Notion’dan aktar</a>
+        <a href="#/import" className={active('#/import')}>⬇ İçe aktar</a>
         <a href="#/trash" className={active('#/trash')}>🗑 Çöp kutusu</a>
         <a href="#/settings" data-tour="nav-settings" className={active('#/settings')}>⚙ Ayarlar</a>
         <button type="button" className="searchbtn" onClick={() => { onNav(); openShortcuts(); }}>⌨ Kısayollar <kbd>Ctrl /</kbd></button>

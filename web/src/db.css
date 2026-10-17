@@ -432,3 +432,4 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .rule-line .spacer { flex: 1; }
 .rule-line select, .rule-line input { border: 1px solid var(--border); border-radius: 7px; padding: 3px 7px; background: var(--panel); }
 .rule-on input { accent-color: var(--accent); }
+.import-h { font-size: 1.15rem; margin: 18px 0 6px; } .md-import { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 8px; }

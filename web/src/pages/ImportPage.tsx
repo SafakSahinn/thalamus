@@ -4,6 +4,7 @@ import { buildNotes, guessColumn, guessType, inferKind, readNotionZip, type DbMa
 import { addProp } from '../lib/schema';
 import { insertNotes, saveSettings, syncNow, uploadFile, useIndex, useStore } from '../lib/store';
 import { TYPES, TYPE_MAP, type TypeId } from '../lib/types';
+import MarkdownImport from './MarkdownImport';
 
 export default function ImportPage() {
   const { alive } = useIndex();
@@ -84,7 +85,8 @@ export default function ImportPage() {
 
   return (
     <div className="page wide import">
-      <h1>⬇ Notion’dan aktar</h1>
+      <h1>⬇ İçe aktar</h1>
+      <h2 className="import-h">Notion</h2>
       {!parsed && (
         <>
           <ol className="steps">
@@ -160,6 +162,8 @@ export default function ImportPage() {
           </div>
         </>
       )}
+
+      <MarkdownImport />
     </div>
   );
 }
