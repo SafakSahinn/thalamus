@@ -1,3 +1,4 @@
+import { chartableX, chartableY, chartConfig } from './ChartView';
 import { useEffect, useRef, useState } from 'react';
 import { displayTitle } from '../../lib/format';
 import { searchNotes } from '../../lib/search';
@@ -164,6 +165,7 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
           </label>
         </>
       )}
+      {view.kind === 'chart' && <ChartOptions t={t} view={view} update={update} />}
       {view.kind === 'calendar' && (
         <label className="opt-line">Tarih alanı:
           <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>
@@ -191,5 +193,50 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
         </>
       )}
     </Popover>
+  );
+}
+
+/** Grafik görünümü ayarları: tür, gruplama alanı, tarih aralığı, ölçü */
+function ChartOptions({ t, view, update }: { t: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
+  const c = chartConfig(t, view);
+  const set = (p: Partial<NonNullable<SavedView['chart']>>) => update({ chart: { ...c, ...p } });
+  const xdef = t.props.find((p) => p.key === c.x);
+  const ys = chartableY(t);
+  return (
+    <>
+      <label className="opt-line">Grafik:
+        <select value={c.type} onChange={(e) => set({ type: e.target.value as 'bar' | 'hbar' | 'line' })}>
+          <option value="bar">Sütun</option>
+          <option value="hbar">Yatay çubuk</option>
+          <option value="line">Çizgi</option>
+        </select>
+      </label>
+      <label className="opt-line">Gruplama:
+        <select value={c.x ?? ''} onChange={(e) => set({ x: e.target.value })}>
+          {chartableX(t).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+        </select>
+      </label>
+      {xdef && ['date', 'created', 'updated'].includes(xdef.kind) && (
+        <label className="opt-line">Aralık:
+          <select value={c.bucket} onChange={(e) => set({ bucket: e.target.value as 'week' | 'month' | 'year' })}>
+            <option value="week">Haftalık</option>
+            <option value="month">Aylık</option>
+            <option value="year">Yıllık</option>
+          </select>
+        </label>
+      )}
+      <label className="opt-line">Ölçü:
+        <select value={c.fn === 'count' ? 'count' : `${c.fn}:${c.y ?? ''}`} onChange={(e) => {
+          const [fn, y] = e.target.value.split(':');
+          set({ fn: fn as 'count' | 'sum' | 'avg', y: y || undefined });
+        }}>
+          <option value="count">Kayıt sayısı</option>
+          {ys.flatMap((p) => [
+            <option key={`sum${p.key}`} value={`sum:${p.key}`}>{p.label} · toplam</option>,
+            <option key={`avg${p.key}`} value={`avg:${p.key}`}>{p.label} · ortalama</option>,
+          ])}
+        </select>
+      </label>
+    </>
   );
 }

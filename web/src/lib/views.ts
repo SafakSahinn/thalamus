@@ -224,6 +224,7 @@ export const VIEW_KINDS: { id: ViewKind; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Takvim', icon: '📅' },
   { id: 'list', label: 'Liste', icon: '≡' },
   { id: 'timeline', label: 'Zaman çizelgesi', icon: '▤' },
+  { id: 'chart', label: 'Grafik', icon: '📊' },
 ];
 
 export const newViewId = vid;

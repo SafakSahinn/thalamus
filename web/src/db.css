@@ -369,3 +369,33 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .tl-deps { position: absolute; top: 0; pointer-events: none; z-index: 1; overflow: visible; }
 .tl-deps path { fill: none; stroke: var(--muted); stroke-width: 1.5; opacity: 0.8; }
 .tl-deps path.bad { stroke: var(--danger); opacity: 1; stroke-dasharray: 4 3; }
+
+/* Grafik görünümü (tek seri: kategorik 1. renk, açık/koyu temada ayrı doğrulandı) */
+.chart-view { --series-1: #2a78d6; display: flex; flex-direction: column; gap: 10px; }
+:root[data-theme='dark'] .chart-view { --series-1: #3987e5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .chart-view { --series-1: #3987e5; } }
+.chart-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chart-head .spacer { flex: 1; }
+.chart-box { position: relative; width: 100%; overflow: hidden; }
+.chart-box svg { display: block; }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-axis { stroke: var(--muted); stroke-width: 1; opacity: 0.5; }
+.chart-tick, .chart-label { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart-label { fill: var(--text); opacity: 0.8; }
+.chart-bar { fill: var(--series-1); transition: opacity 0.12s; }
+.chart-box:hover .chart-bar:not(.on) { opacity: 0.55; }
+.chart-bar.picked { stroke: var(--text); stroke-width: 1.5; }
+.chart-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-dot { fill: var(--series-1); stroke: var(--bg); stroke-width: 2; }
+.chart-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-hit { fill: transparent; cursor: pointer; }
+.chart-tip {
+  position: absolute; transform: translate(-50%, -100%); pointer-events: none; background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; font-size: 12px; box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+  display: flex; flex-direction: column; white-space: nowrap; z-index: 2;
+}
+.chart-tip span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart-table { max-width: 520px; }
+.chart-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.chart-picked { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chart-picked > .muted { width: 100%; }

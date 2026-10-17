@@ -331,7 +331,7 @@ export interface Routine {
   icon: string;
 }
 
-export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list' | 'timeline';
+export type ViewKind = 'table' | 'cards' | 'board' | 'calendar' | 'list' | 'timeline' | 'chart';
 
 export interface ViewFilter {
   key: string;
@@ -355,6 +355,8 @@ export interface SavedView {
   endKey?: string;
   /** table: gizli sütunlar */
   hidden?: string[];
+  /** Grafik görünümü ayarları (bkz. ChartView) */
+  chart?: { type?: 'bar' | 'hbar' | 'line'; x?: string; bucket?: 'week' | 'month' | 'year'; fn?: 'count' | 'sum' | 'avg'; y?: string };
 }
 
 export interface Settings {
