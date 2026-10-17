@@ -73,7 +73,14 @@ export function FilterMenu({ t, view, update }: { t: TypeDef; view: SavedView; u
         if (!def) return null;
         return (
           <div key={i} className="filter-row">
-            <span className="muted small">{i === 0 ? 'Koşul' : 've'}</span>
+            {i === 0 && <span className="muted small filter-join">Koşul</span>}
+            {i === 1 && (
+              <select className="filter-join" value={view.filterMode ?? 'and'} onChange={(e) => update({ filterMode: e.target.value as 'and' | 'or' })} title="Koşullar nasıl birleşsin">
+                <option value="and">ve</option>
+                <option value="or">veya</option>
+              </select>
+            )}
+            {i > 1 && <span className="muted small filter-join">{view.filterMode === 'or' ? 'veya' : 've'}</span>}
             <select value={f.key} onChange={(e) => {
               const d = defOf(e.target.value)!;
               setAt(i, { key: e.target.value, op: opsFor(d)[0].id, value: undefined });

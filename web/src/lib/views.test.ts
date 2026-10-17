@@ -32,6 +32,11 @@ describe('görünüm mantığı', () => {
     expect(titles(applyView(all, view({ filters: [{ key: 'pages', op: 'gt', value: 500 }] }), book, notes))).toEqual(['Suç ve Ceza']);
     expect(titles(applyView(all, view({}), book, notes, 'gece'))).toEqual(['Beyaz Geceler']);
   });
+  it('filtreler "ve" ya da "veya" ile birleşir', () => {
+    const f = [{ key: 'status', op: 'is', value: 'Okunuyor' }, { key: 'status', op: 'is', value: 'Okunacak' }];
+    expect(titles(applyView(all, view({ filters: f }), book, notes))).toEqual([]);
+    expect(titles(applyView(all, view({ filters: f, filterMode: 'or' }), book, notes))).toEqual(['Sapiens', 'Beyaz Geceler']);
+  });
   it('gruplama seçenek sırasıyla', () => {
     const g = groupNotes(all, book.props.find((p) => p.key === 'status')!, notes);
     expect(g.map((x) => `${x.label}:${x.notes.length}`)).toEqual(['Okunacak:1', 'Okunuyor:1', 'Bitti:1', 'Yarım bıraktım:0', 'Boş:0']);

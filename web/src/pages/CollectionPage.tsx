@@ -129,6 +129,8 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
   // Filtrelenmiş görünümde yeni not: filtre değerleri baştan dolu gelsin (Notion gibi)
   const newProps = () => {
     const props: Record<string, unknown> = {};
+    // "veya" ile birleşen filtrelerde hangisinin geçerli olacağı belli değil: doldurma
+    if (view.filterMode === 'or' && view.filters.length > 1) return props;
     for (const f of view.filters) {
       const def = t.props.find((p) => p.key === f.key);
       if (!def) continue;

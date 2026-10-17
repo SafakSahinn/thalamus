@@ -357,3 +357,4 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .ext-actions { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 2px; }
 .ext-actions .spacer { flex: 1; }
 .cal-connect { margin-left: 4px; text-decoration: none; }
+.filter-join { width: 56px; flex: none; }

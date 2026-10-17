@@ -317,6 +317,8 @@ export interface SavedView {
   name: string;
   kind: ViewKind;
   filters: ViewFilter[];
+  /** Filtreler nasıl birleşsin: hepsi (ve) / herhangi biri (veya) */
+  filterMode?: 'and' | 'or';
   sort: { key: string; dir: 'asc' | 'desc' }[];
   /** board: gruplanacak seçim alanı · table/list: gruplama alanı */
   groupBy?: string;

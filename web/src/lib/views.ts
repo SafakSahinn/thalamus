@@ -130,7 +130,8 @@ function cmpValues(a: unknown, b: unknown): number {
 
 export function applyView(list: Note[], view: SavedView, t: TypeDef, notes: Record<string, Note>, search = ''): Note[] {
   const q = norm(search);
-  let rows = list.filter((n) => view.filters.every((f) => matches(n, f, t, notes)));
+  const test = (n: Note) => (f: ViewFilter) => matches(n, f, t, notes);
+  let rows = list.filter((n) => (!view.filters.length ? true : view.filterMode === 'or' ? view.filters.some(test(n)) : view.filters.every(test(n))));
   if (q) rows = rows.filter((n) => norm(displayTitle(n)).includes(q) || norm(n.text).includes(q));
   const sort = view.sort.length ? view.sort : [{ key: '__updated', dir: 'desc' as const }];
   // Seçim alanında seçenek sırasına göre sırala (Notion gibi)
