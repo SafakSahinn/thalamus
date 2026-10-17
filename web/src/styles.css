@@ -694,3 +694,4 @@ fieldset.lockset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .capture-field input, .capture-field select, .capture-field textarea { border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; background: var(--bg); }
 .capture-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .btn.clipper { cursor: grab; border-style: dashed; }
+.prop-btn.done { color: var(--ok); border-color: var(--ok); }

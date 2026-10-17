@@ -28,7 +28,7 @@ function becameTo(oldV: unknown, newV: unknown, to: string): boolean {
   return asText(newV) === to && asText(oldV) !== to;
 }
 
-function actionValue(a: Action, today: string, kind?: string): unknown {
+export function actionValue(a: Action, today: string, kind?: string): unknown {
   if (a.value === 'clear') return undefined;
   if (a.value === 'today') return today;
   if (a.value === 'true') return true;

@@ -14,7 +14,7 @@ async function saveCover(url: string, title: string): Promise<string> {
 import { displayTitle, optionHue, noteIcon } from '../lib/format';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
-import { createNote, indexOf, resolveFileUrl, setProp, uploadFile, useIndex, useStore } from '../lib/store';
+import { createNote, indexOf, resolveFileUrl, runButton, setProp, uploadFile, useIndex, useStore } from '../lib/store';
 import { fileRefs, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
 
 /** Seçenek rengi: Durum alanında gruba göre (yapılacak gri, sürüyor mavi, bitti yeşil), diğerlerinde ada göre */
@@ -28,6 +28,27 @@ export function chipStyle(text: string, def?: PropDef): { className: string; sty
 export function Chip({ text, def }: { text: string; def?: PropDef }) {
   const { className, style } = chipStyle(text, def);
   return <span className={className} style={style}>{def?.statusGroups && <span className="status-dot" />}{text}</span>;
+}
+
+/** Düğme alanı: tıklayınca bu kayıtta tanımlı eylemler uygulanır */
+export function PropButton({ note, def }: { note: Note; def: PropDef }) {
+  const [done, setDone] = useState(false);
+  if (!def.actions?.length) return <span className="muted small">Bu düğmeye ⚙ Alanlar’dan bir eylem ekle.</span>;
+  return (
+    <button
+      type="button"
+      className={`btn small prop-btn ${done ? 'done' : ''}`}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        runButton(note.id, def.actions!);
+        setDone(true);
+        setTimeout(() => setDone(false), 1200);
+      }}
+    >
+      {done ? '✓' : '▶'} {def.label}
+    </button>
+  );
 }
 
 /** Dosyalar alanı: birden çok dosya ekle, aç, kaldır */
@@ -454,6 +475,8 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
       return <Stars value={Number(v) || 0} onChange={(x) => setProp(note.id, def.key, x || undefined)} />;
     case 'files':
       return <FilesInput note={note} def={def} />;
+    case 'button':
+      return <PropButton note={note} def={def} />;
     case 'uid':
       return <span className="computed uid">{uidText(def, v) || <span className="muted">—</span>}</span>;
     case 'select':
@@ -509,7 +532,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
   const notes = useStore((s) => s.notes);
   const [showEmpty, setShowEmpty] = useState(false);
   const isEmpty = (d: PropDef) => {
-    if (['formula', 'rollup', 'created', 'updated', 'uid'].includes(d.kind)) return false;
+    if (['formula', 'rollup', 'created', 'updated', 'uid', 'button'].includes(d.kind)) return false;
     const v = d.back ? propValue(note, d, notes) : note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };

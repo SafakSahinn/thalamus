@@ -12,7 +12,7 @@ export type TypeId = BuiltinTypeId | (string & {});
 export type PropKind =
   | 'text' | 'longtext' | 'number' | 'date' | 'url' | 'email' | 'phone'
   | 'select' | 'multiselect' | 'rating' | 'relation' | 'checkbox'
-  | 'formula' | 'rollup' | 'created' | 'updated' | 'files' | 'uid';
+  | 'formula' | 'rollup' | 'created' | 'updated' | 'files' | 'uid' | 'button';
 
 /** Durum alanı grupları (Notion'daki gibi): yapılacak / sürüyor / bitti */
 export type StatusGroup = 'todo' | 'doing' | 'done';
@@ -50,6 +50,8 @@ export interface PropDef {
   custom?: boolean;
   /** Durum alanı: seçeneklerin grupları (bu alan bir "Durum" seçimidir) */
   statusGroups?: Record<string, StatusGroup>;
+  /** Düğme alanı: tıklayınca o kayıtta yapılacaklar (bkz. automations.ts Action) */
+  actions?: { key: string; value: string }[];
   /** Benzersiz numara: önek, ör. "DENEY" → DENEY-12 */
   prefix?: string;
   /** İlişki en fazla bir kayda bağlanabilir (Notion'daki "1 sayfa sınırı") */
@@ -352,6 +354,8 @@ export interface SavedView {
   sort: { key: string; dir: 'asc' | 'desc' }[];
   /** board: gruplanacak seçim alanı · table/list: gruplama alanı */
   groupBy?: string;
+  /** board: alt gruplama (satırlar) */
+  subGroupBy?: string;
   /** calendar/timeline: (başlangıç) tarih alanı */
   dateKey?: string;
   /** timeline: bitiş tarihi alanı */

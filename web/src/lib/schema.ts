@@ -168,6 +168,7 @@ export const PROP_KINDS: { id: PropDef['kind'] | 'status'; label: string; icon: 
   { id: 'relation', label: 'Bağlantı (başka notlar)', icon: '↗' },
   { id: 'files', label: 'Dosyalar', icon: '📎' },
   { id: 'uid', label: 'Benzersiz numara', icon: '№' },
+  { id: 'button', label: 'Düğme', icon: '▶' },
   { id: 'formula', label: 'Formül', icon: 'Σ' },
   { id: 'rollup', label: 'Toplama (rollup)', icon: '∑' },
   { id: 'created', label: 'Oluşturulma zamanı', icon: '🕓' },

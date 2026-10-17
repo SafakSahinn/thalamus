@@ -1,5 +1,6 @@
 import type { Action, Rule, Trigger } from '../lib/automations';
 import { saveSettings, uid, useStore } from '../lib/store';
+import { updateProp } from '../lib/schema';
 import { typeOf, type PropDef } from '../lib/types';
 
 // Koleksiyon ayarları → Otomasyonlar: "ne zaman … olunca … yap" kuralları
@@ -41,6 +42,31 @@ function ValueSelect({ def, value, onChange, trigger }: { def?: PropDef; value: 
 }
 
 const defaultValue = (d?: PropDef) => (d?.kind === 'date' ? 'today' : d?.kind === 'checkbox' ? 'true' : d?.options?.[0] ?? 'clear');
+
+/** Düğme alanının eylemleri: "▶ Tamamlandı" → Durum = Bitti, Bitiş = bugün */
+export function ButtonActionsEditor({ typeId, def }: { typeId: string; def: PropDef }) {
+  const t = typeOf(typeId);
+  const writable = t.props.filter((p) => SETTABLE.has(p.kind) && !p.back);
+  const fdef = (k: string) => t.props.find((p) => p.key === k);
+  const actions = def.actions ?? [];
+  const save = (next: { key: string; value: string }[]) => void updateProp(typeId, def.key, { actions: next });
+  return (
+    <div className="automations">
+      <p className="muted small">Bu düğmeye basınca o kayıtta şunlar yapılır (düğmenin yazısı alanın adıdır):</p>
+      {actions.map((a, i) => (
+        <div key={i} className="rule-line">
+          <select value={a.key} onChange={(e) => save(actions.map((x, j) => (j === i ? { key: e.target.value, value: defaultValue(fdef(e.target.value)) } : x)))}>
+            {writable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          <span className="muted small">=</span>
+          <ValueSelect def={fdef(a.key)} value={a.value} onChange={(v) => save(actions.map((x, j) => (j === i ? { ...x, value: v } : x)))} />
+          <button type="button" className="iconbtn" title="Kaldır" onClick={() => save(actions.filter((_, j) => j !== i))}>×</button>
+        </div>
+      ))}
+      <button type="button" className="btn small" disabled={!writable.length} onClick={() => save([...actions, { key: writable[0].key, value: defaultValue(writable[0]) }])}>＋ eylem ekle</button>
+    </div>
+  );
+}
 
 export default function AutomationsEditor({ typeId }: { typeId: string }) {
   const settings = useStore((s) => s.settings);

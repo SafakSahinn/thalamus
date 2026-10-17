@@ -21,4 +21,12 @@ describe('otomasyonlar notlarda çalışır', () => {
     setProp(b.id, 'status', 'Bitti');
     expect(notes()[b.id].props.finished).toBe(todayStr());
   });
+
+  it('düğme alanı eylemlerini kayda uygular', async () => {
+    const { runButton } = await import('./store');
+    const b = createNote('book', 'Sapiens', { status: 'Okunuyor', rating: 3 });
+    runButton(b.id, [{ key: 'status', value: 'Okunacak' }, { key: 'rating', value: '5' }, { key: 'finished', value: 'clear' }]);
+    expect(useStore.getState().notes[b.id].props).toMatchObject({ status: 'Okunacak', rating: 5 });
+    expect(useStore.getState().notes[b.id].props.finished).toBeUndefined();
+  });
 });

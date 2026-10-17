@@ -4,7 +4,7 @@ import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText, setSyncedSource } from './links';
-import { runRules } from './automations';
+import { actionValue, runRules } from './automations';
 import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
@@ -154,6 +154,20 @@ function automate(old: Note | null, n: Note) {
 }
 
 /** Toplu ekleme (içe aktarma): bağlantıları hesaplanmış hazır notlar. */
+/** Düğme alanına basıldı: eylemleri bu kayda uygula (ör. Durum = Bitti, Bitiş = bugün) */
+export function runButton(noteId: string, actions: { key: string; value: string }[]) {
+  const n = get().notes[noteId];
+  if (!n || !actions.length) return;
+  const kinds = new Map(typeOf(n.type).props.map((p) => [p.key, p.kind]));
+  const props = { ...n.props };
+  for (const a of actions) {
+    const v = actionValue(a, todayStr(), kinds.get(a.key));
+    if (v === undefined) delete props[a.key];
+    else props[a.key] = v;
+  }
+  updateNote(noteId, { props });
+}
+
 /** Senkron blok değişince onu kullanan notların bağlantı ve arama metnini yenile */
 export function refreshDerived(ids: string[]) {
   const list: Note[] = [];

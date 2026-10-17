@@ -3,7 +3,7 @@ import { EmojiPicker } from '../editor/EmojiPicker';
 import { ROLLUP_FNS } from '../lib/compute';
 import { checkFormula, FUNCTION_NAMES } from '../lib/formula';
 import { go } from '../lib/router';
-import AutomationsEditor from './AutomationsEditor';
+import AutomationsEditor, { ButtonActionsEditor } from './AutomationsEditor';
 import {
   addProp, deleteCollection, PROP_KINDS, removeProp, renameOption, reorderProps, restoreProp, updateCollection, updateProp, setDependencies, setSubItems,
 } from '../lib/schema';
@@ -114,7 +114,7 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
     x.splice(index + d, 0, m);
     void reorderProps(typeId, x);
   };
-  const hasDetails = ['select', 'multiselect', 'formula', 'rollup', 'relation', 'uid'].includes(def.kind);
+  const hasDetails = ['select', 'multiselect', 'formula', 'rollup', 'relation', 'uid', 'button'].includes(def.kind);
   return (
     <div className={`prop-row ${hidden ? 'hidden-prop' : ''}`}>
       <div className="row">
@@ -137,6 +137,7 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
         <div className="prop-details">
           {(def.kind === 'select' || def.kind === 'multiselect') && <OptionsEditor typeId={typeId} def={def} />}
           {def.kind === 'formula' && <FormulaEditor typeId={typeId} def={def} />}
+          {def.kind === 'button' && <ButtonActionsEditor typeId={typeId} def={def} />}
           {def.kind === 'uid' && (
             <div className="row">
               <span className="small muted">Önek:</span>
@@ -176,6 +177,7 @@ function AddProp({ typeId }: { typeId: string }) {
     }
     if (kind === 'relation') def.target = [target];
     if (kind === 'formula') def.formula = '';
+    if (kind === 'button') def.actions = [];
     await addProp(typeId, def);
     setLabel('');
   };

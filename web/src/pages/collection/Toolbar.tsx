@@ -142,12 +142,20 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
   return (
     <Popover label="Görünüm ayarları">
       {view.kind === 'board' && (
-        <label className="opt-line">Sütunlar şu alana göre:
-          <select value={view.groupBy ?? ''} onChange={(e) => update({ groupBy: e.target.value })}>
-            <option value="">seç…</option>
-            {boardable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-          </select>
-        </label>
+        <>
+          <label className="opt-line">Sütunlar şu alana göre:
+            <select value={view.groupBy ?? ''} onChange={(e) => update({ groupBy: e.target.value })}>
+              <option value="">seç…</option>
+              {boardable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </label>
+          <label className="opt-line">Satırlar (alt gruplama):
+            <select value={view.subGroupBy ?? ''} onChange={(e) => update({ subGroupBy: e.target.value || undefined })}>
+              <option value="">yok</option>
+              {boardable.filter((p) => p.key !== view.groupBy).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </label>
+        </>
       )}
       {view.kind === 'timeline' && (
         <>

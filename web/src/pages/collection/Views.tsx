@@ -246,50 +246,81 @@ export function ListView({ t, rows, view }: ViewProps) {
 export function BoardView({ t, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
   const [over, setOver] = useState<string | null>(null);
+  const [folded, setFolded] = useState<Set<string>>(new Set());
   const gdef = t.props.find((p) => p.key === view.groupBy && (p.kind === 'select' || p.kind === 'checkbox'));
   if (!gdef) return <p className="muted">Pano için bir “Seçim” alanı gerekli. Görünüm ayarlarından gruplama alanını seç ya da ⚙ Alanlar’dan bir seçim alanı ekle.</p>;
-  const groups = groupNotes(rows, gdef, notes);
+  // Alt gruplama: sütunlar bir alana, satırlar (şeritler) başka bir alana göre
+  const sdef = t.props.find((p) => p.key === view.subGroupBy && p.key !== gdef.key && (p.kind === 'select' || p.kind === 'checkbox'));
+  const columns = groupNotes(rows, gdef, notes);
+  const lanes: Group[] = sdef ? groupNotes(rows, sdef, notes).filter((l) => l.notes.length || l.key) : [{ key: '*', label: '', notes: rows }];
   const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const cols = t.props.filter((p) => !hidden.has(p.key) && p.key !== gdef.key && p.key !== t.cover).slice(0, 3);
-  const valueFor = (g: Group) => (gdef.kind === 'checkbox' ? g.key === 'true' || undefined : g.key || undefined);
-  const drop = (e: React.DragEvent, g: Group) => {
+  const cols = t.props.filter((p) => !hidden.has(p.key) && p.key !== gdef.key && p.key !== sdef?.key && p.key !== t.cover).slice(0, 3);
+  const valueOf = (def: PropDef, g: Group) => (def.kind === 'checkbox' ? g.key === 'true' || undefined : g.key || undefined);
+  const move = (id: string, col: Group, lane: Group) => {
+    setProp(id, gdef.key, valueOf(gdef, col));
+    if (sdef) setProp(id, sdef.key, valueOf(sdef, lane));
+  };
+  const drop = (e: React.DragEvent, col: Group, lane: Group) => {
     e.preventDefault();
     setOver(null);
     const id = e.dataTransfer.getData('text/thalamus-note');
-    if (id) setProp(id, gdef.key, valueFor(g));
+    if (id) move(id, col, lane);
   };
+  const toggleLane = (k: string) => setFolded((s) => { const x = new Set(s); if (x.has(k)) x.delete(k); else x.add(k); return x; });
+
   return (
-    <div className="board">
-      {groups.map((g) => (
-        <div
-          key={g.key}
-          className={`board-col ${over === g.key ? 'over' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setOver(g.key); }}
-          onDragLeave={() => setOver(null)}
-          onDrop={(e) => drop(e, g)}
-        >
-          <div className="board-head">{g.label} <span className="muted small">{g.notes.length}</span></div>
-          {g.notes.map((n) => (
-            <a
-              key={n.id}
-              href={`#/n/${n.id}`}
-              onClick={peekClick(n.id)}
-              className="board-card"
-              draggable
-              onDragStart={(e) => { e.dataTransfer.setData('text/thalamus-note', n.id); e.dataTransfer.effectAllowed = 'move'; }}
-            >
-              {t.cover && typeof n.props[t.cover] === 'string' && <Cover src={n.props[t.cover] as string} icon={noteIcon(n)} />}
-              <div className="board-title">{!t.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
-              {cols.map((c) => (n.props[c.key] !== undefined ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
-              {/* Dokunmatik ekranlarda sürükleme yerine */}
-              <select className="board-move" value={g.key} onClick={(e) => e.preventDefault()} onChange={(e) => { const to = groups.find((x) => x.key === e.target.value); if (to) setProp(n.id, gdef.key, valueFor(to)); }} aria-label="Taşı">
-                {groups.map((x) => <option key={x.key} value={x.key}>→ {x.label}</option>)}
-              </select>
-            </a>
-          ))}
-          <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(t.id, { ...newProps(), [gdef.key]: valueFor(g) }).id)}>＋ Yeni</button>
-        </div>
-      ))}
+    <div className={`board-lanes ${sdef ? 'with-lanes' : ''}`}>
+      {lanes.map((lane) => {
+        const inLane = new Set(lane.notes.map((n) => n.id));
+        const shut = folded.has(lane.key);
+        return (
+          <div key={lane.key} className="board-lane">
+            {sdef && (
+              <button type="button" className="lane-head" onClick={() => toggleLane(lane.key)}>
+                <span className={`lane-caret ${shut ? '' : 'open'}`}>▸</span> <b>{lane.label}</b> <span className="muted small">{lane.notes.length}</span>
+              </button>
+            )}
+            {!shut && (
+              <div className="board">
+                {columns.map((g) => {
+                  const cell = g.notes.filter((n) => inLane.has(n.id));
+                  const k = `${lane.key}|${g.key}`;
+                  return (
+                    <div
+                      key={g.key}
+                      className={`board-col ${over === k ? 'over' : ''}`}
+                      onDragOver={(e) => { e.preventDefault(); setOver(k); }}
+                      onDragLeave={() => setOver(null)}
+                      onDrop={(e) => drop(e, g, lane)}
+                    >
+                      <div className="board-head">{g.label} <span className="muted small">{cell.length}</span></div>
+                      {cell.map((n) => (
+                        <a
+                          key={n.id}
+                          href={`#/n/${n.id}`}
+                          onClick={peekClick(n.id)}
+                          className="board-card"
+                          draggable
+                          onDragStart={(e) => { e.dataTransfer.setData('text/thalamus-note', n.id); e.dataTransfer.effectAllowed = 'move'; }}
+                        >
+                          {t.cover && typeof n.props[t.cover] === 'string' && <Cover src={n.props[t.cover] as string} icon={noteIcon(n)} />}
+                          <div className="board-title">{!t.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
+                          {cols.map((c) => (n.props[c.key] !== undefined ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
+                          {/* Dokunmatik ekranlarda sürükleme yerine */}
+                          <select className="board-move" value={g.key} onClick={(e) => e.preventDefault()} onChange={(e) => { const to = columns.find((x) => x.key === e.target.value); if (to) move(n.id, to, lane); }} aria-label="Taşı">
+                            {columns.map((x) => <option key={x.key} value={x.key}>→ {x.label}</option>)}
+                          </select>
+                        </a>
+                      ))}
+                      <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(t.id, { ...newProps(), [gdef.key]: valueOf(gdef, g), ...(sdef ? { [sdef.key]: valueOf(sdef, lane) } : {}) }).id)}>＋ Yeni</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

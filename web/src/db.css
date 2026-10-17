@@ -433,3 +433,11 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .rule-line select, .rule-line input { border: 1px solid var(--border); border-radius: 7px; padding: 3px 7px; background: var(--panel); }
 .rule-on input { accent-color: var(--accent); }
 .import-h { font-size: 1.15rem; margin: 18px 0 6px; } .md-import { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 8px; }
+
+/* Pano alt gruplama (şeritler) */
+.board-lanes.with-lanes { display: flex; flex-direction: column; gap: 10px; }
+.board-lane { min-width: 0; }
+.lane-head { display: flex; align-items: center; gap: 6px; border: none; background: none; font: inherit; color: var(--text); cursor: pointer; padding: 6px 2px; }
+.lane-caret { display: inline-block; transition: transform 0.15s; color: var(--muted); font-size: 12px; }
+.lane-caret.open { transform: rotate(90deg); }
+.with-lanes .board-lane { border-top: 1px solid var(--border); }

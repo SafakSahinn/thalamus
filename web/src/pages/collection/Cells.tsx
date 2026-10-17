@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Chip, ComputedValue, NoteChip, PropValue, Stars } from '../../components/PropertyPanel';
+import { Chip, ComputedValue, NoteChip, PropButton, PropValue, Stars } from '../../components/PropertyPanel';
 import { propValue } from '../../lib/compute';
 import { fmtDate } from '../../lib/format';
 import { resolveFileUrl, useStore } from '../../lib/store';
@@ -8,6 +8,7 @@ import { fileRefs, relationIds, uidText, type Note, type PropDef } from '../../l
 /** Salt okunur hücre görünümü */
 export function Cell({ note, def }: { note: Note; def: PropDef }) {
   const notes = useStore((s) => s.notes);
+  if (def.kind === 'button') return <PropButton note={note} def={def} />;
   if (['formula', 'rollup', 'created', 'updated'].includes(def.kind)) return <ComputedValue note={note} def={def} />;
   const v = def.back ? propValue(note, def, notes) : note.props[def.key];
   if (v === undefined || v === null || v === '') return null;
@@ -48,6 +49,7 @@ export function EditCell({ note, def }: { note: Note; def: PropDef }) {
     return () => document.removeEventListener('mousedown', out);
   }, [open]);
   if (['formula', 'rollup', 'created', 'updated'].includes(def.kind)) return <ComputedValue note={note} def={def} />;
+  if (def.kind === 'button') return <PropButton note={note} def={def} />;
   if (INLINE.has(def.kind)) return <div className="cell-edit"><PropValue note={note} def={def} /></div>;
   return (
     <div className="cell-pop-wrap" ref={ref}>
