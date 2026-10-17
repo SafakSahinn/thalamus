@@ -5,7 +5,7 @@ import { calSettings } from '../lib/gcal';
 import { listCalendars, listEvents, type ExtEvent } from '../lib/gcalFull';
 import { loadAuth } from '../lib/google';
 import { go } from '../lib/router';
-import { dueCards, newPerDay } from '../lib/srs';
+import { dueCards, isCard, newPerDay } from '../lib/srs';
 import { saveSettings, todayStr, useIndex, useStore } from '../lib/store';
 import { createDefault } from '../lib/templates';
 import { fmtMin, studyStats, useTimer } from '../lib/timer';
@@ -15,7 +15,8 @@ import { RoutineChecks } from './DailyPage';
 import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
 
-// Ana sayfa: kullanıcının seçip sıraladığı bileşenlerden oluşur (ayarlar.home, Drive'da eşitlenir).
+// Ana sayfa: bileşenlerden oluşur; hangilerinin görüneceği ve sırası Ayarlar > Ana sayfa'dan seçilir
+// (ayarlar.homeLayout, Drive'da eşitlenir). Boş bileşenler kendini gizler.
 
 const QUICK: TypeId[] = ['note', 'book', 'paper', 'lab', 'conference', 'talk', 'movie', 'word', 'concept'];
 const ACTIVE = new Set(['Okunuyor', 'İzleniyor', 'Devam ediyor']);
@@ -25,37 +26,55 @@ interface Widget {
   label: string;
   /** tam genişlik (ızgarada iki sütunu kaplar) */
   wide?: boolean;
+  /** varsayılan olarak kapalı (Ayarlar'dan açılır) */
+  off?: boolean;
   C: () => React.ReactNode;
 }
 
 const WIDGETS: Widget[] = [
   { id: 'today', label: 'Bugün (rutinler)', wide: true, C: Today },
-  { id: 'agenda', label: 'Bugünün takvimi', C: Agenda },
-  { id: 'review', label: 'Tekrar kartları', C: Review },
-  { id: 'study', label: 'Çalışma süresi', C: Study },
-  { id: 'reading', label: 'Okuma hedefi', C: Reading },
   { id: 'quick', label: 'Hızlı ekle', wide: true, C: Quick },
   { id: 'upcoming', label: 'Yaklaşanlar', wide: true, C: Soon },
+  { id: 'review', label: 'Tekrar kartları', C: Review },
+  { id: 'study', label: 'Çalışma süresi', C: Study },
   { id: 'active', label: 'Devam edenler', C: Active },
   { id: 'recent', label: 'Son düzenlenenler', C: Recent },
   { id: 'word', label: 'Günün kelimesi', C: Word },
   { id: 'hubs', label: 'En bağlantılı notlar', C: Hubs },
-  { id: 'colls', label: 'Koleksiyonlar', C: Colls },
+  { id: 'agenda', label: 'Bugünün takvimi', off: true, C: Agenda },
+  { id: 'reading', label: 'Okuma hedefi', off: true, C: Reading },
+  { id: 'colls', label: 'Koleksiyonlar', off: true, C: Colls },
 ];
 
-/** Kayıtlı düzen + sonradan eklenen bileşenler (sona, açık olarak) */
-export function homeLayout(saved?: { id: string; on: boolean }[]) {
+type Layout = { id: string; on: boolean }[];
+
+/** Kayıtlı düzen + sonradan eklenen bileşenler (sona, varsayılan görünürlükle) */
+export function homeLayout(saved?: Layout): Layout {
   const known = new Set(WIDGETS.map((w) => w.id));
   const list = (saved ?? []).filter((x) => known.has(x.id));
-  for (const w of WIDGETS) if (!list.some((x) => x.id === w.id)) list.push({ id: w.id, on: true });
+  for (const w of WIDGETS) if (!list.some((x) => x.id === w.id)) list.push({ id: w.id, on: !w.off });
   return list;
 }
 
 export default function Home() {
-  const settings = useStore((s) => s.settings);
-  const layout = homeLayout(settings.home);
-  const [edit, setEdit] = useState(false);
-  const save = (home: { id: string; on: boolean }[]) => void saveSettings({ ...useStore.getState().settings, home });
+  const layout = homeLayout(useStore((s) => s.settings.homeLayout));
+  return (
+    <div className="page wide home">
+      <div className="home-grid">
+        {layout.map((x) => {
+          const w = WIDGETS.find((y) => y.id === x.id)!;
+          return x.on ? <section key={w.id} className={`widget ${w.wide ? 'wide' : ''}`}><w.C /></section> : null;
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Ayarlar > Ana sayfa: bileşenleri aç/kapat ve sırala */
+export function HomeSettings() {
+  const saved = useStore((s) => s.settings.homeLayout);
+  const layout = homeLayout(saved);
+  const save = (homeLayout: Layout | undefined) => void saveSettings({ ...useStore.getState().settings, homeLayout });
   const move = (i: number, d: number) => {
     const l = [...layout];
     const j = i + d;
@@ -63,33 +82,17 @@ export default function Home() {
     [l[i], l[j]] = [l[j], l[i]];
     save(l);
   };
-
   return (
-    <div className={`page wide home ${edit ? 'home-edit' : ''}`}>
-      <div className="row home-top">
-        <span className="spacer" />
-        {edit && <button className="btn small" onClick={() => save(homeLayout())}>Varsayılana dön</button>}
-        <button className={`btn small ${edit ? 'primary' : ''}`} onClick={() => setEdit(!edit)}>{edit ? '✓ Bitti' : '⚙ Ana sayfayı düzenle'}</button>
-      </div>
-      <div className="home-grid">
-        {layout.map((x, i) => {
-          const w = WIDGETS.find((y) => y.id === x.id)!;
-          if (!x.on && !edit) return null;
-          return (
-            <section key={w.id} className={`widget ${w.wide ? 'wide' : ''} ${x.on ? '' : 'hidden'}`}>
-              {edit && (
-                <div className="widget-bar">
-                  <label><input type="checkbox" checked={x.on} onChange={() => save(layout.map((y) => (y.id === x.id ? { ...y, on: !y.on } : y)))} /> {w.label}</label>
-                  <span className="spacer" />
-                  <button className="iconbtn" disabled={i === 0} title="Yukarı" onClick={() => move(i, -1)}>↑</button>
-                  <button className="iconbtn" disabled={i === layout.length - 1} title="Aşağı" onClick={() => move(i, 1)}>↓</button>
-                </div>
-              )}
-              {x.on && <w.C />}
-            </section>
-          );
-        })}
-      </div>
+    <div className="home-settings">
+      {layout.map((x, i) => (
+        <div key={x.id} className={`home-set-row ${x.on ? '' : 'off'}`}>
+          <label><input type="checkbox" checked={x.on} onChange={() => save(layout.map((y) => (y.id === x.id ? { ...y, on: !y.on } : y)))} /> {WIDGETS.find((w) => w.id === x.id)!.label}</label>
+          <span className="spacer" />
+          <button className="iconbtn" disabled={i === 0} title="Yukarı" onClick={() => move(i, -1)}>↑</button>
+          <button className="iconbtn" disabled={i === layout.length - 1} title="Aşağı" onClick={() => move(i, 1)}>↓</button>
+        </div>
+      ))}
+      {saved && <button className="btn small" onClick={() => save(undefined)}>Varsayılana dön</button>}
     </div>
   );
 }
@@ -127,6 +130,7 @@ function Agenda() {
     return () => { off = true; };
   }, [extKey, today]);
 
+  if (!mine.length && !ext.length) return null;
   return (
     <>
       <h3>Bugünün takvimi</h3>
@@ -144,7 +148,6 @@ function Agenda() {
             <span className="muted small">{e.time ? `${e.time}${e.endTime ? `–${e.endTime}` : ''}` : 'tüm gün'}</span>
           </a>
         ))}
-        {!mine.length && !ext.length && <p className="muted small">Bugün için takvimde bir şey yok.</p>}
       </div>
       <a href="#/takvim" className="small">Takvimi aç →</a>
     </>
@@ -154,6 +157,8 @@ function Agenda() {
 function Review() {
   const notes = useStore((s) => s.notes);
   const { due, fresh } = useMemo(() => dueCards(Object.values(notes), todayStr(), newPerDay()), [notes]);
+  const any = useMemo(() => Object.values(notes).some(isCard), [notes]);
+  if (!any) return null;
   return (
     <>
       <h3>Tekrar kartları</h3>
@@ -207,10 +212,11 @@ function Quick() {
 function Soon() {
   const { alive } = useIndex();
   const soon = useMemo(() => upcoming(alive), [alive]);
+  if (!soon.length) return null;
   return (
     <>
       <h3>Yaklaşanlar</h3>
-      {soon.length ? (
+      {(
         <div className="list upcoming">
           {soon.map((u) => (
             <a key={u.note.id + u.def.key} className={`rowlink ${u.days < 0 ? 'overdue' : u.days <= 2 ? 'near' : ''}`} href={`#/n/${u.note.id}`}>
@@ -220,7 +226,7 @@ function Soon() {
             </a>
           ))}
         </div>
-      ) : <p className="muted small">Önümüzdeki iki haftada tarihli bir şey yok.</p>}
+      )}
     </>
   );
 }
@@ -228,11 +234,12 @@ function Soon() {
 function Active() {
   const { alive } = useIndex();
   const active = useMemo(() => alive.filter((n) => ACTIVE.has(n.props.status as string)), [alive]);
+  if (!active.length) return null;
   return (
     <>
       <h3>Devam edenler</h3>
       <div className="list">
-        {active.length ? active.map((n) => <Row key={n.id} n={n} meta={String(n.props.status)} />) : <p className="muted small">Okunan, izlenen ya da devam eden bir şey yok.</p>}
+        {active.map((n) => <Row key={n.id} n={n} meta={String(n.props.status)} />)}
       </div>
     </>
   );
@@ -248,7 +255,7 @@ function Recent() {
     <>
       <h3>Son düzenlenenler</h3>
       <div className="list">
-        {recent.length ? recent.map((n) => <Row key={n.id} n={n} meta={relTime(n.updated_at)} />) : <p className="muted">Henüz not yok. “Hızlı ekle”den bir şey ekleyerek başla.</p>}
+        {recent.length ? recent.map((n) => <Row key={n.id} n={n} meta={relTime(n.updated_at)} />) : <p className="muted">Henüz not yok. Yukarıdan bir şey ekleyerek başla.</p>}
       </div>
     </>
   );
@@ -262,15 +269,12 @@ function Word() {
     const day = Math.floor(Date.now() / 86_400_000);
     return words[day % words.length];
   }, [alive]);
+  if (!word) return null;
   return (
     <div className="wotd">
       <h3>Günün kelimesi</h3>
-      {word ? (
-        <>
-          <a href={`#/n/${word.id}`} className="wotd-word">{word.title}</a>
-          <div className="wotd-meaning">{String(word.props.meaning)}</div>
-        </>
-      ) : <p className="muted small">Sözlüğe anlamıyla birlikte kelime ekleyince burada her gün biri çıkar.</p>}
+      <a href={`#/n/${word.id}`} className="wotd-word">{word.title}</a>
+      <div className="wotd-meaning">{String(word.props.meaning)}</div>
       <a href="#/dictionary" className="small">Sözlüğe git →</a>
     </div>
   );
@@ -284,10 +288,11 @@ function Hubs() {
       .filter((x) => x.c > 1).sort((a, b) => b.c - a.c).slice(0, 8),
     [alive, backlinks],
   );
+  if (!hubs.length) return null;
   return (
     <>
       <h3>En bağlantılı notlar</h3>
-      {hubs.length ? <div className="chips">{hubs.map(({ n }) => <NoteChip key={n.id} note={n} />)}</div> : <p className="muted small">Notlar arasında [[bağlantı]] kurdukça burada görünür.</p>}
+      <div className="chips">{hubs.map(({ n }) => <NoteChip key={n.id} note={n} />)}</div>
       <a href="#/graph" className="small">Haritayı aç →</a>
     </>
   );

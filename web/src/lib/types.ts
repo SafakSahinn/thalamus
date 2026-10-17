@@ -380,7 +380,7 @@ export interface Settings {
   /** Google Takvim eşitlemesi */
   calendar?: { enabled: boolean; calendarId?: string; fields: string[]; reminders: number[]; eventOff?: boolean; external?: string[] };
   /** Ana sayfa bileşenlerinin sırası ve görünürlüğü */
-  home?: { id: string; on: boolean }[];
+  homeLayout?: { id: string; on: boolean }[];
   /** Yıllık okuma hedefleri (yıl → kitap/makale sayısı) */
   readingGoals?: Record<string, import('./reading').ReadingGoal>;
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CalendarSettings from '../components/CalendarSettings';
+import { HomeSettings } from './Home';
 import NotifySettings from '../components/NotifySettings';
 import ClipperSettings from '../components/ClipperSettings';
 import { startTour } from '../components/Tour';
@@ -266,6 +267,12 @@ export default function SettingsPage() {
         <h3>Günlük rutinler</h3>
         <p className="muted small">Her gün Günlük sayfasında ve ana sayfada işaretleyeceğin alışkanlıklar.</p>
         <Routines />
+      </section>
+
+      <section>
+        <h3>Ana sayfa</h3>
+        <p className="muted small">Ana sayfada hangi bölümlerin görüneceğini ve sırasını seç. Boş bölümler (ör. yaklaşan bir şey yoksa) kendiliğinden gizlenir.</p>
+        <HomeSettings />
       </section>
 
       <section>

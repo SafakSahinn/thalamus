@@ -147,20 +147,20 @@ body.focus-mode .writing-bar { opacity: 0.35; transition: opacity 0.2s; }
 body.focus-mode .writing-bar:hover { opacity: 1; }
 
 /* Ana sayfa bileşenleri */
-.home-top { margin-bottom: -8px; }
-.home-top .spacer { flex: 1; }
 .home-grid > .widget { min-width: 0; }
+.home-grid > .widget:empty { display: none; }
 .home-grid > .widget.wide { grid-column: 1 / -1; }
-.home-grid > .widget > .home-today { margin-top: 12px; }
 .widget-kpi { display: flex; align-items: baseline; gap: 6px 8px; flex-wrap: wrap; }
 .widget-kpi b { font-size: 22px; font-variant-numeric: tabular-nums; }
 .widget-kpi .muted + b { margin-left: 10px; }
 .widget-kpi .spacer { flex: 1; }
-.home-edit .widget { border: 1px dashed var(--border); border-radius: 12px; padding: 4px 12px 12px; margin-bottom: 12px; }
-.home-edit .widget.hidden { opacity: 0.55; padding-bottom: 4px; }
-.widget-bar { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; padding: 4px 0; border-bottom: 1px solid var(--border); }
-.widget-bar label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.widget-bar .spacer { flex: 1; }
+.home-settings { display: flex; flex-direction: column; gap: 2px; max-width: 420px; }
+.home-set-row { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; }
+.home-set-row:hover { background: var(--hover); }
+.home-set-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.home-set-row.off label { color: var(--muted); }
+.home-set-row .spacer { flex: 1; }
+.home-settings > .btn { align-self: flex-start; margin-top: 8px; }
 
 /* Okuma istatistikleri */
 .reading-kpis { grid-template-columns: repeat(4, 1fr); }
