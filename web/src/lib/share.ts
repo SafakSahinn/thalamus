@@ -1,12 +1,12 @@
 // Herkese açık paylaşım: notun okunabilir bir kopyası kullanıcının Drive'ındaki Thalamus klasörüne
 // "bağlantıya sahip olan görebilir" ayarlı bir dosya olarak yazılır; bağlantı o dosyanın kimliğidir.
-// İçindeki Drive görselleri de herkese açık yapılır. Sunucuda hiçbir şey saklanmaz.
+// İçindeki Drive görselleri de herkese açık yapılır; sunucuda kopyası tutulmaz.
 
-import { propValue, showValue } from './compute';
+import { publicProps } from './noteHtml';
 import { displayTitle, noteIcon } from './format';
 import { fnUrl } from './google';
 import { publicFile, removeShareFile, setProp, unpublicFile, useStore, writeShareFile } from './store';
-import { relationIds, typeOf, type Note } from './types';
+import type { Note } from './types';
 
 interface PMNode {
   type?: string;
@@ -40,19 +40,6 @@ async function publicContent(doc: unknown, files: Set<string>): Promise<unknown>
   return doc ? walk(doc as PMNode) : null;
 }
 
-function publicProps(note: Note, notes: Record<string, Note>) {
-  const out: { label: string; value: string }[] = [];
-  for (const def of typeOf(note.type).props) {
-    if (def.kind === 'url' && /^(gd|local):/.test(String(note.props[def.key] ?? ''))) continue;
-    const v = propValue(note, def, notes);
-    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;
-    const value = def.kind === 'relation'
-      ? relationIds(v).map((id) => (notes[id] ? displayTitle(notes[id]) : '')).filter(Boolean).join(', ')
-      : def.kind === 'rating' ? '★'.repeat(Number(v)) : def.kind === 'checkbox' ? (v ? '✓' : '') : showValue(v);
-    if (value) out.push({ label: def.label, value });
-  }
-  return out;
-}
 
 export async function publishShare(note: Note): Promise<string> {
   const notes = useStore.getState().notes;

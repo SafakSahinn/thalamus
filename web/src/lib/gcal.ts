@@ -7,6 +7,7 @@ import { getMeta, setMeta } from './db';
 import { addDays, displayTitle } from './format';
 import { accessToken, cloud, loadAuth } from './google';
 import { onAfterSync, saveSettings, setProp, useStore } from './store';
+import { eventDescription } from './noteHtml';
 import { isTemplate } from './templates';
 import { typeOf, TYPES, type Note, type Settings } from './types';
 
@@ -94,6 +95,7 @@ export function desiredEvents(notes: Note[], cs: CalendarSettings, appUrl: strin
   const reminders = cs.reminders.slice(0, 5).map((d) => ({ method: 'popup', minutes: Math.max(0, d * 1440 - 9 * 60) }));
   // Saatli etkinlik: "o gün" yarım saat önce, diğerleri tam gün sayısı kadar önce
   const timedReminders = cs.reminders.slice(0, 5).map((d) => ({ method: 'popup', minutes: d ? d * 1440 : 30 }));
+  const byId = Object.fromEntries(notes.map((x) => [x.id, x]));
   for (const n of notes) {
     if (n.deleted_at || isTemplate(n) || n.type === 'daily') continue;
     const t = typeOf(n.type);
@@ -123,13 +125,13 @@ export function desiredEvents(notes: Note[], cs: CalendarSettings, appUrl: strin
       if (n.type === 'event') summary = displayTitle(n);
       const body = {
         summary,
-        description: `${t.icon} ${t.label} · Thalamus\n${appUrl}#/n/${n.id}`,
+        // Notun kendisi açıklamada okunur; bağlantıya tıklamak gerekmez
+        description: eventDescription(n, byId, `${appUrl}#/n/${n.id}`),
         ...when,
         ...(n.type === 'event' && typeof n.props.location === 'string' && n.props.location ? { location: n.props.location } : {}),
         transparency: time ? 'opaque' : 'transparent',
         reminders: { useDefault: false, overrides: time ? timedReminders : reminders },
         extendedProperties: { private: { thalamus: n.id, field: def.key } },
-        source: { title: 'Thalamus', url: `${appUrl}#/n/${n.id}` },
       };
       out.push({ id: eventId(n.id, def.key), body, hash: hashOf(body) });
     }

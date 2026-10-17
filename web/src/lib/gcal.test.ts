@@ -85,6 +85,16 @@ describe('Google Takvim eşitlemesi', () => {
     expect((d.body.end as { dateTime: string }).dateTime).toBe('2026-10-20T15:30:00');
     expect(d.body.location).toBe('B-204');
     expect((d.body.reminders as { overrides: { minutes: number }[] }).overrides.map((r) => r.minutes)).toEqual([30, 1440]);
+    // Notun içeriği açıklamada okunur (bağlantıya tıklamadan)
+    const withBody = { ...ev, content: { type: 'doc', content: [
+      { type: 'paragraph', content: [{ type: 'text', text: 'Tez taslağını götür <önemli>', marks: [{ type: 'bold' }] }] },
+      { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Bölüm 2' }] }] }] },
+    ] } };
+    const desc = String(desiredEvents([withBody], cs, 'https://x/')[0].body.description);
+    expect(desc).toContain('<b>Tez taslağını götür &lt;önemli&gt;</b>');
+    expect(desc).toContain('<ul><li>Bölüm 2</li></ul>');
+    expect(desc).toContain('Thalamus’ta aç');
+    expect(desc).not.toContain('Saat');
     const [allDay] = desiredEvents([{ ...ev, props: { date: '2026-10-20' } }], cs, 'https://x/');
     expect(allDay.body.start).toEqual({ date: '2026-10-20' });
   });
