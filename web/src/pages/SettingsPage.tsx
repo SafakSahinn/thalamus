@@ -54,7 +54,7 @@ function Feedback() {
       <p className="muted small">Bir hata mı buldun, bir özellik mi istiyorsun? E-postayla yazabilir ya da GitHub’da kayıt açabilirsin.</p>
       <div className="row">
         <a className="btn" href="mailto:getthalamus@gmail.com?subject=Thalamus%20geri%20bildirim">✉ E-posta gönder</a>
-        <a className="btn ghost" href="https://github.com/SafakSahinn/thalamus/issues" target="_blank" rel="noopener noreferrer">GitHub’da kayıt aç ↗</a>
+        <a className="btn" href="https://github.com/SafakSahinn/thalamus/issues" target="_blank" rel="noopener noreferrer">GitHub’da kayıt aç ↗</a>
       </div>
     </section>
   );
@@ -103,7 +103,7 @@ function DeleteAccount({ email }: { email: string }) {
           <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={email} />
           <div className="row">
-            <button className="btn ghost" onClick={() => { setOpen(false); setTyped(''); }} disabled={busy}>Vazgeç</button>
+            <button className="btn" onClick={() => { setOpen(false); setTyped(""); }} disabled={busy}>Vazgeç</button>
             <button className="btn danger" disabled={busy || typed.trim().toLowerCase() !== email.toLowerCase()} onClick={() => void run()}>
               {busy ? 'Siliniyor…' : 'Kalıcı olarak sil'}
             </button>
@@ -282,8 +282,8 @@ export default function SettingsPage() {
         <div className="row">
           <button className="btn" onClick={() => void exportZip()} disabled={Boolean(zipBusy)}>{zipBusy ?? 'Markdown olarak indir (.zip)'}</button>
           <button className="btn" onClick={exportJson}>Yedeği indir (.json)</button>
-          <button className="btn ghost" onClick={importJson}>Yedekten geri yükle</button>
-          <a className="btn ghost" href="#/import">Notion’dan aktar</a>
+          <button className="btn" onClick={importJson}>Yedekten geri yükle</button>
+          <a className="btn" href="#/import">Notion’dan aktar</a>
         </div>
         {msg && <p className="small">{msg}</p>}
       </section>

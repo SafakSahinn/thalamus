@@ -104,7 +104,7 @@ export default function CalendarSettings() {
           </div>
           <div className="row">
             <button className="btn small" disabled={Boolean(busy)} onClick={() => void run("…", () => disconnectCalendar(false))}>Eşitlemeyi durdur</button>
-            <button className="btn ghost small danger" disabled={Boolean(busy)} onClick={() => {
+            <button className="btn small danger" disabled={Boolean(busy)} onClick={() => {
               if (confirm('Google Takvim’deki “Thalamus” takvimi ve içindeki bütün etkinlikler silinsin mi? Notların etkilenmez.')) void run('Siliniyor…', () => disconnectCalendar(true));
             }}>Thalamus takvimini sil</button>
           </div>
