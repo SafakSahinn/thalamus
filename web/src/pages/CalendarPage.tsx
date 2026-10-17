@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import ExtEventDialog from '../components/ExtEventDialog';
 import { openPeek, peekClick } from '../components/Peek';
 import { addDays, displayTitle, noteIcon, parseDay } from '../lib/format';
 import { calSettings, parseTime } from '../lib/gcal';
+import { listCalendars, listEvents, moveEvent, type ExtCal, type ExtEvent } from '../lib/gcalFull';
+import { loadAuth } from '../lib/google';
 import { setProp, todayStr, useStore } from '../lib/store';
 import { createDefault, isTemplate } from '../lib/templates';
 import { typeOf, TYPES, type Note } from '../lib/types';
@@ -43,6 +46,13 @@ export default function CalendarPage() {
   const [over, setOver] = useState<string | null>(null);
   /** "+" ile açılan gün menüsü */
   const [adding, setAdding] = useState<string | null>(null);
+  // Diğer Google takvimleri (tam takvim izniyle)
+  const external = calSettings(settings).external ?? [];
+  const [cals, setCals] = useState<ExtCal[]>([]);
+  const [ext, setExt] = useState<ExtEvent[]>([]);
+  const [extErr, setExtErr] = useState('');
+  const [extLoading, setExtLoading] = useState(false);
+  const [dialog, setDialog] = useState<{ ev?: ExtEvent; day?: string } | null>(null);
 
   // Tarih alanı olan koleksiyonlar (günlük kendi sayfasında)
   const types = useMemo(() => TYPES.filter((t) => t.id !== 'daily' && t.props.some((p) => p.kind === 'date')), [settings]);
@@ -94,6 +104,46 @@ export default function CalendarPage() {
     });
   }, [cursor]);
 
+  const from = ymd(days[0]);
+  const to = ymd(days[days.length - 1]);
+  const extKey = external.join(',');
+  const loadExt = useCallback(async () => {
+    if (!extKey || !navigator.onLine || !(await loadAuth())?.fullCalendar) {
+      setCals([]);
+      setExt([]);
+      return;
+    }
+    setExtLoading(true);
+    try {
+      const all = await listCalendars();
+      const shown = all.filter((c) => extKey.split(',').includes(c.id));
+      setCals(shown);
+      setExt((await Promise.all(shown.map((c) => listEvents(c, from, to)))).flat());
+      setExtErr('');
+    } catch (e) {
+      setExtErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setExtLoading(false);
+    }
+  }, [extKey, from, to]);
+  useEffect(() => {
+    void loadExt();
+    // Başka yerde (telefonda) yapılan değişiklikler için ara ara yenile
+    const id = setInterval(() => document.visibilityState === 'visible' && void loadExt(), 120_000);
+    return () => clearInterval(id);
+  }, [loadExt]);
+
+  const extByDay = useMemo(() => {
+    const map = new Map<string, ExtEvent[]>();
+    for (const e of ext) {
+      if (hidden.includes(`g:${e.calId}`)) continue;
+      for (let d = e.date, i = 0; d <= e.endDate && i < 62; d = addDays(d, 1), i++) map.set(d, [...(map.get(d) ?? []), e]);
+    }
+    for (const list of map.values()) list.sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
+    return map;
+  }, [ext, hidden]);
+  const calOf = (id: string) => cals.find((c) => c.id === id);
+
   const toggleType = (id: string) => {
     const next = hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id];
     setHidden(next);
@@ -102,6 +152,21 @@ export default function CalendarPage() {
     } catch {
       /* yok say */
     }
+  };
+
+  const dropExt = async (raw: string, day: string) => {
+    const ev = ext.find((e) => `${e.calId}|${e.id}` === raw);
+    if (!ev || !calOf(ev.calId)?.writable) return;
+    const delta = dayDiff(ev.date, day);
+    if (!delta) return;
+    // Hemen ekranda taşı, sonra Google'a yaz
+    setExt((list) => list.map((e) => (e === ev ? { ...e, date: addDays(e.date, delta), endDate: addDays(e.endDate, delta) } : e)));
+    try {
+      await moveEvent(ev, delta);
+    } catch (e) {
+      setExtErr(e instanceof Error ? e.message : String(e));
+    }
+    void loadExt();
   };
 
   const drop = (raw: string, day: string) => {
@@ -131,19 +196,28 @@ export default function CalendarPage() {
             {t.icon} {t.plural}
           </button>
         ))}
+        {cals.map((c) => (
+          <button key={c.id} type="button" className={`cal-type ${hidden.includes(`g:${c.id}`) ? '' : 'on'}`} onClick={() => toggleType(`g:${c.id}`)} aria-pressed={!hidden.includes(`g:${c.id}`)}>
+            <span className="ext-dot" style={{ background: c.color }} /> {c.summary}
+          </button>
+        ))}
       </div>
+      {extErr && <p className="err small">{extErr}</p>}
       <div className="calendar" data-tour="calendar">
         <div className="cal-head">
           <button type="button" className="iconbtn" onClick={() => move(-1)} aria-label="Önceki ay">‹</button>
           <b className="cal-month">{MONTH.format(cursor)}</b>
           <button type="button" className="iconbtn" onClick={() => move(1)} aria-label="Sonraki ay">›</button>
           <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>Bugün</button>
+          {cals.length > 0 && <button type="button" className="iconbtn" title="Google takvimlerini yenile" aria-label="Google takvimlerini yenile" disabled={extLoading} onClick={() => void loadExt()}>{extLoading ? '…' : '⟳'}</button>}
         </div>
         <div className="cal-grid">
           {WEEK.map((w) => <div key={w} className="cal-wd">{w}</div>)}
           {days.map((d) => {
             const k = ymd(d);
             const items = byDay.get(k) ?? [];
+            const gitems = extByDay.get(k) ?? [];
+            const room = Math.max(0, 5 - gitems.length);
             const other = d.getMonth() !== cursor.getMonth();
             return (
               <div
@@ -156,6 +230,8 @@ export default function CalendarPage() {
                   setOver(null);
                   const raw = e.dataTransfer.getData('text/thalamus-date');
                   if (raw) drop(raw, k);
+                  const g = e.dataTransfer.getData('text/thalamus-gevent');
+                  if (g) void dropExt(g, k);
                 }}
               >
                 <div className="cal-num">
@@ -165,12 +241,32 @@ export default function CalendarPage() {
                 </div>
                 {adding === k && (
                   <div className="cal-addmenu" role="menu">
+                    {cals.some((c) => c.writable) && (
+                      <button type="button" role="menuitem" onClick={() => { setAdding(null); setDialog({ day: k }); }}>📅 Google Takvim etkinliği</button>
+                    )}
                     {types.map((t) => (
                       <button key={t.id} type="button" role="menuitem" onClick={() => addOn(t.id, k)}>{t.icon} {t.label}</button>
                     ))}
                   </div>
                 )}
-                {items.slice(0, 5).map((it) => (
+                {gitems.slice(0, 5).map((ge) => {
+                  const c = calOf(ge.calId);
+                  return (
+                    <button
+                      key={`${ge.calId}.${ge.id}`}
+                      type="button"
+                      className="cal-item cal-gitem"
+                      style={{ borderLeftColor: c?.color }}
+                      draggable={Boolean(c?.writable)}
+                      title={`${ge.summary}${c ? ` · ${c.summary}` : ''}`}
+                      onClick={() => setDialog({ ev: ge })}
+                      onDragStart={(e) => e.dataTransfer.setData('text/thalamus-gevent', `${ge.calId}|${ge.id}`)}
+                    >
+                      {ge.time && ge.date === k && <b>{ge.time} </b>}{ge.summary}
+                    </button>
+                  );
+                })}
+                {items.slice(0, room).map((it) => (
                   <a
                     key={`${it.note.id}.${it.key}`}
                     href={`#/n/${it.note.id}`}
@@ -185,12 +281,13 @@ export default function CalendarPage() {
                     {it.label && <span className="muted">{it.label}: </span>}{displayTitle(it.note)}
                   </a>
                 ))}
-                {items.length > 5 && <div className="muted small">+{items.length - 5} daha</div>}
+                {items.length + gitems.length > 5 && <div className="muted small">+{items.length + gitems.length - Math.min(5, gitems.length) - Math.min(room, items.length)} daha</div>}
               </div>
             );
           })}
         </div>
       </div>
+      {dialog && <ExtEventDialog ev={dialog.ev} day={dialog.day} cals={cals} onClose={() => setDialog(null)} onChanged={() => void loadExt()} />}
     </div>
   );
 }

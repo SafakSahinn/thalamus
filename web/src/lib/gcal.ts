@@ -22,6 +22,8 @@ export interface CalendarSettings {
   reminders: number[];
   /** Kullanıcı Etkinlikler'i takvimden bilerek çıkardı (yeni varsayılan sonradan eklenmesin) */
   eventOff?: boolean;
+  /** Thalamus Takvim sayfasında gösterilen diğer Google takvimleri (tam takvim izniyle) */
+  external?: string[];
 }
 
 export const DEFAULT_CAL_FIELDS = ['event.date', 'conference.deadline', 'conference.start', 'conference.end', 'lab.date', 'lab.due', 'talk.date'];
@@ -49,7 +51,7 @@ export function dateFields() {
     .filter((x) => x.fields.length);
 }
 
-async function call(path: string, init: RequestInit = {}): Promise<Response> {
+export async function call(path: string, init: RequestInit = {}): Promise<Response> {
   const r = await fetch(`${API}${path}`, {
     ...init,
     headers: { ...(init.headers ?? {}), Authorization: `Bearer ${await accessToken()}`, 'Content-Type': 'application/json' },

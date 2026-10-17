@@ -9,6 +9,8 @@ const GIS_SRC = 'https://accounts.google.com/gsi/client';
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 /** Yalnızca uygulamanın oluşturduğu "Thalamus" takvimi ve içindeki etkinlikler */
 export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
+/** İsteğe bağlı tam takvim: bütün takvimleri okuma + etkinlik ekleme/düzenleme (Google'ın "hassas" izinleri) */
+export const FULL_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events'];
 const SCOPE = `openid email profile ${DRIVE_SCOPE}`;
 
 export const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || '';
@@ -40,6 +42,8 @@ export interface AuthState {
   is_new?: boolean;
   /** Google Takvim izni verildi */
   calendar?: boolean;
+  /** Bütün takvimlere tam erişim izni verildi */
+  fullCalendar?: boolean;
 }
 
 interface CodeResponse {
@@ -102,7 +106,7 @@ function requestCode(prompt: string, hint?: string, extra = ''): Promise<string>
       callback: (r) => {
         if (r.error || !r.code) reject(new Error(r.error_description ?? r.error ?? 'no_code'));
         else if (!(r.scope ?? '').includes(DRIVE_SCOPE)) reject(new Error('drive_scope_missing'));
-        else if (extra && !(r.scope ?? '').includes(extra)) reject(new Error('calendar_scope_missing'));
+        else if (extra && !extra.split(' ').every((x) => (r.scope ?? '').includes(x))) reject(new Error('calendar_scope_missing'));
         else resolve(r.code);
       },
       error_callback: (e) => reject(new Error(e.type === 'popup_closed' ? 'popup_closed' : e.message ?? e.type)),
@@ -226,6 +230,7 @@ export async function signInWithGoogle(consent = false): Promise<AuthState> {
     is_new: r.is_new ?? isNew,
     announcements: r.announcements,
     calendar: (r.scope ?? '').includes(CALENDAR_SCOPE),
+    fullCalendar: FULL_CALENDAR_SCOPES.every((x) => (r.scope ?? '').includes(x)),
   };
   await setMeta('auth', state);
   return state;
@@ -242,6 +247,17 @@ export async function grantCalendar(): Promise<void> {
   await writeSessionFile(r.access_token, r.session);
   const cur = a ?? ({ profile: r.profile } as AuthState);
   await setMeta('auth', { ...cur, session: r.session, refresh_token: undefined, access_token: r.access_token, expires_at: Date.now() + r.expires_in * 1000, calendar: true });
+}
+
+/** Bütün Google takvimlerine tam erişim iste (Thalamus'tan görmek ve düzenlemek için) */
+export async function grantFullCalendar(): Promise<void> {
+  await loadGis();
+  const a = await loadAuth();
+  const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('consent', a?.profile.email, [CALENDAR_SCOPE, ...FULL_CALENDAR_SCOPES].join(' ')) });
+  if (!r.session) throw new Error('Google kalıcı izin vermedi, lütfen tekrar dene.');
+  await writeSessionFile(r.access_token, r.session);
+  const cur = a ?? ({ profile: r.profile } as AuthState);
+  await setMeta('auth', { ...cur, session: r.session, refresh_token: undefined, access_token: r.access_token, expires_at: Date.now() + r.expires_in * 1000, calendar: true, fullCalendar: true });
 }
 
 let refreshing: Promise<string> | null = null;

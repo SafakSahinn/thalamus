@@ -312,7 +312,7 @@ export interface Settings {
   /** Koleksiyon başına varsayılan şablon kimliği */
   defaultTemplates?: Record<string, string>;
   /** Google Takvim eşitlemesi */
-  calendar?: { enabled: boolean; calendarId?: string; fields: string[]; reminders: number[] };
+  calendar?: { enabled: boolean; calendarId?: string; fields: string[]; reminders: number[]; eventOff?: boolean; external?: string[] };
 }
 
 export const DEFAULT_SETTINGS: Settings = {

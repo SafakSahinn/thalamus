@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ExternalCalendars from './ExternalCalendars';
 import { getMeta } from '../lib/db';
 import { relTime } from '../lib/format';
 import { calSettings, dateFields, disconnectCalendar, syncCalendar } from '../lib/gcal';
@@ -110,6 +111,7 @@ export default function CalendarSettings() {
         </>
       )}
       {msg && <p className="small">{msg}</p>}
+      <ExternalCalendars />
     </section>
   );
 }
