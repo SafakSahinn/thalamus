@@ -422,3 +422,13 @@ tr:hover .sel-cell .check, .row-sel .sel-cell .check, thead .sel-cell .check:che
 .form-rel { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
 .form-done { background: var(--ok-bg); color: var(--ok); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+
+/* Otomasyonlar */
+.automations { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.rule { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); }
+.rule.off { opacity: 0.55; }
+.rule-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.rule-line.act { padding-left: 26px; }
+.rule-line .spacer { flex: 1; }
+.rule-line select, .rule-line input { border: 1px solid var(--border); border-radius: 7px; padding: 3px 7px; background: var(--panel); }
+.rule-on input { accent-color: var(--accent); }

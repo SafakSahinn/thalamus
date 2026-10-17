@@ -4,6 +4,7 @@ import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders
 import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionFile, type AuthState, type Profile } from './google';
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText } from './links';
+import { runRules } from './automations';
 import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
@@ -126,7 +127,30 @@ export function createNote(
   n.links = computeLinks(n);
   commit([n]);
   for (const k of backs) setProp(n.id, k, props[k]);
+  automate(null, get().notes[n.id] ?? n);
   return n;
+}
+
+// ---------- otomasyonlar ----------
+let automating = 0;
+/** Koleksiyonun kurallarını uygula (yalnızca bu cihazdaki düzenlemelerde; eşitlemeden gelenlerde değil) */
+function automate(old: Note | null, n: Note) {
+  const rules = get().settings.automations?.[n.type];
+  if (!rules?.length || automating > 3) return;
+  const kinds = new Map(typeOf(n.type).props.map((p) => [p.key, p.kind]));
+  const patch = runRules(rules, old ? old.props : null, n.props, todayStr(), (k) => kinds.get(k));
+  if (!patch) return;
+  automating++;
+  try {
+    const props = { ...n.props };
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined) delete props[k];
+      else props[k] = v;
+    }
+    updateNote(n.id, { props });
+  } finally {
+    automating--;
+  }
 }
 
 /** Toplu ekleme (içe aktarma): bağlantıları hesaplanmış hazır notlar. */
@@ -147,6 +171,7 @@ export function updateNote(id: string, patch: NotePatch) {
   if ('content' in patch) n.text = plainText(n.content);
   if ('content' in patch || 'props' in patch || 'type' in patch) n.links = computeLinks(n);
   commit([n]);
+  if ('props' in patch) automate(old, n);
 }
 
 export function setProp(id: string, key: string, value: unknown) {

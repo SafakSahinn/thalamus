@@ -3,6 +3,7 @@ import { EmojiPicker } from '../editor/EmojiPicker';
 import { ROLLUP_FNS } from '../lib/compute';
 import { checkFormula, FUNCTION_NAMES } from '../lib/formula';
 import { go } from '../lib/router';
+import AutomationsEditor from './AutomationsEditor';
 import {
   addProp, deleteCollection, PROP_KINDS, removeProp, renameOption, reorderProps, restoreProp, updateCollection, updateProp, setDependencies, setSubItems,
 } from '../lib/schema';
@@ -228,6 +229,9 @@ export default function TypeEditor({ typeId, onClose }: { typeId: string; onClos
           {t.props.map((p, i) => <PropRow key={p.key} typeId={typeId} def={p} hidden={hiddenKeys.has(p.key)} index={i} keys={keys} />)}
         </div>
         <AddProp typeId={typeId} />
+
+        <h4>Otomasyonlar</h4>
+        <AutomationsEditor typeId={typeId} />
 
         <h4>Gelişmiş</h4>
         <label className="te-opt">
