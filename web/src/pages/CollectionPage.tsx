@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import NewButton from '../components/NewButton';
+import PaperImportButton from '../components/PaperImportButton';
 import { promptText } from '../components/Prompt';
 import TypeEditor from '../components/TypeEditor';
 import { go } from '../lib/router';
@@ -156,6 +157,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
         <h1>{t.icon} {t.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
+        {t.id === 'paper' && <PaperImportButton extraProps={newProps} />}
         <NewButton t={t} extraProps={newProps} />
       </div>
       <div className="view-tabs" data-tour="views">

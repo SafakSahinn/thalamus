@@ -9,6 +9,8 @@ import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
 import { displayTitle, fmtNum, relTime, textStats } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
+import { fillPaper } from '../lib/paperImport';
+import { parseIdent } from '../lib/scholar';
 import { linkVia, snippetAround } from '../lib/links';
 import { go } from '../lib/router';
 import { createNote, deleteNote, duplicateNote, restoreNote, setProp, updateNote, useIndex, useStore } from '../lib/store';
@@ -179,6 +181,9 @@ export default function NotePage({ id }: { id: string }) {
           <span className="muted small note-stats" title={`${fmtNum(stats.chars)} karakter · yaklaşık ${stats.minutes} dk okuma`}>· {fmtNum(stats.words)} kelime</span>
         )}
         {openComments.length > 0 && <button className="lock-badge" title="Yorumları göster" onClick={() => showComments(note.id)}>💬 {openComments.length}</button>}
+        {note.type === 'paper' && !note.props.__cite && typeof note.props.doi === 'string' && parseIdent(note.props.doi) && (
+          <button className="lock-badge" title="DOI/arXiv'den başlık, yazarlar, yıl, özet…" onClick={() => void fillPaper(note.id, note.props.doi as string).catch((e: Error) => alert(e.message))}>🔎 Bilgileri doldur</button>
+        )}
         {locked && <button className="lock-badge" title="Kilidi aç" onClick={() => setProp(note.id, '__locked', undefined)}>🔒 Kilitli</button>}
         <span className="spacer" />
         <button className={`iconbtn ${note.pinned ? 'on' : ''}`} title={note.pinned ? 'Sabitlemeyi kaldır' : 'Kenar çubuğuna sabitle'} onClick={() => updateNote(note.id, { pinned: !note.pinned })}>📌</button>

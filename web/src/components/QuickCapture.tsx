@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { go } from '../lib/router';
 import { createNote, useStore } from '../lib/store';
 import { TYPES, typeOf } from '../lib/types';
+import { importPaper } from '../lib/paperImport';
+import { parseIdent } from '../lib/scholar';
 
 // Telefonda "Paylaş → Thalamus": tarayıcıdan ya da başka bir uygulamadan paylaşılan bağlantı/metin buraya gelir
 // (PWA share_target, adres ?title=…&text=…&url=…). Kullanıcı koleksiyonu ve başlığı seçip kaydeder.
@@ -41,13 +43,31 @@ export default function QuickCapture() {
   const [title, setTitle] = useState(shared?.title || (shared?.url ? hostOf(shared.url) : '') || '');
   const [note, setNote] = useState(shared?.text ?? '');
   const [type, setType] = useState(shared?.url ? 'paper' : 'note');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const ident = shared?.url ? parseIdent(shared.url) : null;
   if (!open || !shared || !ready) return null;
 
   const close = () => {
     clear();
     setOpen(false);
   };
-  const save = () => {
+  const save = async () => {
+    // Makale bağlantısı (DOI/arXiv): başlık, yazarlar, yıl, özet kendiliğinden
+    if (type === 'paper' && ident) {
+      setBusy(true);
+      try {
+        const r = await importPaper(shared.url);
+        clear();
+        setOpen(false);
+        go(`/n/${r.note.id}`);
+        return;
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : String(e));
+        setBusy(false);
+        return;
+      }
+    }
     const t = typeOf(type);
     const urlKey = t.props.find((p) => p.kind === 'url' && (p.key === 'url' || p.key === 'doi'))?.key;
     const content = [
@@ -79,9 +99,11 @@ export default function QuickCapture() {
           <span>Not</span>
           <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="İstersen bir not ekle…" />
         </label>
+        {type === 'paper' && ident && <p className="muted small">🔎 Bu bir {ident.kind === 'arxiv' ? 'arXiv' : 'DOI'} bağlantısı: başlık, yazarlar, yıl ve özet kendiliğinden doldurulacak.</p>}
+        {err && <p className="err small">{err}</p>}
         <div className="capture-actions">
           <button type="button" className="btn" onClick={close}>Vazgeç</button>
-          <button type="button" className="btn primary" onClick={save}>Kaydet</button>
+          <button type="button" className="btn primary" disabled={busy} onClick={() => void save()}>{busy ? 'Bilgiler alınıyor…' : 'Kaydet'}</button>
         </div>
       </div>
     </div>
