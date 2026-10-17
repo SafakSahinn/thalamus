@@ -49,6 +49,17 @@ export async function insertFile(editor: Editor, file: File, pos?: number) {
   }
 }
 
+/** Yeni açılır blok kapalı başlamasın: imlecin bulunduğu bloğun açma düğmesine bas (görünüm kendi durumunu günceller) */
+export function openDetailsAt(editor: Editor) {
+  setTimeout(() => {
+    const { node } = editor.view.domAtPos(editor.state.selection.from);
+    const el = (node instanceof Element ? node : node.parentElement)?.closest('.details');
+    if (el && !el.classList.contains('is-open')) el.querySelector<HTMLButtonElement>(':scope > button')?.click();
+    editor.commands.focus();
+  }, 0);
+  return true;
+}
+
 function pickFile(editor: Editor, accept = '*/*') {
   const input = document.createElement('input');
   input.type = 'file';
@@ -126,7 +137,10 @@ const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
     e.chain().focus().deleteRange(r).run();
     pickFile(e);
   } },
-  { icon: '▸', label: 'Açılır bölüm (toggle)', keys: 'toggle details katla gizle', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().run() },
+  { icon: '▸', label: 'Açılır bölüm (toggle)', keys: 'toggle details katla gizle', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().run() && openDetailsAt(e) },
+  { icon: '▸1', label: 'Açılır başlık 1', keys: 'toggle heading baslik katla h1', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e) },
+  { icon: '▸2', label: 'Açılır başlık 2', keys: 'toggle heading baslik katla h2', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e) },
+  { icon: '▸3', label: 'Açılır başlık 3', keys: 'toggle heading baslik katla h3', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e) },
   { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
   { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
   { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
@@ -205,7 +219,19 @@ export function baseExtensions(): AnyExtension[] {
     TextStyle,
     Color,
     Highlight.configure({ multicolor: true }),
-    Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
+    // Açılır başlıklar: aynı açılır blok, özeti başlık büyüklüğünde (level 1-3)
+    Details.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          level: {
+            default: null,
+            parseHTML: (el) => Number(el.getAttribute('data-level')) || null,
+            renderHTML: (a) => (a.level ? { 'data-level': a.level } : {}),
+          },
+        };
+      },
+    }).configure({ persist: true, HTMLAttributes: { class: 'details' } }),
     DetailsSummary,
     DetailsContent,
     Callout,

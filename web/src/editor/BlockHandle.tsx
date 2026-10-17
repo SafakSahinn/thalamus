@@ -3,6 +3,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { BG_COLORS, TEXT_COLORS } from './colors';
+import { openDetailsAt } from './extensions';
 
 interface Target {
   start: number;
@@ -28,7 +29,10 @@ const TURN_INTO: { label: string; icon: string; run: (e: Editor) => void }[] = [
   { label: 'Madde listesi', icon: '•', run: (e) => e.chain().clearNodes().toggleBulletList().run() },
   { label: 'Numaralı liste', icon: '1.', run: (e) => e.chain().clearNodes().toggleOrderedList().run() },
   { label: 'Yapılacaklar', icon: '☑', run: (e) => e.chain().clearNodes().toggleTaskList().run() },
-  { label: 'Açılır bölüm', icon: '▸', run: (e) => e.chain().clearNodes().setDetails().run() },
+  { label: 'Açılır bölüm', icon: '▸', run: (e) => e.chain().clearNodes().setDetails().run() && openDetailsAt(e) },
+  { label: 'Açılır başlık 1', icon: '▸1', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e) },
+  { label: 'Açılır başlık 2', icon: '▸2', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e) },
+  { label: 'Açılır başlık 3', icon: '▸3', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e) },
   { label: 'Bilgi kutusu', icon: '💡', run: (e) => e.chain().clearNodes().wrapIn('callout').run() },
   { label: 'Alıntı', icon: '❝', run: (e) => e.chain().clearNodes().toggleBlockquote().run() },
   { label: 'Kod', icon: '{}', run: (e) => e.chain().clearNodes().toggleCodeBlock().run() },
@@ -94,7 +98,13 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
   }, [menu]);
 
   if (!t || !editor.isEditable) return null;
-  const cur = editor.state.doc.nodeAt(t.start);
+  // Belge değiştiyse (başka nota geçildi) eski konum geçersiz olabilir
+  let cur: ReturnType<typeof editor.state.doc.nodeAt> = null;
+  try {
+    cur = t.start <= editor.state.doc.content.size ? editor.state.doc.nodeAt(t.start) : null;
+  } catch {
+    cur = null;
+  }
   if (!cur) return null;
   const end = t.start + cur.nodeSize;
 

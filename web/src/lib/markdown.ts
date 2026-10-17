@@ -91,7 +91,8 @@ function block(n: PMNode, ctx: MdCtx): string {
     case 'callout': return `> ${String(n.attrs?.emoji ?? '💡')} ${blocks(n.content, ctx).split('\n').join('\n> ')}`;
     case 'details': {
       const [summary, body] = n.content ?? [];
-      return `<details>\n<summary>${inline(summary?.content, ctx)}</summary>\n\n${blocks(body?.content, ctx)}\n\n</details>`;
+      const lv = Number(n.attrs?.level) || 0;
+      return `<details>\n<summary>${lv ? `${'#'.repeat(lv)} ` : ''}${inline(summary?.content, ctx)}</summary>\n\n${blocks(body?.content, ctx)}\n\n</details>`;
     }
     case 'columns': return (n.content ?? []).map((c) => blocks(c.content, ctx)).join('\n\n');
     case 'mermaid': return `\`\`\`mermaid\n${String(n.attrs?.code ?? '')}\n\`\`\``;

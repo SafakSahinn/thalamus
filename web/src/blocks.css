@@ -90,6 +90,16 @@
 .details.is-open > button { transform: rotate(90deg); }
 .details > div { flex: 1; min-width: 0; }
 .details summary { list-style: none; font-weight: 500; }
+/* Açılır başlıklar */
+.details[data-level] { margin-top: 0.8em; }
+.details[data-level] > div > summary { font-weight: 700; line-height: 1.3; }
+.details[data-level='1'] > div > summary { font-size: 1.75em; }
+.details[data-level='2'] > div > summary { font-size: 1.4em; }
+.details[data-level='3'] > div > summary { font-size: 1.18em; }
+.details[data-level] > button::before { font-size: 18px; }
+.details[data-level='1'] > button { height: 2.3em; }
+.details[data-level='2'] > button { height: 1.9em; }
+.details[data-level='3'] > button { height: 1.6em; }
 .details summary::-webkit-details-marker { display: none; }
 .details:not(.is-open) [data-type='detailsContent'] { display: none; }
 .details [data-type='detailsContent'] > * + * { margin-top: 0.4em; }

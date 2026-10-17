@@ -4,6 +4,7 @@ import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
 import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
+import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
 import Welcome from './components/Welcome';
 import { parse, useHash } from './lib/router';
@@ -82,7 +83,9 @@ export default function App() {
           <button className="iconbtn" data-tour="search" onClick={openPalette} aria-label="Ara" title="Ara (Ctrl+K)">🔍</button>
           <button className="btn small primary" data-tour="new-note" onClick={() => go(`/n/${createNote('note').id}`)} title="Yeni not">+ Not</button>
         </header>
-        {ready ? <Suspense fallback={<div className="page muted">Yükleniyor…</div>}>{page}</Suspense> : <div className="page muted">Yükleniyor…</div>}
+        <ErrorBoundary resetKey={location.hash}>
+          {ready ? <Suspense fallback={<div className="page muted">Yükleniyor…</div>}>{page}</Suspense> : <div className="page muted">Yükleniyor…</div>}
+        </ErrorBoundary>
       </main>
       <CommandPalette />
       <PromptHost />
