@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Peek from './components/Peek';
 import Shortcuts from './components/Shortcuts';
 import CommentsPanel from './components/CommentsPanel';
+import { startReminders } from './lib/notify';
 import QuickCapture from './components/QuickCapture';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
@@ -45,6 +46,9 @@ export default function App() {
   useEffect(() => {
     if (cloud && account) void initLocal().then(startSync);
   }, [account]);
+
+  // Uygulama içi hatırlatmalar (bildirimler açıksa)
+  useEffect(() => startReminders(() => Object.values(useStore.getState().notes)), []);
 
   // Herkese açık paylaşılan sayfa: giriş gerekmez
   if (route.name === 'shared') {

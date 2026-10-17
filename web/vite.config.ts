@@ -33,6 +33,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 6_000_000,
         navigateFallbackDenylist: [/^\/auth/, /\/(privacy|terms)\.html$/],
+        // Bildirime tıklayınca notu aç
+        importScripts: ['sw-notify.js'],
       },
     }),
   ],

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CalendarSettings from '../components/CalendarSettings';
+import NotifySettings from '../components/NotifySettings';
 import { startTour } from '../components/Tour';
 import { calSettings, disconnectCalendar } from '../lib/gcal';
 import { SyncBadge } from '../components/Sidebar';
@@ -220,6 +221,8 @@ export default function SettingsPage() {
       )}
 
       {cloud && account && <CalendarSettings />}
+
+      <NotifySettings />
 
       {cloud && (
         <section>
