@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CalendarSettings from '../components/CalendarSettings';
 import { startTour } from '../components/Tour';
+import { calSettings, disconnectCalendar } from '../lib/gcal';
 import { SyncBadge } from '../components/Sidebar';
 import { relTime } from '../lib/format';
 import { cloud } from '../lib/google';
@@ -62,6 +63,8 @@ function Feedback() {
 function DeleteAccount({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
   const [drive, setDrive] = useState(false);
+  const [cal, setCal] = useState(false);
+  const hasCal = Boolean(calSettings(useStore((s) => s.settings)).calendarId);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -69,6 +72,8 @@ function DeleteAccount({ email }: { email: string }) {
     setBusy(true);
     setErr('');
     try {
+      // Takvim, Google izni geri alınmadan önce silinmeli
+      if (cal && hasCal) await disconnectCalendar(true);
       await deleteAccount(drive);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -87,6 +92,13 @@ function DeleteAccount({ email }: { email: string }) {
             <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} />
             <span>Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil</span>
           </label>
+          {hasCal && (
+            <label className="small">
+              <input type="checkbox" checked={cal} onChange={(e) => setCal(e.target.checked)} />
+              <span>Google Takvim’imdeki <b>“Thalamus”</b> takvimini ve içindeki bütün etkinlikleri de sil</span>
+            </label>
+          )}
+          {hasCal && !cal && <p className="muted small">Takvimdeki etkinlikler kalır; notun içeriği açıklamalarında okunmaya devam eder.</p>}
           {!drive && <p className="muted small">Notların Drive’ında kalır; istediğin zaman tekrar giriş yapıp kaldığın yerden devam edebilirsin.</p>}
           <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={email} />
