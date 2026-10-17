@@ -50,39 +50,59 @@ export default function ExtEventDialog({ ev, day, cals, onClose, onChanged }: {
 
   return (
     <div className="modal-back" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal ext-event" role="dialog" aria-label={ev ? 'Takvim etkinliği' : 'Yeni takvim etkinliği'}>
+      <div className="modal ext-event" role="dialog" aria-label={ev ? 'Takvim etkinliği' : 'Yeni takvim etkinliği'} style={{ '--c': (cal ?? cals.find((c) => c.id === calId))?.color } as React.CSSProperties}>
         <div className="ext-event-head">
           {cal && <span className="ext-dot" style={{ background: cal.color }} />}
           <span className="muted small">{ev ? cal?.summary ?? 'Google Takvim' : 'Yeni Google Takvim etkinliği'}{ev?.recurring ? ' · tekrar eden etkinliğin bu günü' : ''}</span>
         </div>
         <input className="ext-title" value={summary} placeholder="Başlık" autoFocus={!ev} disabled={!editable} onChange={(e) => setSummary(e.target.value)} />
-        <div className="ext-row">
-          <label className="small">Gün <input type="date" value={date} disabled={!editable} onChange={(e) => setDate(e.target.value)} /></label>
-          <label className="small">Saat <input type="time" value={time} disabled={!editable} onChange={(e) => setTime(e.target.value)} /></label>
-          {time && <label className="small">Bitiş <input type="time" value={endTime} disabled={!editable} onChange={(e) => setEndTime(e.target.value)} /></label>}
+        <div className="ext-fields">
+          <span>Gün</span>
+          <input type="date" value={date} disabled={!editable} onChange={(e) => setDate(e.target.value)} aria-label="Gün" />
+          <span>Saat</span>
+          <div className="ext-times">
+            <input type="time" value={time} disabled={!editable} onChange={(e) => setTime(e.target.value)} aria-label="Başlangıç saati" />
+            {time && <>–<input type="time" value={endTime} disabled={!editable} onChange={(e) => setEndTime(e.target.value)} aria-label="Bitiş saati" /></>}
+            {!time && <span className="muted small">{editable ? 'boş bırakırsan tüm gün' : 'tüm gün'}</span>}
+          </div>
+          {(editable || location) && (
+            <>
+              <span>Yer</span>
+              <input className="ext-wide" value={location} disabled={!editable} onChange={(e) => setLocation(e.target.value)} placeholder="—" aria-label="Yer" />
+            </>
+          )}
+          {!ev && writableCals.length > 1 && (
+            <>
+              <span>Takvim</span>
+              <select className="ext-wide" value={calId} onChange={(e) => setCalId(e.target.value)} aria-label="Takvim">
+                {writableCals.map((c) => <option key={c.id} value={c.id}>{c.summary}</option>)}
+              </select>
+            </>
+          )}
         </div>
-        {!time && <p className="muted small">Saat boşsa tüm gün etkinliği olur.</p>}
-        <label className="small ext-loc">Yer <input value={location} disabled={!editable} onChange={(e) => setLocation(e.target.value)} placeholder="—" /></label>
-        {!ev && writableCals.length > 1 && (
-          <label className="small ext-loc">Takvim{' '}
-            <select value={calId} onChange={(e) => setCalId(e.target.value)}>
-              {writableCals.map((c) => <option key={c.id} value={c.id}>{c.summary}</option>)}
-            </select>
-          </label>
+        {desc && (
+          <div className="ext-desc">
+            {desc.split(/(https?:\/\/[^\s<>"]+)/g).map((part, i) =>
+              i % 2 ? <a key={i} href={part} target="_blank" rel="noopener noreferrer">{part}</a> : part,
+            )}
+          </div>
         )}
-        {desc && <div className="ext-desc">{desc}</div>}
         {!editable && <p className="muted small">Bu takvim salt okunur; yalnızca görüntüleyebilirsin.</p>}
         {err && <p className="err small">{err}</p>}
-        <div className="row ext-actions">
-          {ev?.htmlLink && <a className="btn ghost small" href={ev.htmlLink} target="_blank" rel="noopener noreferrer">Google’da aç ↗</a>}
-          {ev && <button type="button" className="btn ghost small" onClick={toNote} title="Bu etkinliğin bir kopyasını Etkinlikler koleksiyonuna ekle">📝 Not olarak kopyala</button>}
-          <span className="spacer" />
+        {ev && (
+          <div className="ext-links">
+            {ev.htmlLink && <a href={ev.htmlLink} target="_blank" rel="noopener noreferrer">↗ Google Takvim’de aç</a>}
+            <button type="button" onClick={toNote} title="Bu etkinliğin bir kopyasını Etkinlikler koleksiyonuna ekle">📝 Not olarak kopyala</button>
+          </div>
+        )}
+        <div className="ext-actions">
           {ev && editable && (
             <button type="button" className="btn ghost small danger" disabled={busy} onClick={() => (sure ? void run(() => deleteEvent(ev)) : setSure(true))}>
               {sure ? 'Emin misin? Sil' : 'Sil'}
             </button>
           )}
-          <button type="button" className="btn ghost small" onClick={onClose}>{editable ? 'Vazgeç' : 'Kapat'}</button>
+          <span className="spacer" />
+          <button type="button" className="btn small" onClick={onClose}>{editable ? 'Vazgeç' : 'Kapat'}</button>
           {editable && <button type="button" className="btn primary small" disabled={busy || !date || (!ev && !calId)} onClick={() => void save()}>{busy ? 'Kaydediliyor…' : ev ? 'Kaydet' : 'Ekle'}</button>}
         </div>
       </div>
