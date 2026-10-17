@@ -9,6 +9,7 @@ export type Route =
   | { name: 'pdf'; id: string }
   | { name: 'review' }
   | { name: 'study' }
+  | { name: 'reading' }
   | { name: 'daily'; date?: string }
   | { name: 'dictionary' }
   | { name: 'settings' }
@@ -26,6 +27,7 @@ export function parse(hash: string): Route {
     case 'takvim': return { name: 'calendar' };
     case 'tekrar': return { name: 'review' };
     case 'calisma': return { name: 'study' };
+    case 'okuma': return { name: 'reading' };
     case 'oku': return parts[1] ? { name: 'pdf', id: parts[1] } : { name: 'home' };
     case 'daily': return { name: 'daily', date: parts[1] };
     case 'dictionary': return { name: 'dictionary' };

@@ -5,6 +5,7 @@ import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionF
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText, setSyncedSource } from './links';
 import { actionValue, runRules } from './automations';
+import { readingStamp } from './reading';
 import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error';
@@ -135,11 +136,14 @@ export function createNote(
 let automating = 0;
 /** Koleksiyonun kurallarını uygula (yalnızca bu cihazdaki düzenlemelerde; eşitlemeden gelenlerde değil) */
 function automate(old: Note | null, n: Note) {
+  if (automating > 3) return;
   const rules = get().settings.automations?.[n.type];
-  if (!rules?.length || automating > 3) return;
   const kinds = new Map(typeOf(n.type).props.map((p) => [p.key, p.kind]));
-  const patch = runRules(rules, old ? old.props : null, n.props, todayStr(), (k) => kinds.get(k));
-  if (!patch) return;
+  // Yerleşik kural: okuma durumu değişince başlama/bitiş tarihleri (bkz. reading.ts)
+  const stamp = readingStamp(n.type, old ? old.props : null, n.props, todayStr());
+  const ruled = rules?.length ? runRules(rules, old ? old.props : null, n.props, todayStr(), (k) => kinds.get(k)) : null;
+  if (!stamp && !ruled) return;
+  const patch = { ...stamp, ...ruled };
   automating++;
   try {
     const props = { ...n.props };

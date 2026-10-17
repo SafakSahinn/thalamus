@@ -181,6 +181,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
       <ReviewLink active={active('#/tekrar')} />
       <a href="#/calisma" className={active('#/calisma')}>⏱ Çalışma</a>
+      <a href="#/okuma" className={active('#/okuma')}>📈 Okuma</a>
       <TimerPill />
       <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
 

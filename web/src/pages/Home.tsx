@@ -12,6 +12,8 @@ import { fmtMin, studyStats, useTimer } from '../lib/timer';
 import { upcoming, whenText } from '../lib/upcoming';
 import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
+import { editGoal, GoalBar } from './ReadingPage';
+import { readingStats } from '../lib/reading';
 
 // Ana sayfa: kullanıcının seçip sıraladığı bileşenlerden oluşur (ayarlar.home, Drive'da eşitlenir).
 
@@ -31,6 +33,7 @@ const WIDGETS: Widget[] = [
   { id: 'agenda', label: 'Bugünün takvimi', C: Agenda },
   { id: 'review', label: 'Tekrar kartları', C: Review },
   { id: 'study', label: 'Çalışma süresi', C: Study },
+  { id: 'reading', label: 'Okuma hedefi', C: Reading },
   { id: 'quick', label: 'Hızlı ekle', wide: true, C: Quick },
   { id: 'upcoming', label: 'Yaklaşanlar', wide: true, C: Soon },
   { id: 'active', label: 'Devam edenler', C: Active },
@@ -318,5 +321,28 @@ function Row({ n, meta }: { n: Note; meta: string }) {
       <span className="grow">{displayTitle(n)}</span>
       <span className="muted small">{meta}</span>
     </a>
+  );
+}
+
+function Reading() {
+  const notes = useStore((s) => s.notes);
+  const year = new Date().getFullYear();
+  const g = useStore((s) => s.settings.readingGoals?.[year]);
+  const s = useMemo(() => readingStats(notes, year), [notes, year]);
+  const now = useMemo(() => Object.values(notes).filter((n) => !n.deleted_at && n.type === 'book' && n.props.status === 'Okunuyor'), [notes]);
+  return (
+    <>
+      <h3>Okuma hedefi</h3>
+      {g?.books || g?.papers ? (
+        <>
+          <GoalBar label="📚 Kitap" done={s.books.length} goal={g.books} year={year} />
+          <GoalBar label="📄 Makale" done={s.papers.length} goal={g.papers} year={year} />
+        </>
+      ) : (
+        <p className="muted small">Bu yıl {s.books.length} kitap, {s.papers.length} makale. <button className="linkbtn" onClick={() => void editGoal(year)}>🎯 Hedef koy</button></p>
+      )}
+      {now.length > 0 && <div className="chips">{now.slice(0, 4).map((n) => <NoteChip key={n.id} note={n} />)}</div>}
+      <a href="#/okuma" className="small">İstatistikler →</a>
+    </>
   );
 }
