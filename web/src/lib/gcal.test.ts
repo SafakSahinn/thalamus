@@ -93,7 +93,8 @@ describe('Google Takvim eşitlemesi', () => {
     const desc = String(desiredEvents([withBody], cs, 'https://x/')[0].body.description);
     expect(desc).toContain('<b>Tez taslağını götür &lt;önemli&gt;</b>');
     expect(desc).toContain('<ul><li>Bölüm 2</li></ul>');
-    expect(desc).toContain('Thalamus’ta aç');
+    expect(desc).not.toContain('href="https://x');
+    expect((desiredEvents([withBody], cs, 'https://x/')[0].body.source as { url: string }).url).toBe('https://x/#/n/aaaaaaaa-2222-3333-4444-555555555555');
     expect(desc).not.toContain('Saat');
     const [allDay] = desiredEvents([{ ...ev, props: { date: '2026-10-20' } }], cs, 'https://x/');
     expect(allDay.body.start).toEqual({ date: '2026-10-20' });

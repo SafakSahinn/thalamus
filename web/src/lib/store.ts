@@ -615,6 +615,11 @@ export async function signOut() {
 /** Kullanıcı kaydını siler ve uygulamanın Google iznini geri alır (bütün cihazlarda oturum kapanır); istenirse Drive'daki Thalamus klasörünü de siler. */
 export async function deleteAccount(alsoDrive: boolean) {
   const token = await accessToken();
+  if (!alsoDrive) {
+    // Son değişiklikler (ör. az önce silinen takvimin ayarı) Drive'a yazılmadan izin geri alınmasın
+    for (let i = 0; i < 40 && flushing; i++) await new Promise((r) => setTimeout(r, 250));
+    await push().catch(() => undefined);
+  }
   if (alsoDrive) {
     const f = folders ?? (await getMeta<Folders>('folders'));
     if (f) await api.remove(f.root).catch((e) => {

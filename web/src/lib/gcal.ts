@@ -57,10 +57,30 @@ async function call(path: string, init: RequestInit = {}): Promise<Response> {
   return r;
 }
 
+/** Daha önce bu uygulamanın oluşturduğu "Thalamus" takvimi (ör. hesap silinip yeniden girildiyse) */
+async function findExisting(): Promise<string | null> {
+  try {
+    const r = await call('/users/me/calendarList?minAccessRole=owner&maxResults=250');
+    if (!r.ok) return null;
+    const d = (await r.json()) as { items?: { id: string; summary?: string }[] };
+    return d.items?.find((c) => c.summary === 'Thalamus')?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function ensureCalendar(cs: CalendarSettings): Promise<string> {
   if (cs.calendarId) {
     const r = await call(`/calendars/${encodeURIComponent(cs.calendarId)}`);
     if (r.ok) return cs.calendarId;
+  }
+  // Yeni takvim açmadan önce eskisini ara: ikinci bir "Thalamus" takvimi oluşmasın
+  const old = await findExisting();
+  if (old) {
+    const s = useStore.getState().settings;
+    await saveSettings({ ...s, calendar: { ...calSettings(s), calendarId: old } });
+    await setMeta('gcalState', null);
+    return old;
   }
   const r = await call('/calendars', {
     method: 'POST',
@@ -126,10 +146,12 @@ export function desiredEvents(notes: Note[], cs: CalendarSettings, appUrl: strin
       const body = {
         summary,
         // Notun kendisi açıklamada okunur; bağlantıya tıklamak gerekmez
-        description: eventDescription(n, byId, `${appUrl}#/n/${n.id}`),
+        description: eventDescription(n, byId),
         ...when,
         ...(n.type === 'event' && typeof n.props.location === 'string' && n.props.location ? { location: n.props.location } : {}),
         transparency: time ? 'opaque' : 'transparent',
+        // Google'ın "Kaynağı görüntüle" bağlantısı: uyarı sayfası olmadan doğrudan notu açar
+        source: { title: `Thalamus · ${displayTitle(n)}`.slice(0, 200), url: `${appUrl}#/n/${n.id}` },
         reminders: { useDefault: false, overrides: time ? timedReminders : reminders },
         extendedProperties: { private: { thalamus: n.id, field: def.key } },
       };

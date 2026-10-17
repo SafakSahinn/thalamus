@@ -89,14 +89,15 @@ export function publicProps(note: Note, notes: Record<string, Note>, skip: (def:
   return out;
 }
 
-/** Google Takvim etkinlik açıklaması: alanlar + notun içeriği + uygulamada açma bağlantısı */
-export function eventDescription(note: Note, notes: Record<string, Note>, url: string): string {
+/** Google Takvim etkinlik açıklaması: alanlar + notun içeriği. Uygulamaya bağlantı açıklamada değil, etkinliğin
+ * "kaynak" alanında durur (açıklamadaki bağlantıları Google bir uyarı sayfasından geçirir). */
+export function eventDescription(note: Note, notes: Record<string, Note>): string {
   const t = typeOf(note.type);
   const hidden = new Set(note.type === 'event' ? ['time', 'endTime', 'location'] : []);
   const props = publicProps(note, notes, (d) => ['date', 'created', 'updated', 'formula', 'rollup'].includes(d.kind) || hidden.has(d.key))
     .map((p) => `<b>${esc(p.label)}:</b> ${esc(p.value)}`).join('<br>');
   const body = docToHtml(note.content);
-  return [props, body, `<i>${t.icon} ${esc(t.label)} · <a href="${esc(url)}">Thalamus’ta aç</a></i>`].filter(Boolean).join('<br><br>');
+  return [props, body, `<i>${t.icon} ${esc(t.label)} · Thalamus</i>`].filter(Boolean).join('<br><br>');
 }
 
 /** Not içeriği → sade HTML (en fazla max karakter) */
