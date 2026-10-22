@@ -264,3 +264,62 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 .reading-page .row .spacer { flex: 1; }
 .reading-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 32px; }
 @media (max-width: 560px) { .reading-kpis { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- sağ tık menüsü ---------- */
+.ctxmenu {
+  position: fixed; z-index: 58; min-width: 190px; background: var(--bg); box-shadow: var(--shadow); border-radius: 8px; padding: 4px;
+  display: flex; flex-direction: column; font-size: 13.5px;
+}
+.ctxmenu > button {
+  display: flex; align-items: center; gap: 8px; border: none; background: none; color: var(--text); padding: 6px 10px 6px 6px;
+  border-radius: 5px; cursor: pointer; text-align: left; font: inherit;
+}
+.ctxmenu > button:hover { background: var(--hover); }
+.ctxmenu > button.danger { color: var(--danger); }
+.ctxmenu .ic { width: 20px; text-align: center; flex: none; }
+.ctxmenu-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+.ctxmenu-swatches { display: flex; gap: 6px; padding: 6px; }
+
+/* ---------- yapışkan notlar ---------- */
+/* kâğıt renkleri temadan bağımsız; koyu temada biraz loş */
+.c-yellow { --sk: #fdf7a6; --sk-head: #f5ea78; }
+.c-blue { --sk: #cfeaf9; --sk-head: #b3dbf2; }
+.c-green { --sk: #d2f4c9; --sk-head: #b7e8aa; }
+.c-pink { --sk: #f9d3e6; --sk-head: #f2b8d4; }
+.c-purple { --sk: #e1d6fa; --sk-head: #cdbdf3; }
+.c-white { --sk: #fbfbfa; --sk-head: #ebebe8; }
+.sticky-swatch { width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgb(0 0 0 / 18%); background: var(--sk); cursor: pointer; padding: 0; }
+.sticky-swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.sticky-layer { position: fixed; inset: 0; z-index: 32; pointer-events: none; }
+.sticky {
+  position: absolute; pointer-events: auto; display: flex; flex-direction: column; background: var(--sk); color: #2f2e2b;
+  border-radius: 2px; box-shadow: 0 1px 2px rgb(0 0 0 / 18%), 0 6px 16px rgb(0 0 0 / 16%);
+}
+.sticky.dragging { box-shadow: 0 2px 4px rgb(0 0 0 / 20%), 0 14px 30px rgb(0 0 0 / 24%); user-select: none; }
+.sticky-head { display: flex; align-items: center; height: 24px; flex: none; background: var(--sk-head); cursor: move; touch-action: none; padding: 0 2px; }
+.sticky-head .spacer { flex: 1; }
+.sticky-head button {
+  border: none; background: none; color: rgb(0 0 0 / 55%); width: 22px; height: 20px; border-radius: 3px; cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 0; opacity: 0; transition: opacity 0.12s;
+}
+.sticky:hover .sticky-head button, .sticky:focus-within .sticky-head button, .sticky.mobile .sticky-head button { opacity: 1; }
+.sticky-head button:hover { background: rgb(0 0 0 / 8%); color: #000; }
+.sticky textarea {
+  flex: 1; min-height: 0; width: 100%; resize: none; border: none; outline: none; background: transparent; color: inherit;
+  padding: 8px 10px; font: 14.5px/1.45 'Segoe Print', 'Segoe UI', system-ui, sans-serif;
+}
+.sticky-grip {
+  position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, rgb(0 0 0 / 14%) 50%, rgb(0 0 0 / 14%) 60%, transparent 60%, transparent 72%, rgb(0 0 0 / 14%) 72%, rgb(0 0 0 / 14%) 82%, transparent 82%);
+}
+.sticky-dock { position: absolute; right: 10px; bottom: 14px; display: flex; flex-direction: column-reverse; gap: 6px; pointer-events: auto; }
+.sticky-tab {
+  width: 34px; height: 34px; border-radius: 4px; border: none; background: var(--sk); color: #2f2e2b; font-weight: 600; font-size: 14px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 4px 10px rgb(0 0 0 / 18%); cursor: pointer;
+}
+.sticky-tab.on { outline: 2px solid var(--accent); }
+.sticky.mobile { left: 12px; right: 56px; top: 64px; height: min(55vh, 420px); }
+body.focus-mode .sticky-layer { display: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .sticky, :root:not([data-theme='light']) .sticky-tab { filter: brightness(0.86); } }
+:root[data-theme='dark'] .sticky, :root[data-theme='dark'] .sticky-tab { filter: brightness(0.86); }

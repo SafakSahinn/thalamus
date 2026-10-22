@@ -14,6 +14,7 @@ const GROUPS: [string, [string, string][]][] = [
     ['Alt N', 'Yeni not'],
     ['Alt D', 'Bugünün günlüğü'],
     ['Alt G', 'Bağlantı haritası'],
+    ['Alt Y', 'Yapışkan notları gizle / göster'],
     [`${mod} /`, 'Bu kısayol listesi'],
     ['Esc', 'Pencereyi kapat'],
   ]],

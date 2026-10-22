@@ -4,6 +4,7 @@ import { displayTitle, noteIcon } from '../lib/format';
 import { go } from '../lib/router';
 import { searchNotes } from '../lib/search';
 import { createNote, useIndex } from '../lib/store';
+import { addSticky } from '../lib/sticky';
 import { TYPES, typeOf } from '../lib/types';
 
 export const usePalette = create<{ open: boolean }>(() => ({ open: false }));
@@ -67,6 +68,7 @@ export default function CommandPalette() {
         { key: 'go-daily', icon: '📅', label: 'Bugünün günlüğü', run: () => go('/daily') },
         { key: 'go-graph', icon: '🕸', label: 'Bağlantı haritası', run: () => go('/graph') },
         { key: 'go-dict', icon: '🔤', label: 'Sözlük', run: () => go('/dictionary') },
+        { key: 'sticky', icon: '🗒', label: 'Yeni yapışkan not', run: () => addSticky() },
       );
     }
     return out;

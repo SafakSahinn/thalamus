@@ -385,6 +385,10 @@ export interface Settings {
   readingGoals?: Record<string, import('./reading').ReadingGoal>;
   /** "Tarihte bugün" bileşeninin dili */
   otdLang?: import('./onThisDay').OtdLang;
+  /** Yapışkan notlar (bkz. sticky.ts) */
+  stickies?: import('./sticky').Sticky[];
+  /** Yapışkan notlar her sayfada mı yoksa yalnız ana sayfada mı görünsün (varsayılan: her sayfada) */
+  stickyScope?: import('./sticky').StickyScope;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

@@ -8,6 +8,8 @@ import CommentsPanel from './components/CommentsPanel';
 import { startReminders } from './lib/notify';
 import { watchTimer } from './lib/timer';
 import QuickCapture from './components/QuickCapture';
+import StickyNotes from './components/StickyNotes';
+import ContextMenu from './components/ContextMenu';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
 import Welcome from './components/Welcome';
@@ -109,6 +111,8 @@ export default function App() {
       <Tour />
       <CommentsPanel />
       <QuickCapture />
+      <StickyNotes home={route.name === 'home'} />
+      <ContextMenu />
       <Shortcuts />
       <Peek />
     </div>

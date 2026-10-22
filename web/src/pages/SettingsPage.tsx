@@ -276,6 +276,17 @@ export default function SettingsPage() {
       </section>
 
       <section>
+        <h3>Yapışkan notlar</h3>
+        <p className="muted small">Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” ile oluşturulur; Alt Y bu cihazda gizler / gösterir.</p>
+        <div className="seg">
+          {([['all', 'Tüm sayfalarda'], ['home', 'Yalnız ana sayfada']] as const).map(([v, label]) => (
+            <button key={v} className={(settings.stickyScope ?? 'all') === v ? 'on' : ''}
+              onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{label}</button>
+          ))}
+        </div>
+      </section>
+
+      <section>
         <h3>Görünüm</h3>
         <div className="seg">
           {(['system', 'light', 'dark'] as Theme[]).map((t) => (

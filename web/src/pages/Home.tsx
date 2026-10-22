@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { openMenu } from '../components/ContextMenu';
 import OnThisDay from '../components/OnThisDay';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle, relTime, noteIcon } from '../lib/format';
@@ -15,6 +16,7 @@ import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
 import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
+import { addSticky } from '../lib/sticky';
 
 // Ana sayfa: bileşenlerden oluşur; hangilerinin görüneceği ve sırası Ayarlar > Ana sayfa'dan seçilir
 // (ayarlar.homeLayout, Drive'da eşitlenir). Boş bileşenler kendini gizler.
@@ -58,10 +60,21 @@ export function homeLayout(saved?: Layout): Layout {
   return list;
 }
 
+/** Ana sayfada sağ tık menüsü (yazı alanları, bağlantılar ve seçili metin tarayıcının kendi menüsünde kalır) */
+function onContext(e: React.MouseEvent) {
+  const t = e.target as HTMLElement;
+  if (t.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
+  e.preventDefault();
+  const at = { x: e.clientX, y: e.clientY };
+  openMenu(e.clientX, e.clientY, [
+    { key: 'sticky', icon: '🗒', label: 'Yapışkan not ekle', run: () => addSticky(at) },
+  ]);
+}
+
 export default function Home() {
   const layout = homeLayout(useStore((s) => s.settings.homeLayout));
   return (
-    <div className="page wide home">
+    <div className="page wide home" onContextMenu={onContext}>
       <div className="home-grid">
         {layout.map((x) => {
           const w = WIDGETS.find((y) => y.id === x.id)!;
