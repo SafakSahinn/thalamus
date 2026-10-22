@@ -40,18 +40,29 @@ export default function OnThisDay() {
   }, [lang, day]);
 
   const lead = feed?.selected[0];
-  // Bölüm başlıkları + kayıtlar tek düz liste (manşet bölümünün başlığı manşet kutusunda)
+  // Bölüm başlıkları + kayıtlar tek düz liste. Manşet varsa seçkinin geri kalanı olaylara katılır
+  // (aynı olay iki kez yazılmaz); böylece manşetin altı tek bir "Olaylar" bölümüyle başlar.
   const entries = useMemo(() => {
     const out: Entry[] = [];
     if (!feed) return out;
+    const same = (a: OtdItem, b: OtdItem) => a.year === b.year && (a.text === b.text || (!!a.url && a.url === b.url));
     for (const kind of OTD_KINDS) {
-      const items = kind === 'selected' && lead ? feed.selected.slice(1) : feed[kind];
+      let items = feed[kind];
+      if (lead && kind === 'selected') continue;
+      if (lead && kind === 'events') {
+        items = [...feed.selected.slice(1), ...feed.events]
+          .filter((x, i, a) => !same(x, lead) && a.findIndex((y) => same(x, y)) === i)
+          .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+      }
       if (!items.length) continue;
-      if (!(kind === 'selected' && lead)) out.push({ kind });
+      out.push({ kind });
       for (const it of items) out.push({ kind, it });
     }
     return out;
   }, [feed, lead]);
+  // ilk sayfadaki ilk bölüm başlığı manşetin altında tüm genişlikte bant olarak durur
+  const band = entries[0] && !entries[0].it ? entries[0] : null;
+  const body = band ? entries.slice(1) : entries;
 
   useLayoutEffect(() => setSplit(null), [entries]);
 
@@ -88,7 +99,7 @@ export default function OnThisDay() {
       heads.push({ kind: h.dataset.kind as OtdKind, page: p + 1, atStart: x - p * stride < 8 });
     }
     if (heads[0]) heads[0].atStart = true;
-    const restPages = split < entries.length ? Math.max(1, Math.ceil((b.scrollWidth + gap) / stride - 0.02)) : 0;
+    const restPages = split < body.length ? Math.max(1, Math.ceil((b.scrollWidth + gap) / stride - 0.02)) : 0;
     setGeo({ pages: 1 + restPages, stride, heads });
   }, [split, entries]);
 
@@ -102,7 +113,7 @@ export default function OnThisDay() {
 
   const setLang = (otdLang: OtdLang) => void saveSettings({ ...useStore.getState().settings, otdLang });
   const date = new Date().toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const cut = split ?? entries.length;
+  const cut = split ?? body.length;
 
   return (
     <div className="otd" lang={lang}>
@@ -139,10 +150,11 @@ export default function OnThisDay() {
                     </div>
                   </article>
                 )}
-                <div className="otd-cols" ref={first}>{entries.slice(0, cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}</div>
+                {band && <h4 className="otd-band" data-kind={band.kind}>{L[band.kind]}</h4>}
+                <div className="otd-cols" ref={first}>{body.slice(0, cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}</div>
               </div>
               <div className={`otd-cols otd-rest ${cur > 0 ? '' : 'hidden'}`} ref={rest}>
-                {entries.slice(cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}
+                {body.slice(cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}
               </div>
             </>
           )}

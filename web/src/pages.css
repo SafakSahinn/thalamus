@@ -195,6 +195,7 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 .otd-sheet { position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
 .otd-first { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .otd-first .otd-cols { flex: 1; min-height: 0; }
+.otd-first .otd-band { flex: none; }
 .otd-rest { position: absolute; inset: 0; }
 .otd-sheet .hidden { visibility: hidden; }
 .otd-cols { overflow: hidden; column-count: 3; column-gap: 24px; column-fill: auto; column-rule: 1px solid var(--rule); }
