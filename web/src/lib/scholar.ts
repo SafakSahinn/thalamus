@@ -103,6 +103,37 @@ export async function fetchMeta(ident: Ident): Promise<CiteMeta> {
   return m;
 }
 
+const titleWords = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().split(' ').filter(Boolean);
+
+/** İki başlığın kelime benzerliği (0–1, Dice) */
+export function titleSimilarity(a: string, b: string): number {
+  const x = titleWords(a);
+  const y = titleWords(b);
+  if (!x.length || !y.length) return 0;
+  const pool = [...y];
+  let hit = 0;
+  for (const w of x) {
+    const k = pool.indexOf(w);
+    if (k >= 0) {
+      hit++;
+      pool.splice(k, 1);
+    }
+  }
+  return (2 * hit) / (x.length + y.length);
+}
+
+/** DOI'si bilinmeyen yayın için başlıkla Crossref araması; yalnızca neredeyse birebir eşleşme kabul edilir */
+export async function findDoiByTitle(title: string): Promise<string | null> {
+  const q = new URLSearchParams({ 'query.bibliographic': title, rows: '5', select: 'DOI,title' });
+  const r = await fetch(`https://api.crossref.org/works?${q}`);
+  if (!r.ok) return null;
+  const items = ((await r.json()) as { message: { items: { DOI: string; title?: string[] }[] } }).message.items ?? [];
+  const best = items
+    .map((it) => ({ doi: it.DOI, score: titleSimilarity(title, stripTags(it.title?.[0] ?? '')) }))
+    .sort((a, b) => b.score - a.score)[0];
+  return best && best.score >= 0.9 ? best.doi : null;
+}
+
 export const personName = (p: Person) => [p.given, p.family].filter(Boolean).join(' ');
 
 /** "Tür" alanının Türkçe karşılığı */

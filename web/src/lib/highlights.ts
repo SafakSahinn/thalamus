@@ -3,7 +3,8 @@
 
 import { fmtNum } from './format';
 import { walk } from './links';
-import { refreshEditor, setProp, uid, updateNote, useStore } from './store';
+import { fnUrl } from './google';
+import { refreshEditor, resolveFileUrl, setProp, uid, updateNote, useStore } from './store';
 import { fileRefs, type Note } from './types';
 
 export type HlColor = 'yellow' | 'green' | 'blue' | 'pink';
@@ -72,3 +73,17 @@ export function pdfSources(n: Note): { src: string; label: string }[] {
   return out;
 }
 
+
+/** PDF baytları: Drive/cihaz dosyası, doğrudan bağlantı ya da (CORS engelinde) açık arşiv aracısı */
+export async function loadPdfBytes(src: string): Promise<ArrayBuffer> {
+  if (/^(gd|local):\/\//.test(src)) return (await fetch(await resolveFileUrl(src))).arrayBuffer();
+  try {
+    const r = await fetch(src);
+    if (r.ok && (r.headers.get('content-type') ?? '').includes('pdf')) return r.arrayBuffer();
+  } catch {
+    /* CORS: aracıyla dene */
+  }
+  const r = await fetch(`${fnUrl}?pdf=${encodeURIComponent(src)}`);
+  if (!r.ok) throw new Error('Bu PDF’i tarayıcı doğrudan açamıyor (yayıncı sitesi izin vermiyor). PDF’i indirip aşağıdaki “PDF yükle” ile ekle.');
+  return r.arrayBuffer();
+}

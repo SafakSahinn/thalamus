@@ -11,8 +11,8 @@ import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
 import NoteEditor from '../editor/Editor';
 import { displayTitle, relTime } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
-import { fillPaper } from '../lib/paperImport';
-import { pdfSources } from '../lib/highlights';
+import { fillFromPdf, fillPaper, isBlankContent, pdfFillMessage } from '../lib/paperImport';
+import { loadPdfBytes, pdfSources } from '../lib/highlights';
 import { citeOf, formatCite, toBibtex } from '../lib/bibtex';
 import { parseIdent } from '../lib/scholar';
 import { linkVia, snippetAround } from '../lib/links';
@@ -148,6 +148,8 @@ export default function NotePage({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareId, note?.updated_at]);
   const [graphOpen, setGraphOpen] = useState(() => localStorage.getItem('localGraph') !== '0');
+  const [pdfMsg, setPdfMsg] = useState<{ text: string; err?: boolean } | null>(null);
+  useEffect(() => setPdfMsg(null), [id]);
 
   if (!note) return <div className="page"><p className="muted">{ready ? 'Not bulunamadı.' : 'Yükleniyor…'}</p></div>;
   // Sayfa ayarları (Notion'daki gibi): notun gizli alanlarında saklanır
@@ -158,6 +160,17 @@ export default function NotePage({ id }: { id: string }) {
   const comments = Array.isArray(note.props.__comments) ? (note.props.__comments as Comment[]) : [];
   const openComments = comments.filter((c) => !c.resolved);
   const t = typeOf(note.type);
+  const readFromPdf = async () => {
+    const append = !isBlankContent(note.content, note.type);
+    if (append && !confirm('Bu notta yazdıkların var. PDF’teki özet ve bölüm başlıkları notun sonuna eklensin mi? (Boş alanlar her durumda doldurulur.)')) return;
+    setPdfMsg({ text: 'PDF okunuyor…' });
+    try {
+      const r = await fillFromPdf(note.id, await loadPdfBytes(pdfSources(note)[0].src), { append });
+      setPdfMsg({ text: pdfFillMessage(r) });
+    } catch (e) {
+      setPdfMsg({ text: e instanceof Error ? e.message : String(e), err: true });
+    }
+  };
 
   return (
     <div className={`page note-page ${wide ? 'wide' : ''} ${small ? 'small-text' : ''} ${font ? `font-${font}` : ''} ${locked ? 'locked' : ''}`}>
@@ -169,6 +182,11 @@ export default function NotePage({ id }: { id: string }) {
       {isTemplate(note) && (
         <div className="banner">
           🧩 Bu bir <b>şablon</b>. {typeOf(note.type).plural} koleksiyonunda “+ Yeni ▾” menüsünden kullanılır; başlığı şablonun adıdır.
+        </div>
+      )}
+      {pdfMsg && (
+        <div className={`banner ${pdfMsg.err ? 'warn' : ''}`}>
+          📑 {pdfMsg.text} <button className="linkbtn small" onClick={() => setPdfMsg(null)}>Kapat</button>
         </div>
       )}
       {note.deleted_at && (
@@ -201,6 +219,9 @@ export default function NotePage({ id }: { id: string }) {
                   <button className="btn small" onClick={() => { void navigator.clipboard.writeText(formatCite(citeOf(note, useStore.getState().notes), 'ieee')); setMenu(false); }}>📋 Atıfı kopyala (IEEE)</button>
                   <button className="btn small" onClick={() => { void navigator.clipboard.writeText(formatCite(citeOf(note, useStore.getState().notes), 'apa')); setMenu(false); }}>📋 Atıfı kopyala (APA)</button>
                   <button className="btn small" onClick={() => { void navigator.clipboard.writeText(toBibtex(citeOf(note, useStore.getState().notes))); setMenu(false); }}>📋 BibTeX kopyala</button>
+                  {pdfSources(note).length > 0 && (
+                    <button className="btn small" title="Başlık, yazarlar, özet ve bölüm başlıklarını PDF'in içinden okur" onClick={() => { setMenu(false); void readFromPdf(); }}>📑 PDF’ten bilgileri al</button>
+                  )}
                 </>
               )}
               <label className="muted small">Sayfa</label>

@@ -12,6 +12,7 @@ async function saveCover(url: string, title: string): Promise<string> {
   return uploadFile(blob, `kapak-${safe}.${ext}`);
 }
 import { displayTitle, optionHue, noteIcon } from '../lib/format';
+import { fillFromPdf, pdfFillMessage } from '../lib/paperImport';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
 import { createNote, indexOf, resolveFileUrl, runButton, setProp, uploadFile, useIndex, useStore } from '../lib/store';
@@ -327,6 +328,8 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   const [finder, setFinder] = useState(false);
   const canFind = def.key === 'cover' && (note.type === 'book' || note.type === 'movie');
   const [saveErr, setSaveErr] = useState('');
+  const [pdfMsg, setPdfMsg] = useState('');
+  const [reading, setReading] = useState(false);
   const keep = async () => {
     setBusy(true);
     setSaveErr('');
@@ -349,12 +352,23 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
       const f = input.files?.[0];
       if (!f) return;
       setBusy(true);
+      setSaveErr('');
+      setPdfMsg('');
       try {
         setProp(note.id, def.key, await uploadFile(f, f.name));
+        if (def.key === 'pdf' && note.type === 'paper') {
+          setReading(true);
+          const r = await fillFromPdf(note.id, await f.arrayBuffer()).catch((e: Error) => {
+            setSaveErr(`PDF yüklendi ama içinden bilgi okunamadı: ${e.message}`);
+            return null;
+          });
+          if (r) setPdfMsg(pdfFillMessage(r));
+        }
       } catch (e) {
         alert(e instanceof Error ? e.message : String(e));
       } finally {
         setBusy(false);
+        setReading(false);
       }
     };
     input.click();
@@ -371,12 +385,13 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
       {v && <button className="btn small ghost" onClick={() => void open()}>Aç ↗</button>}
       {isFile && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>Kaldır</button>}
       {(def.key === 'cover' || (!v && def.key === 'pdf')) && (
-        <button className="btn small ghost" disabled={busy} onClick={upload}>{busy ? 'Yükleniyor…' : v ? 'Değiştir' : 'Dosya yükle'}</button>
+        <button className="btn small ghost" disabled={busy} onClick={upload}>{reading ? 'PDF okunuyor…' : busy ? 'Yükleniyor…' : v ? 'Değiştir' : 'Dosya yükle'}</button>
       )}
       {def.key === 'cover' && /^https?:/.test(v) && (
         <button className="btn small ghost" disabled={busy} onClick={() => void keep()} title="Görseli indirip Drive’ına kaydeder; site kaldırsa bile kapak kaybolmaz">💾 Drive’a kaydet</button>
       )}
       {saveErr && <span className="err small">{saveErr}</span>}
+      {pdfMsg && <span className="muted small">✓ {pdfMsg}</span>}
       {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? 'Kapak bul' : 'Afiş bul'}</button>}
       {finder && <CoverFinder note={note} onClose={() => setFinder(false)} />}
     </div>
@@ -560,5 +575,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
 function alwaysShow(note: Note, d: PropDef) {
   if (d.kind === 'relation' && d.target?.[0] === 'word') return true;
   if (d.key === 'cover' && (note.type === 'book' || note.type === 'movie')) return true;
+  // PDF yüklenince bilgiler kendiliğinden dolar; bu yüzden makalede hep görünür
+  if (d.key === 'pdf' && note.type === 'paper') return true;
   return ['status', 'author', 'authors', 'meaning', 'language', 'kind', 'speakers', 'definition', 'course', 'date', 'year'].includes(d.key);
 }

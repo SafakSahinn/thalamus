@@ -3,10 +3,10 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { promptText } from '../components/Prompt';
 import { displayTitle, fmtNum } from '../lib/format';
-import { fnUrl } from '../lib/google';
-import { addHighlight, HL_COLORS, pdfSources, removeHighlight, type Highlight, type HlColor } from '../lib/highlights';
+import { addHighlight, HL_COLORS, loadPdfBytes, pdfSources, removeHighlight, type Highlight, type HlColor } from '../lib/highlights';
+import { fillFromPdf } from '../lib/paperImport';
 import { go } from '../lib/router';
-import { createNote, resolveFileUrl, setProp, uploadFile, useStore } from '../lib/store';
+import { createNote, setProp, uploadFile, useStore } from '../lib/store';
 import { relationIds } from '../lib/types';
 import '../pdf-text.css';
 
@@ -16,19 +16,6 @@ GlobalWorkerOptions.workerSrc = workerUrl;
 // Vurgular notun gizli alanında durur ve notun içine alıntı olarak da eklenir (bkz. highlights.ts).
 
 /** PDF baytları: Drive/cihaz dosyası, doğrudan adres, olmazsa açık arşivler için sunucu aracısı */
-async function loadBytes(src: string): Promise<ArrayBuffer> {
-  if (/^(gd|local):\/\//.test(src)) return (await fetch(await resolveFileUrl(src))).arrayBuffer();
-  try {
-    const r = await fetch(src);
-    if (r.ok && (r.headers.get('content-type') ?? '').includes('pdf')) return r.arrayBuffer();
-  } catch {
-    /* CORS: aracıyla dene */
-  }
-  const r = await fetch(`${fnUrl}?pdf=${encodeURIComponent(src)}`);
-  if (!r.ok) throw new Error('Bu PDF’i tarayıcı doğrudan açamıyor (yayıncı sitesi izin vermiyor). PDF’i indirip aşağıdaki “PDF yükle” ile ekle.');
-  return r.arrayBuffer();
-}
-
 interface Sel {
   page: number;
   rects: [number, number, number, number][];
@@ -137,7 +124,7 @@ export default function PdfReaderPage({ id }: { id: string }) {
     let gone = false;
     setPdf(null);
     setErr('');
-    void loadBytes(active)
+    void loadPdfBytes(active)
       .then((buf) => getDocument({ data: new Uint8Array(buf) }).promise)
       .then((d) => !gone && setPdf(d))
       .catch((e: Error) => !gone && setErr(e.message));
@@ -170,6 +157,8 @@ export default function PdfReaderPage({ id }: { id: string }) {
       const s = await uploadFile(f, f.name);
       if (note.type === 'paper' || !note.props.pdf) setProp(note.id, 'pdf', s);
       setSrc(s);
+      // makale notunda boş alanlar ve (içerik boşsa) özet + bölüm başlıkları PDF'ten dolsun
+      if (note.type === 'paper') void fillFromPdf(note.id, await f.arrayBuffer()).catch(() => undefined);
     } finally {
       setBusy(false);
     }
