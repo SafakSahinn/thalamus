@@ -19,9 +19,9 @@ export type OtdFeed = Record<OtdKind, OtdItem[]>;
 
 export const OTD_KINDS: OtdKind[] = ['selected', 'events', 'holidays', 'births', 'deaths'];
 
-export const OTD_LABELS: Record<OtdLang, Record<OtdKind, string> & { sub: string; page: string; source: string; empty: string; error: string; prev: string; next: string }> = {
-  tr: { sub: 'Tarihte Bugün', selected: 'Manşet', events: 'Olaylar', births: 'Doğumlar', deaths: 'Ölümler', holidays: 'Özel günler', page: 'Sayfa', source: 'Kaynak: Vikipedi', empty: 'Bugün için kayıt bulunamadı.', error: 'Vikipedi’ye ulaşılamadı.', prev: 'Önceki sayfa', next: 'Sonraki sayfa' },
-  en: { sub: 'On This Day', selected: 'Front page', events: 'Events', births: 'Births', deaths: 'Deaths', holidays: 'Observances', page: 'Page', source: 'Source: Wikipedia', empty: 'No entries found for today.', error: 'Could not reach Wikipedia.', prev: 'Previous page', next: 'Next page' },
+export const OTD_LABELS: Record<OtdLang, Record<OtdKind, string> & { name: string; sub: string; page: string; source: string; empty: string; error: string; prev: string; next: string }> = {
+  tr: { name: 'Gazete', sub: 'Tarihte Bugün', selected: 'Manşet', events: 'Olaylar', births: 'Doğumlar', deaths: 'Ölümler', holidays: 'Özel günler', page: 'Sayfa', source: 'Kaynak: Wikipedia', empty: 'Bugün için kayıt bulunamadı.', error: 'Wikipedia’ya ulaşılamadı.', prev: 'Önceki sayfa', next: 'Sonraki sayfa' },
+  en: { name: 'Newspaper', sub: 'On This Day', selected: 'Front page', events: 'Events', births: 'Births', deaths: 'Deaths', holidays: 'Observances', page: 'Page', source: 'Source: Wikipedia', empty: 'No entries found for today.', error: 'Could not reach Wikipedia.', prev: 'Previous page', next: 'Next page' },
 };
 
 interface RawPage {

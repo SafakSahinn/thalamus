@@ -2,13 +2,18 @@ import '@fontsource/unifrakturmaguntia/400.css';
 import '@fontsource/old-standard-tt/400.css';
 import '@fontsource/old-standard-tt/400-italic.css';
 import '@fontsource/old-standard-tt/700.css';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cachedOnThisDay, loadOnThisDay, OTD_KINDS, OTD_LABELS, prefetchOnThisDay, type OtdFeed, type OtdItem, type OtdKind, type OtdLang } from '../lib/onThisDay';
 import { saveSettings, todayStr, useStore } from '../lib/store';
 
 // Ana sayfa bileşeni "Gazete": Wikipedia'dan tarihte bugün, eski gazete sayfası düzeninde.
-// Metin sabit yükseklikteki sütunlara akar; taşan sütunlar yan yana yeni sayfalar olur ve
-// çerçevenin kenarındaki ‹ › ile çevrilir (sayfa boyu hiç değişmez). Dil (TR/EN) köşeden seçilir, Drive'da saklanır.
+// Sayfa boyu sabittir. İlk sayfa: tüm genişlikte manşet + altına sığan kadar sütun; kalan metin ikinci
+// bölgede sabit yükseklikli sütunlara akar, taşan sütunlar yan yana yeni sayfalar olur (‹ › ile çevrilir).
+// İlk sayfaya neyin sığdığı ölçülerek bölünür (tek sütun akışında manşet sonraki sayfalarda boşluk bırakırdı).
+// Dil (TR/EN) köşeden seçilir, Drive'da saklanır.
+
+type Entry = { kind: OtdKind; it?: OtdItem };
+type Head = { kind: OtdKind; page: number; atStart: boolean };
 
 export default function OnThisDay() {
   const lang: OtdLang = useStore((s) => s.settings.otdLang) ?? 'tr';
@@ -17,8 +22,12 @@ export default function OnThisDay() {
   const [feed, setFeed] = useState<OtdFeed | null>(() => cachedOnThisDay(lang));
   const [err, setErr] = useState(false);
   const [page, setPage] = useState(0);
-  const [geo, setGeo] = useState({ pages: 1, stride: 1, heads: [] as { kind: OtdKind; page: number; atStart: boolean }[] });
+  /** ilk sayfaya sığan kayıt sayısı; null = ölçülecek */
+  const [split, setSplit] = useState<number | null>(null);
+  const [geo, setGeo] = useState({ pages: 1, stride: 1, heads: [] as Head[] });
   const sheet = useRef<HTMLDivElement>(null);
+  const first = useRef<HTMLDivElement>(null);
+  const rest = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let off = false;
@@ -30,30 +39,61 @@ export default function OnThisDay() {
     return () => { off = true; };
   }, [lang, day]);
 
-  // Sayfa sayısı ve bölüm başlıklarının hangi sayfada olduğu: sütun akışından ölçülür
-  useLayoutEffect(() => {
+  const lead = feed?.selected[0];
+  // Bölüm başlıkları + kayıtlar tek düz liste (manşet bölümünün başlığı manşet kutusunda)
+  const entries = useMemo(() => {
+    const out: Entry[] = [];
+    if (!feed) return out;
+    for (const kind of OTD_KINDS) {
+      const items = kind === 'selected' && lead ? feed.selected.slice(1) : feed[kind];
+      if (!items.length) continue;
+      if (!(kind === 'selected' && lead)) out.push({ kind });
+      for (const it of items) out.push({ kind, it });
+    }
+    return out;
+  }, [feed, lead]);
+
+  useLayoutEffect(() => setSplit(null), [entries]);
+
+  // Boyut ya da yazı tipi değişince bölme yeniden ölçülür
+  useEffect(() => {
     const el = sheet.current;
     if (!el) return;
-    const measure = () => {
-      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
-      const stride = el.clientWidth + gap;
-      const left = el.getBoundingClientRect().left - el.scrollLeft;
-      const heads = [...el.querySelectorAll<HTMLElement>('[data-kind]')].map((h) => {
-        const x = h.getBoundingClientRect().left - left + 1;
-        const page = Math.floor(x / stride);
-        return { kind: h.dataset.kind as OtdKind, page, atStart: x - page * stride < 8 };
-      });
-      setGeo({ pages: Math.max(1, Math.ceil((el.scrollWidth + gap) / stride - 0.02)), stride, heads });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
+    let w = el.clientWidth;
+    const ro = new ResizeObserver(() => { if (el.clientWidth !== w) { w = el.clientWidth; setSplit(null); } });
     ro.observe(el);
-    void document.fonts?.ready.then(measure);
+    void document.fonts?.ready.then(() => setSplit(null));
     return () => ro.disconnect();
   }, [feed]);
 
+  useLayoutEffect(() => {
+    const a = first.current;
+    const b = rest.current;
+    if (!a || !b) return;
+    if (split === null) {
+      // ilk sayfa bölgesinin görünen genişliğinin dışına taşan ilk kayıt = bölme noktası
+      const edge = a.getBoundingClientRect().left + a.clientWidth - 1;
+      const kids = [...a.children];
+      const i = kids.findIndex((k) => k.getBoundingClientRect().left >= edge);
+      setSplit(i < 0 ? kids.length : i);
+      return;
+    }
+    const gap = parseFloat(getComputedStyle(b).columnGap) || 0;
+    const stride = b.clientWidth + gap;
+    const left = b.getBoundingClientRect().left - b.scrollLeft;
+    const heads: Head[] = [...sheet.current!.querySelectorAll<HTMLElement>('.otd-first [data-kind]')].map((h) => ({ kind: h.dataset.kind as OtdKind, page: 0, atStart: false }));
+    for (const h of b.querySelectorAll<HTMLElement>('[data-kind]')) {
+      const x = h.getBoundingClientRect().left - left + 1;
+      const p = Math.floor(x / stride);
+      heads.push({ kind: h.dataset.kind as OtdKind, page: p + 1, atStart: x - p * stride < 8 });
+    }
+    if (heads[0]) heads[0].atStart = true;
+    const restPages = split < entries.length ? Math.max(1, Math.ceil((b.scrollWidth + gap) / stride - 0.02)) : 0;
+    setGeo({ pages: 1 + restPages, stride, heads });
+  }, [split, entries]);
+
   const cur = Math.min(page, geo.pages - 1);
-  useEffect(() => { sheet.current?.scrollTo({ left: cur * geo.stride, behavior: 'smooth' }); }, [cur, geo.stride]);
+  useEffect(() => { if (cur > 0) rest.current?.scrollTo({ left: (cur - 1) * geo.stride, behavior: 'smooth' }); }, [cur, geo.stride]);
 
   // Bu sayfadaki bölümler: önceki sayfadan devam eden + burada başlayanlar
   const here = geo.heads.filter((h) => h.page === cur);
@@ -62,8 +102,7 @@ export default function OnThisDay() {
 
   const setLang = (otdLang: OtdLang) => void saveSettings({ ...useStore.getState().settings, otdLang });
   const date = new Date().toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const lead = feed?.selected[0];
-  const total = feed ? OTD_KINDS.reduce((n, k) => n + feed[k].length, 0) : 0;
+  const cut = split ?? entries.length;
 
   return (
     <div className="otd" lang={lang}>
@@ -75,7 +114,7 @@ export default function OnThisDay() {
         ))}
       </div>
       <header className="otd-mast">
-        <h2>Gazete</h2>
+        <h2>{L.name}</h2>
         <div className="otd-sub">{L.sub}</div>
         <div className="otd-dateline">
           <span>{date}</span>
@@ -83,35 +122,43 @@ export default function OnThisDay() {
         </div>
       </header>
       <div className="otd-sheet" ref={sheet}>
-        {err && !total ? <p className="otd-msg">{L.error}</p>
+        {err && !entries.length && !lead ? <p className="otd-msg">{L.error}</p>
           : !feed ? <p className="otd-msg">…</p>
-          : !total ? <p className="otd-msg">{L.empty}</p>
-          : OTD_KINDS.map((kind) => {
-            const items = kind === 'selected' ? feed.selected.slice(1) : feed[kind];
-            if (!items.length && !(kind === 'selected' && lead)) return null;
-            return (
-              <section key={kind} className={`otd-sec ${kind}`}>
-                <h4 data-kind={kind}>{L[kind]}</h4>
-                {kind === 'selected' && lead && (
+          : !entries.length && !lead ? <p className="otd-msg">{L.empty}</p>
+          : (
+            <>
+              <div className={`otd-first ${cur === 0 ? '' : 'hidden'}`}>
+                {lead && (
                   <article className="otd-lead">
+                    <h4 data-kind="selected">{L.selected}</h4>
                     {lead.year !== undefined && <div className="otd-year">{lead.year}</div>}
                     <h3><Link it={lead}>{lead.text}</Link></h3>
-                    {lead.thumb && <img src={lead.thumb} alt="" />}
-                    {lead.extract && <p>{lead.extract}</p>}
+                    <div className={`otd-lead-body ${lead.thumb ? '' : 'noimg'}`}>
+                      {lead.thumb && <img src={lead.thumb} alt="" />}
+                      {lead.extract && <p>{lead.extract}</p>}
+                    </div>
                   </article>
                 )}
-                {items.map((it, i) => (
-                  <article key={i} className="otd-item">
-                    {kind !== 'holidays' && it.year !== undefined && <span className="otd-year">{it.year}</span>}
-                    <Link it={it}>{it.text}</Link>
-                  </article>
-                ))}
-              </section>
-            );
-          })}
+                <div className="otd-cols" ref={first}>{entries.slice(0, cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}</div>
+              </div>
+              <div className={`otd-cols otd-rest ${cur > 0 ? '' : 'hidden'}`} ref={rest}>
+                {entries.slice(cut).map((e, i) => <EntryView key={i} e={e} L={L} />)}
+              </div>
+            </>
+          )}
       </div>
       <footer className="otd-foot">{L.source}</footer>
     </div>
+  );
+}
+
+function EntryView({ e, L }: { e: Entry; L: (typeof OTD_LABELS)[OtdLang] }) {
+  if (!e.it) return <h4 data-kind={e.kind}>{L[e.kind]}</h4>;
+  return (
+    <article className="otd-item">
+      {e.kind !== 'holidays' && e.it.year !== undefined && <span className="otd-year">{e.it.year}</span>}
+      <Link it={e.it}>{e.it.text}</Link>
+    </article>
   );
 }
 

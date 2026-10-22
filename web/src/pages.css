@@ -190,34 +190,45 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
   border-top: 3px double var(--ink); border-bottom: 3px double var(--ink);
   font: 12px/1.4 var(--otd-serif); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink);
 }
-/* sabit yükseklik: metin sütunlara akar, taşan sütunlar sağda yeni sayfa olur (kaydırma çubuğu gizli, ‹ › çevirir) */
-.otd-sheet {
-  aspect-ratio: 3 / 4; overflow: hidden; column-count: 3; column-gap: 24px; column-fill: auto; column-rule: 1px solid var(--rule);
-}
+/* sabit yükseklik: ilk sayfa (manşet + sütunlar) ve kalan sayfalar üst üste iki bölge; metin sütunlara akar,
+   taşan sütunlar sağda yeni sayfa olur (kaydırma çubuğu gizli, ‹ › çevirir) */
+.otd-sheet { position: relative; aspect-ratio: 3 / 4; overflow: hidden; }
+.otd-first { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.otd-first .otd-cols { flex: 1; min-height: 0; }
+.otd-rest { position: absolute; inset: 0; }
+.otd-sheet .hidden { visibility: hidden; }
+.otd-cols { overflow: hidden; column-count: 3; column-gap: 24px; column-fill: auto; column-rule: 1px solid var(--rule); }
+.otd-cols > h4:not(:first-child) { break-before: column; }
 .otd a { color: inherit; text-decoration: none; }
 .otd a:hover { text-decoration: underline; }
-.otd-sec + .otd-sec { break-before: column; }
-.otd-sec h4 {
+.otd-sheet h4 {
   font: 700 13px/1.2 var(--otd-serif); text-transform: uppercase; letter-spacing: 0.18em; text-align: center; color: var(--ink);
   margin: 0 0 10px; padding: 3px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); break-after: avoid;
 }
 .otd-year { font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
-.otd-lead { break-inside: avoid; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.otd-lead { flex: none; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 3px double var(--ink); }
 .otd-lead .otd-year { font-size: 12px; letter-spacing: 0.14em; color: var(--ink-2); text-align: center; }
-.otd-lead h3 { font: 700 22px/1.2 var(--otd-serif); margin: 2px 0 8px; color: var(--ink); text-align: center; text-transform: none; letter-spacing: 0; }
-.otd-lead img { display: block; width: 100%; max-height: 200px; object-fit: cover; margin-bottom: 8px; border: 1px solid var(--rule); }
-.otd-lead p { margin: 0; font-size: 14px; line-height: 1.5; text-align: justify; hyphens: auto; }
+.otd-lead h3 { font: 700 30px/1.15 var(--otd-serif); margin: 2px 0 12px; color: var(--ink); text-align: center; text-transform: none; letter-spacing: 0; }
+.otd-lead-body { display: grid; grid-template-columns: minmax(0, 46%) minmax(0, 1fr); gap: 18px; align-items: start; }
+.otd-lead-body.noimg { grid-template-columns: 1fr; }
+.otd-lead img { display: block; width: 100%; max-height: 300px; object-fit: cover; border: 1px solid var(--rule); }
+.otd-lead p { margin: 0; font-size: 14.5px; line-height: 1.5; text-align: justify; hyphens: auto; display: -webkit-box; -webkit-line-clamp: 13; -webkit-box-orient: vertical; overflow: hidden; }
 .otd-lead p::first-letter { float: left; font: 700 40px/0.85 var(--otd-serif); margin: 4px 6px 0 0; }
 .otd-item { break-inside: avoid; font-size: 14.5px; line-height: 1.45; text-align: justify; hyphens: auto; margin: 0 0 9px; padding-bottom: 9px; border-bottom: 1px dotted var(--rule); }
 .otd-item .otd-year { margin-right: 6px; }
 .otd-item .otd-year::after { content: ' —'; font-weight: 400; color: var(--ink-2); }
 .otd-msg { text-align: center; padding: 40px 0; color: var(--ink-2); font-style: italic; }
 .otd-foot { text-align: right; font: italic 12px/1.4 var(--otd-serif); color: var(--ink-2); border-top: 1px solid var(--ink); padding-top: 4px; margin-top: 8px; }
-@media (max-width: 900px) { .otd-sheet { column-count: 2; } }
+@media (max-width: 900px) { .otd-cols { column-count: 2; } }
 @media (max-width: 600px) {
   .otd { margin: 12px 14px 20px; padding: 14px 18px 8px; }
   .otd-mast h2 { font-size: 42px; margin-top: 22px; }
-  .otd-sheet { column-count: 1; aspect-ratio: auto; height: min(75vh, 640px); }
+  .otd-sheet { aspect-ratio: auto; height: min(75vh, 640px); }
+  .otd-cols { column-count: 1; }
+  .otd-lead h3 { font-size: 22px; }
+  .otd-lead-body { grid-template-columns: 1fr; gap: 10px; }
+  .otd-lead img { max-height: 180px; }
+  .otd-lead p { -webkit-line-clamp: 6; }
   .otd-nav { width: 26px; height: 50px; }
   .otd-nav.prev { left: -14px; }
   .otd-nav.next { right: -14px; }
