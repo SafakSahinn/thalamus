@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import OnThisDay from '../components/OnThisDay';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { calSettings } from '../lib/gcal';
@@ -44,6 +45,7 @@ const WIDGETS: Widget[] = [
   { id: 'agenda', label: 'Bugünün takvimi', off: true, C: Agenda },
   { id: 'reading', label: 'Okuma hedefi', off: true, C: Reading },
   { id: 'colls', label: 'Koleksiyonlar', off: true, C: Colls },
+  { id: 'otd', label: 'Tarihte bugün', wide: true, off: true, C: OnThisDay },
 ];
 
 type Layout = { id: string; on: boolean }[];

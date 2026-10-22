@@ -383,6 +383,8 @@ export interface Settings {
   homeLayout?: { id: string; on: boolean }[];
   /** Yıllık okuma hedefleri (yıl → kitap/makale sayısı) */
   readingGoals?: Record<string, import('./reading').ReadingGoal>;
+  /** "Tarihte bugün" bileşeninin dili */
+  otdLang?: import('./onThisDay').OtdLang;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
