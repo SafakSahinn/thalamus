@@ -322,10 +322,14 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
   flex: 1; min-height: 0; width: 100%; resize: none; border: none; outline: none; background: transparent; color: inherit;
   padding: 8px 10px; font: 14.5px/1.45 'Segoe Print', 'Segoe UI', system-ui, sans-serif;
 }
+/* boyutlandırma çizgileri yalnız fare köşeye gelince ya da köşeye dokunup sürüklerken görünür */
 .sticky-grip {
-  position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none;
-  background: linear-gradient(135deg, transparent 50%, rgb(0 0 0 / 14%) 50%, rgb(0 0 0 / 14%) 60%, transparent 60%, transparent 72%, rgb(0 0 0 / 14%) 72%, rgb(0 0 0 / 14%) 82%, transparent 82%);
+  position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; opacity: 0; transition: opacity 0.12s;
+  background: linear-gradient(135deg, transparent 50%, rgb(0 0 0 / 22%) 50%, rgb(0 0 0 / 22%) 58%, transparent 58%, transparent 70%, rgb(0 0 0 / 22%) 70%, rgb(0 0 0 / 22%) 78%, transparent 78%);
 }
+.sticky-grip:hover, .sticky.sizing .sticky-grip { opacity: 1; }
+/* dokunmatik ekranda (fare yok) yazarken hafifçe görünür ki köşe bulunabilsin */
+@media (hover: none) { .sticky:focus-within .sticky-grip { opacity: 0.6; } }
 .sticky-dock { position: absolute; right: 10px; bottom: 14px; display: flex; flex-direction: column-reverse; gap: 6px; pointer-events: auto; }
 .sticky-tab {
   width: 34px; height: 34px; border-radius: 4px; border: none; background: var(--sk); color: #2f2e2b; font-weight: 600; font-size: 14px;

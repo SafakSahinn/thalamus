@@ -76,6 +76,7 @@ type Rect = { left: number; top: number; w: number; h: number };
 function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: number; vh: number; z: number; mobile?: boolean }) {
   const [text, setText] = useState(s.text);
   const [live, setLive] = useState<Rect | null>(null);
+  const [sizing, setSizing] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null);
   const editing = useRef(false);
   const pending = useRef<{ t: number; v: string } | null>(null);
@@ -114,6 +115,7 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
     e.preventDefault();
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
+    if (mode === 'size') setSizing(true);
     const start = { x: e.clientX, y: e.clientY, ...rect };
     let cur: Rect = rect;
     const move = (ev: PointerEvent) => {
@@ -130,6 +132,7 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
       el.removeEventListener('pointercancel', up);
       if (cur !== rect) patchSticky(s.id, mode === 'move' ? { x: cur.left / vw, y: cur.top / vh } : { w: cur.w, h: cur.h });
       setLive(null);
+      setSizing(false);
     };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
@@ -166,7 +169,7 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
   const r = live ?? rect;
   const style: React.CSSProperties = mobile ? { zIndex: z } : { left: r.left, top: r.top, width: r.w, height: r.h, zIndex: z };
   return (
-    <div className={`sticky c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''}`} style={style}
+    <div className={`sticky c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
       onPointerDownCapture={() => raiseSticky(s.id)}>
       {/* kâğıt ayrı katmanda: kıvrık köşe gölgeleri (::before/::after) onun arkasında kalsın */}
       <div className="sticky-paper">
