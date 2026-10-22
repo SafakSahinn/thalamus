@@ -17,7 +17,7 @@ export interface OtdItem {
 
 export type OtdFeed = Record<OtdKind, OtdItem[]>;
 
-export const OTD_KINDS: OtdKind[] = ['selected', 'events', 'births', 'deaths', 'holidays'];
+export const OTD_KINDS: OtdKind[] = ['selected', 'events', 'holidays', 'births', 'deaths'];
 
 export const OTD_LABELS: Record<OtdLang, Record<OtdKind, string> & { sub: string; page: string; source: string; empty: string; error: string; prev: string; next: string }> = {
   tr: { sub: 'Tarihte Bugün', selected: 'Manşet', events: 'Olaylar', births: 'Doğumlar', deaths: 'Ölümler', holidays: 'Özel günler', page: 'Sayfa', source: 'Kaynak: Vikipedi', empty: 'Bugün için kayıt bulunamadı.', error: 'Vikipedi’ye ulaşılamadı.', prev: 'Önceki sayfa', next: 'Sonraki sayfa' },
