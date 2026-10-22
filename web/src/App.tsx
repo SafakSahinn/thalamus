@@ -19,7 +19,7 @@ import { cloud } from './lib/google';
 import { createNote, initAuth, initLocal, startSync, useStore } from './lib/store';
 import CollectionPage from './pages/CollectionPage';
 import DailyPage from './pages/DailyPage';
-import Home from './pages/Home';
+import Home, { homeContextMenu } from './pages/Home';
 import Login from './pages/Login';
 import NotePage from './pages/NotePage';
 import { go } from './lib/router';
@@ -92,7 +92,7 @@ export default function App() {
     <div className={`app ${drawer ? 'drawer-open' : ''}`}>
       <Sidebar route={route} onNav={() => setDrawer(false)} />
       <div className="scrim" onClick={() => setDrawer(false)} />
-      <main>
+      <main onContextMenu={route.name === 'home' ? homeContextMenu : undefined}>
         <header className="topbar">
           <button className="iconbtn menu" data-tour="menu" onClick={() => setDrawer(true)} aria-label="Menü">☰</button>
           <button className="iconbtn" onClick={() => history.back()} aria-label="Geri" title="Geri">←</button>

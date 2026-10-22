@@ -60,8 +60,8 @@ export function homeLayout(saved?: Layout): Layout {
   return list;
 }
 
-/** Ana sayfada sağ tık menüsü (yazı alanları, bağlantılar ve seçili metin tarayıcının kendi menüsünde kalır) */
-function onContext(e: React.MouseEvent) {
+/** Ana sayfada (içerik alanının herhangi bir yerinde) sağ tık menüsü (yazı alanları, bağlantılar ve seçili metin tarayıcının kendi menüsünde kalır) */
+export function homeContextMenu(e: React.MouseEvent) {
   const t = e.target as HTMLElement;
   if (t.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
   e.preventDefault();
@@ -74,7 +74,7 @@ function onContext(e: React.MouseEvent) {
 export default function Home() {
   const layout = homeLayout(useStore((s) => s.settings.homeLayout));
   return (
-    <div className="page wide home" onContextMenu={onContext}>
+    <div className="page wide home">
       <div className="home-grid">
         {layout.map((x) => {
           const w = WIDGETS.find((y) => y.id === x.id)!;
