@@ -168,19 +168,22 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
   return (
     <div className={`sticky c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''}`} style={style}
       onPointerDownCapture={() => raiseSticky(s.id)}>
-      <div className="sticky-head" onPointerDown={(e) => startDrag(e, 'move')}
-        onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
-        <button title="Yeni yapışkan not" onClick={() => addSticky(undefined, s.color)}>＋</button>
-        <span className="spacer" />
-        <button title="Renk ve diğer" onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
-        {mobile && <button title="Küçült" onClick={() => { flush(); useStickyUi.setState({ open: null }); }}>▾</button>}
-        <button title="Sil" onClick={remove}>×</button>
+      {/* kâğıt ayrı katmanda: kıvrık köşe gölgeleri (::before/::after) onun arkasında kalsın */}
+      <div className="sticky-paper">
+        <div className="sticky-head" onPointerDown={(e) => startDrag(e, 'move')}
+          onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
+          <button title="Yeni yapışkan not" onClick={() => addSticky(undefined, s.color)}>＋</button>
+          <span className="spacer" />
+          <button title="Renk ve diğer" onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
+          {mobile && <button title="Küçült" onClick={() => { flush(); useStickyUi.setState({ open: null }); }}>▾</button>}
+          <button title="Sil" onClick={remove}>×</button>
+        </div>
+        <textarea ref={area} value={text} spellCheck={false} aria-label="Yapışkan not"
+          onChange={(e) => onText(e.target.value)}
+          onFocus={() => { editing.current = true; }}
+          onBlur={() => { editing.current = false; flush(); }} />
+        {!mobile && <div className="sticky-grip" title="Boyutlandır" onPointerDown={(e) => startDrag(e, 'size')} />}
       </div>
-      <textarea ref={area} value={text} spellCheck={false} aria-label="Yapışkan not"
-        onChange={(e) => onText(e.target.value)}
-        onFocus={() => { editing.current = true; }}
-        onBlur={() => { editing.current = false; flush(); }} />
-      {!mobile && <div className="sticky-grip" title="Boyutlandır" onPointerDown={(e) => startDrag(e, 'size')} />}
     </div>
   );
 }
