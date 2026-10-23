@@ -2,10 +2,10 @@ import 'fake-indexeddb/auto';
 import { Editor } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
 import { schemaExtensions } from '../editor/extensions';
-import { BUILTIN_TEMPLATES } from './templates';
+import { builtinTemplates } from './templates';
 
 describe('hazır şablonlar', () => {
-  for (const tpl of BUILTIN_TEMPLATES) {
+  for (const tpl of builtinTemplates()) {
     it(`${tpl.name} editöre yüklenir`, () => {
       const el = document.createElement('div');
       const ed = new Editor({ element: el, extensions: schemaExtensions(), content: '' });

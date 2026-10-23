@@ -3,13 +3,13 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import { createNote, initLocal } from '../lib/store';
-import { applyTemplate, BUILTIN_TEMPLATES } from '../lib/templates';
+import { applyTemplate, builtinTemplates } from '../lib/templates';
 import NotePage from './NotePage';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('not sayfası + şablon', () => {
-  for (const tpl of BUILTIN_TEMPLATES) {
+  for (const tpl of builtinTemplates()) {
     it(`${tpl.name} açık editöre uygulanır`, async () => {
       await initLocal();
       const n = createNote(tpl.type, 'Deneme');

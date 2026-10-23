@@ -25,6 +25,7 @@ import sidebar from './sidebar';
 import slash from './slash';
 import study from './study';
 import time from './time';
+import tpl from './tpl';
 import types from './types';
 import views from './views';
 import writing from './writing';
@@ -56,6 +57,7 @@ export default {
   slash,
   study,
   time,
+  tpl,
   types,
   views,
   writing,

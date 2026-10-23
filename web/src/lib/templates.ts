@@ -39,94 +39,97 @@ const table = (head: string[], rows: number): JSONContent => ({
 const math = (latex: string): JSONContent => ({ type: 'blockMath', attrs: { latex } });
 const doc = (...content: JSONContent[]): JSONContent => ({ type: 'doc', content });
 
-export const BUILTIN_TEMPLATES: Template[] = [
-  {
-    id: 'b:paper', type: 'paper', name: 'Makale okuma notu', icon: '📄',
-    content: doc(
-      callout('🎯', 'Bu makaleyi neden okuyorum?', 'blue'),
-      h(2, 'Özet'), p(),
-      h(2, 'Araştırma sorusu'), p(),
-      h(2, 'Yöntem'), p(),
-      h(2, 'Bulgular'), bullets(['']),
-      h(2, 'Güçlü ve zayıf yönler'), bullets(['Güçlü: ', 'Zayıf: ']),
-      h(2, 'Alıntılar'), quote(),
-      h(2, 'Kendi araştırmamla ilişkisi'), p(),
-      toggle('Okunacak kaynaklar', [bullets([''])]),
-    ),
-  },
-  {
-    id: 'b:book', type: 'book', name: 'Kitap notu', icon: '📚',
-    content: doc(
-      h(2, 'Kısa özet'), p(),
-      h(2, 'Öne çıkan fikirler'), bullets(['']),
-      h(2, 'Alıntılar'), quote(),
-      h(2, 'Kendime notlar'), p(),
-      h(2, 'Kime önerirdim?'), p(),
-    ),
-  },
-  {
-    id: 'b:lab', type: 'lab', name: 'Deney raporu', icon: '🧪',
-    content: doc(
-      h(2, 'Amaç'), p(),
-      h(2, 'Teorik bilgi'), p(), math('V = I \\cdot R'),
-      h(2, 'Kullanılan cihazlar ve malzemeler'), bullets(['']),
-      h(2, 'Devre şeması'), callout('🖼', 'Şemanın fotoğrafını ya da çizimini buraya sürükleyip bırak.'),
-      h(2, 'Yöntem'), numbered(['']),
-      h(2, 'Ölçümler'), table(['Ölçüm', 'Değer', 'Birim', 'Not'], 3),
-      h(2, 'Hesaplamalar'), p(),
-      h(2, 'Sonuç ve yorum'), p(),
-      h(2, 'Hata kaynakları'), bullets(['']),
-      h(2, 'Teslimden önce'), tasks(['Ölçüm tabloları dolduruldu', 'Grafikler eklendi', 'Kaynaklar yazıldı', 'Rapor PDF olarak yüklendi']),
-    ),
-  },
-  {
-    id: 'b:course', type: 'course', name: 'Ders sayfası', icon: '🎓',
-    content: doc(
-      h(2, 'Ders bilgileri'), bullets(['Saat ve sınıf: ', 'Ofis saatleri: ', 'Değerlendirme: ']),
-      h(2, 'Haftalık konular'), tasks(['1. hafta: ', '2. hafta: ', '3. hafta: ']),
-      h(2, 'Sınav ve ödev tarihleri'), bullets(['']),
-      h(2, 'Kaynaklar'), bullets(['']),
-    ),
-  },
-  {
-    id: 'b:lecture', type: 'note', name: 'Ders notu', icon: '📝',
-    content: doc(
-      h(2, 'Konu'), p(),
-      callout('📌', 'Tanımlar', 'blue'), bullets(['']),
-      h(2, 'Formüller'), math('f(x) = '),
-      h(2, 'Örnekler'), p(),
-      toggle('Kendime sorular', [bullets([''])]),
-      h(2, 'Anlamadıklarım'), tasks(['']),
-    ),
-  },
-  {
-    id: 'b:meeting', type: 'note', name: 'Toplantı notu', icon: '🗣',
-    content: doc(
-      h(2, 'Katılanlar'), p(),
-      h(2, 'Gündem'), numbered(['']),
-      h(2, 'Konuşulanlar'), p(),
-      h(2, 'Yapılacaklar'), tasks(['']),
-    ),
-  },
-  {
-    id: 'b:conference', type: 'conference', name: 'Konferans planı', icon: '🎤',
-    content: doc(
-      h(2, 'Başvuru kontrol listesi'), tasks(['Çağrı metni okundu', 'Şablon indirildi', 'Özet yazıldı', 'Bildiri gönderildi', 'Kayıt yapıldı']),
-      h(2, 'Önemli tarihler'), bullets(['Özet: ', 'Tam metin: ', 'Kabul bildirimi: ', 'Kamera hazır sürüm: ']),
-      h(2, 'Sunum hazırlığı'), tasks(['Slaytlar', 'Prova']),
-      h(2, 'Konferans notları'), p(),
-    ),
-  },
-  {
-    id: 'b:talk', type: 'talk', name: 'Söyleşi notu', icon: '🎙️',
-    content: doc(
-      h(2, 'Konuşmacı hakkında'), p(),
-      h(2, 'Ana fikirler'), bullets(['']),
-      h(2, 'Alıntılar'), quote(),
-      h(2, 'Takip edilecekler'), tasks(['']),
-    ),
-  },
-];
+/** Hazır şablonlar; metinler çağrıldığı andaki dilde kurulur (yeni notlar o dilde başlar) */
+export function builtinTemplates(): Template[] {
+  return [
+    {
+      id: 'b:paper', type: 'paper', name: t('tpl.paper.name'), icon: '📄',
+      content: doc(
+        callout('🎯', t('tpl.paper.why'), 'blue'),
+        h(2, t('tpl.paper.abstract')), p(),
+        h(2, t('tpl.paper.question')), p(),
+        h(2, t('tpl.paper.method')), p(),
+        h(2, t('tpl.paper.findings')), bullets(['']),
+        h(2, t('tpl.paper.prosCons')), bullets([t('tpl.paper.pro'), t('tpl.paper.con')]),
+        h(2, t('tpl.paper.quotes')), quote(),
+        h(2, t('tpl.paper.relation')), p(),
+        toggle(t('tpl.paper.toRead'), [bullets([''])]),
+      ),
+    },
+    {
+      id: 'b:book', type: 'book', name: t('tpl.book.name'), icon: '📚',
+      content: doc(
+        h(2, t('tpl.book.summary')), p(),
+        h(2, t('tpl.book.ideas')), bullets(['']),
+        h(2, t('tpl.book.quotes')), quote(),
+        h(2, t('tpl.book.notes')), p(),
+        h(2, t('tpl.book.recommend')), p(),
+      ),
+    },
+    {
+      id: 'b:lab', type: 'lab', name: t('tpl.lab.name'), icon: '🧪',
+      content: doc(
+        h(2, t('tpl.lab.aim')), p(),
+        h(2, t('tpl.lab.theory')), p(), math('V = I \\cdot R'),
+        h(2, t('tpl.lab.equipment')), bullets(['']),
+        h(2, t('tpl.lab.circuit')), callout('🖼', t('tpl.lab.circuitHint')),
+        h(2, t('tpl.lab.method')), numbered(['']),
+        h(2, t('tpl.lab.measurements')), table([t('tpl.lab.colMeasure'), t('tpl.lab.colValue'), t('tpl.lab.colUnit'), t('tpl.lab.colNote')], 3),
+        h(2, t('tpl.lab.calculations')), p(),
+        h(2, t('tpl.lab.result')), p(),
+        h(2, t('tpl.lab.errors')), bullets(['']),
+        h(2, t('tpl.lab.beforeSubmit')), tasks([t('tpl.lab.check1'), t('tpl.lab.check2'), t('tpl.lab.check3'), t('tpl.lab.check4')]),
+      ),
+    },
+    {
+      id: 'b:course', type: 'course', name: t('tpl.course.name'), icon: '🎓',
+      content: doc(
+        h(2, t('tpl.course.info')), bullets([t('tpl.course.time'), t('tpl.course.office'), t('tpl.course.grading')]),
+        h(2, t('tpl.course.weekly')), tasks([1, 2, 3].map((n) => t('tpl.course.week', { n }))),
+        h(2, t('tpl.course.dates')), bullets(['']),
+        h(2, t('tpl.course.sources')), bullets(['']),
+      ),
+    },
+    {
+      id: 'b:lecture', type: 'note', name: t('tpl.lecture.name'), icon: '📝',
+      content: doc(
+        h(2, t('tpl.lecture.topic')), p(),
+        callout('📌', t('tpl.lecture.definitions'), 'blue'), bullets(['']),
+        h(2, t('tpl.lecture.formulas')), math('f(x) = '),
+        h(2, t('tpl.lecture.examples')), p(),
+        toggle(t('tpl.lecture.questions'), [bullets([''])]),
+        h(2, t('tpl.lecture.unclear')), tasks(['']),
+      ),
+    },
+    {
+      id: 'b:meeting', type: 'note', name: t('tpl.meeting.name'), icon: '🗣',
+      content: doc(
+        h(2, t('tpl.meeting.attendees')), p(),
+        h(2, t('tpl.meeting.agenda')), numbered(['']),
+        h(2, t('tpl.meeting.discussed')), p(),
+        h(2, t('tpl.meeting.todo')), tasks(['']),
+      ),
+    },
+    {
+      id: 'b:conference', type: 'conference', name: t('tpl.conference.name'), icon: '🎤',
+      content: doc(
+        h(2, t('tpl.conference.checklist')), tasks([t('tpl.conference.c1'), t('tpl.conference.c2'), t('tpl.conference.c3'), t('tpl.conference.c4'), t('tpl.conference.c5')]),
+        h(2, t('tpl.conference.dates')), bullets([t('tpl.conference.d1'), t('tpl.conference.d2'), t('tpl.conference.d3'), t('tpl.conference.d4')]),
+        h(2, t('tpl.conference.prep')), tasks([t('tpl.conference.slides'), t('tpl.conference.rehearsal')]),
+        h(2, t('tpl.conference.notes')), p(),
+      ),
+    },
+    {
+      id: 'b:talk', type: 'talk', name: t('tpl.talk.name'), icon: '🎙️',
+      content: doc(
+        h(2, t('tpl.talk.speaker')), p(),
+        h(2, t('tpl.talk.ideas')), bullets(['']),
+        h(2, t('tpl.talk.quotes')), quote(),
+        h(2, t('tpl.talk.followUp')), tasks(['']),
+      ),
+    },
+  ];
+}
 
 export const isTemplate = (n: Pick<Note, 'props'>) => Boolean(n.props.__template);
 
@@ -135,8 +138,8 @@ export function templatesFor(type: TypeId, notes: Record<string, Note>): Templat
   const user = Object.values(notes)
     .filter((n) => n.type === type && isTemplate(n) && !n.deleted_at)
     .sort((a, b) => a.title.localeCompare(b.title, localeTag()))
-    .map<Template>((n) => ({ id: `u:${n.id}`, noteId: n.id, type, name: n.title || 'Adsız şablon', icon: (n.props.icon as string) || '🧩', props: n.props, content: n.content as JSONContent | null }));
-  return [...user, ...BUILTIN_TEMPLATES.filter((x) => x.type === type)];
+    .map<Template>((n) => ({ id: `u:${n.id}`, noteId: n.id, type, name: n.title || t('tpl.untitled'), icon: (n.props.icon as string) || '🧩', props: n.props, content: n.content as JSONContent | null }));
+  return [...user, ...builtinTemplates().filter((x) => x.type === type)];
 }
 
 function cleanProps(props: Record<string, unknown> = {}) {
@@ -160,11 +163,11 @@ export function applyTemplate(note: Note, tpl: Template) {
 
 /** Mevcut notu kullanıcı şablonu olarak kopyala */
 export function saveAsTemplate(note: Note): Note {
-  return createNote(note.type, note.title ? `${note.title} (şablon)` : 'Yeni şablon', { ...cleanProps(note.props), __template: true }, note.content ? structuredClone(note.content) : null);
+  return createNote(note.type, note.title ? t('tpl.copySuffix', { title: note.title }) : t('tpl.newTemplate'), { ...cleanProps(note.props), __template: true }, note.content ? structuredClone(note.content) : null);
 }
 
 export function newBlankTemplate(type: TypeId): Note {
-  return createNote(type, 'Yeni şablon', { __template: true });
+  return createNote(type, t('tpl.newTemplate'), { __template: true });
 }
 
 // ---------- varsayılan şablon (koleksiyon başına) ----------
