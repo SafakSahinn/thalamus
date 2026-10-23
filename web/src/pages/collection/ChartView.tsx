@@ -168,7 +168,7 @@ export function ChartView({ ty, rows, view }: ViewProps) {
       </div>
 
       {!buckets.length ? (
-        <p className="muted">Bu görünümde gösterilecek kayıty yok.</p>
+        <p className="muted">Bu görünümde gösterilecek kayıt yok.</p>
       ) : asTable ? (
         <table className="dbtable chart-table">
           <thead><tr><th>{xdef.label}</th><th className="num">{title}</th></tr></thead>
@@ -246,13 +246,13 @@ export function ChartView({ ty, rows, view }: ViewProps) {
 
       {sel && (
         <div className="chart-picked">
-          <div className="muted small">{sel.label} · {sel.notes.length} kayıty</div>
+          <div className="muted small">{sel.label} · {sel.notes.length} kayıt</div>
           {sel.notes.map((n) => (
             <button key={n.id} type="button" className="chip-soft" onClick={() => openPeek(n.id)}>{noteIcon(n)} {displayTitle(n)}</button>
           ))}
         </div>
       )}
-      {!sel && buckets.length > 0 && !asTable && <p className="muted small">Bir çubuğa tyıklarsan o gruptaki kayıtlar aşağıda listelenir.</p>}
+      {!sel && buckets.length > 0 && !asTable && <p className="muted small">Bir çubuğa tıklarsan o gruptaki kayıtlar aşağıda listelenir.</p>}
     </div>
   );
 }

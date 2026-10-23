@@ -102,7 +102,7 @@ export function FormView({ ty, view, newProps }: ViewProps) {
           <span className="form-icon">{ty.icon}</span>
           <div>
             <h2>Yeni {ty.label.toLocaleLowerCase('tr')}</h2>
-            <p className="muted small">Formu doldurup gönderince {ty.plural} koleksiyonuna yeni bir kayıty eklenir. Sorulan alanları “Görünüm ayarları”ndan seçebilirsin.</p>
+            <p className="muted small">Formu doldurup gönderince {ty.plural} koleksiyonuna yeni bir kayıt eklenir. Sorulan alanları “Görünüm ayarları”ndan seçebilirsin.</p>
           </div>
         </div>
         {done && (

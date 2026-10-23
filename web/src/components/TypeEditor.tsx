@@ -153,7 +153,7 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
                 {TYPES.map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.plural}</option>)}
               </select>
               <label className="small" title="Notion'daki 1 sayfa sınırı: yeni seçim öncekinin yerine geçer">
-                <input type="checkbox" checked={Boolean(def.single)} onChange={(e) => void updateProp(typeId, def.key, { single: e.target.checked || undefined })} /> yalnızca tek kayıty
+                <input type="checkbox" checked={Boolean(def.single)} onChange={(e) => void updateProp(typeId, def.key, { single: e.target.checked || undefined })} /> yalnızca tek kayıt
               </label>
             </div>
           )}

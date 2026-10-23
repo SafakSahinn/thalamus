@@ -238,7 +238,7 @@ function ChartOptions({ ty, view, update }: { ty: TypeDef; view: SavedView; upda
           const [fn, y] = e.target.value.split(':');
           set({ fn: fn as 'count' | 'sum' | 'avg', y: y || undefined });
         }}>
-          <option value="count">Kayıty sayısı</option>
+          <option value="count">Kayıt sayısı</option>
           {ys.flatMap((p) => [
             <option key={`sum${p.key}`} value={`sum:${p.key}`}>{p.label} · toplam</option>,
             <option key={`avg${p.key}`} value={`avg:${p.key}`}>{p.label} · ortalama</option>,
