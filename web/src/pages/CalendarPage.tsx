@@ -1,3 +1,4 @@
+import { localeTag, t, weekdays } from '../i18n';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ExtEventDialog from '../components/ExtEventDialog';
 import { openPeek, peekClick } from '../components/Peek';
@@ -9,8 +10,7 @@ import { setProp, todayStr, useStore } from '../lib/store';
 import { createDefault, isTemplate } from '../lib/templates';
 import { typeOf, TYPES, type Note } from '../lib/types';
 
-const WEEK = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-const MONTH = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' });
+
 const p2 = (n: number) => String(n).padStart(2, '0');
 const ymd = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v);
@@ -27,7 +27,7 @@ interface Item {
 
 type Entry = { kind: 'g'; ev: ExtEvent; at: string } | { kind: 'n'; it: Item; at: string };
 
-const WDAY = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' });
+const weekdayName = (d: Date) => d.toLocaleDateString(localeTag(), { weekday: 'long' });
 const MAX_PER_DAY = 4;
 const VIEW_KEY = 'calendarView';
 
@@ -81,15 +81,15 @@ export default function CalendarPage() {
   };
 
   // Tarih alanı olan koleksiyonlar (günlük kendi sayfasında)
-  const types = useMemo(() => TYPES.filter((t) => t.id !== 'daily' && t.props.some((p) => p.kind === 'date')), [settings]);
+  const types = useMemo(() => TYPES.filter((ty) => ty.id !== 'daily' && ty.props.some((p) => p.kind === 'date')), [settings]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Item[]>();
     const add = (day: string, it: Item) => map.set(day, [...(map.get(day) ?? []), it]);
     for (const n of Object.values(notes)) {
       if (n.deleted_at || isTemplate(n) || n.type === 'daily' || hidden.includes(n.type)) continue;
-      const t = typeOf(n.type);
-      const dates = t.props.filter((p) => p.kind === 'date');
+      const ty = typeOf(n.type);
+      const dates = ty.props.filter((p) => p.kind === 'date');
       const multi = dates.length > 1;
       for (const def of dates) {
         const v = n.props[def.key];
@@ -112,8 +112,8 @@ export default function CalendarPage() {
   }, [notes, hidden, settings]);
 
   const addOn = (typeId: string, day: string) => {
-    const t = typeOf(typeId);
-    const key = t.props.find((p) => p.kind === 'date')?.key;
+    const ty = typeOf(typeId);
+    const key = ty.props.find((p) => p.kind === 'date')?.key;
     if (!key) return;
     setAdding(null);
     openPeek(createDefault(typeId, { [key]: day }).id);
@@ -238,21 +238,21 @@ export default function CalendarPage() {
       );
     }
     const { note, key, label, endKey } = e.it;
-    const t = typeOf(note.type);
+    const ty = typeOf(note.type);
     return (
       <a
         key={`n.${note.id}.${key}`}
         href={`#/n/${note.id}`}
         onClick={peekClick(note.id)}
         className={`cal-item ${wide ? 'wide' : ''}`}
-        style={{ '--c': t.color } as React.CSSProperties}
+        style={{ '--c': ty.color } as React.CSSProperties}
         draggable
         title={`${displayTitle(note)}${label ? ` · ${label}` : ''}`}
         onDragStart={(ev) => ev.dataTransfer.setData('text/thalamus-date', [note.id, key, endKey ?? ''].join('|'))}
       >
         {e.at && <span className="cal-time">{e.at}</span>}
         <span className="cal-txt">{noteIcon(note)} {label && <span className="cal-lbl">{label}: </span>}{displayTitle(note)}</span>
-        {wide && <span className="cal-src">{t.plural}</span>}
+        {wide && <span className="cal-src">{ty.plural}</span>}
       </a>
     );
   };
@@ -263,20 +263,20 @@ export default function CalendarPage() {
   return (
     <div className="page calendar-page">
       <div className="cal-top">
-        <h1>📆 Takvim</h1>
+        <h1>{t('calendar.page.title')}</h1>
         <div className="seg cal-view">
-          <button type="button" className={view === 'month' ? 'on' : ''} onClick={() => setView('month')}>Ay</button>
-          <button type="button" className={view === 'agenda' ? 'on' : ''} onClick={() => setView('agenda')}>Ajanda</button>
+          <button type="button" className={view === 'month' ? 'on' : ''} onClick={() => setView('month')}>{t('calendar.page.month')}</button>
+          <button type="button" className={view === 'agenda' ? 'on' : ''} onClick={() => setView('agenda')}>{t('calendar.page.agenda')}</button>
         </div>
       </div>
       <p className="muted small">
-        Notlarındaki bütün tarihler{cals.length ? ' ve Google takvimlerin' : ''} tek yerde. Bir günün köşesindeki ＋ ile etkinlik, ▾ ile başka bir şey eklersin; öğeleri sürükleyerek taşırsın.
-        {' '}Google Takvim eşitlemesi {gcalOn ? <><b>açık</b>.</> : <>kapalı. <a className="btn small primary cal-connect" href="#/settings">Google Takvim’i bağla</a></>}
+        {t(cals.length ? 'calendar.page.introCals' : 'calendar.page.intro')}
+        {' '}{gcalOn ? t.rich('calendar.page.syncOn') : <>{t('calendar.page.syncOff')} <a className="btn small primary cal-connect" href="#/settings">{t('calendar.page.connect')}</a></>}
       </p>
       <div className="chips cal-types">
-        {types.map((t) => (
-          <button key={t.id} type="button" className={`cal-type ${hidden.includes(t.id) ? '' : 'on'}`} style={{ '--c': t.color } as React.CSSProperties} onClick={() => toggleType(t.id)} aria-pressed={!hidden.includes(t.id)}>
-            {t.icon} {t.plural}
+        {types.map((ty) => (
+          <button key={ty.id} type="button" className={`cal-type ${hidden.includes(ty.id) ? '' : 'on'}`} style={{ '--c': ty.color } as React.CSSProperties} onClick={() => toggleType(ty.id)} aria-pressed={!hidden.includes(ty.id)}>
+            {ty.icon} {ty.plural}
           </button>
         ))}
         {cals.map((c) => (
@@ -288,17 +288,17 @@ export default function CalendarPage() {
       {extErr && <p className="err small">{extErr}</p>}
       <div className="calendar" data-tour="calendar">
         <div className="cal-head">
-          <b className="cal-month">{MONTH.format(cursor)}</b>
+          <b className="cal-month">{cursor.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })}</b>
           <span className="spacer" />
-          <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>Bugün</button>
-          <button type="button" className="cal-nav" onClick={() => move(-1)} aria-label="Önceki ay">‹</button>
-          <button type="button" className="cal-nav" onClick={() => move(1)} aria-label="Sonraki ay">›</button>
-          {cals.length > 0 && <button type="button" className="cal-nav" title="Google takvimlerini yenile" aria-label="Google takvimlerini yenile" disabled={extLoading} onClick={() => void loadExt()}>{extLoading ? '…' : '⟳'}</button>}
+          <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>{t('calendar.page.today')}</button>
+          <button type="button" className="cal-nav" onClick={() => move(-1)} aria-label={t('calendar.page.prev')}>‹</button>
+          <button type="button" className="cal-nav" onClick={() => move(1)} aria-label={t('calendar.page.next')}>›</button>
+          {cals.length > 0 && <button type="button" className="cal-nav" title={t('calendar.page.refresh')} aria-label={t('calendar.page.refresh')} disabled={extLoading} onClick={() => void loadExt()}>{extLoading ? '…' : '⟳'}</button>}
         </div>
 
         {view === 'month' ? (
           <div className="cal-grid">
-            {WEEK.map((w, i) => <div key={w} className={`cal-wd ${i > 4 ? 'we' : ''}`}>{w}</div>)}
+            {weekdays('short').map((w, i) => <div key={w} className={`cal-wd ${i > 4 ? 'we' : ''}`}>{w}</div>)}
             {days.map((d, i) => {
               const k = ymd(d);
               const all = entriesOf(k);
@@ -322,23 +322,23 @@ export default function CalendarPage() {
                 >
                   <div className="cal-num">
                     <span className="cal-n">{parseDay(k).getDate()}</span>
-                    <button type="button" className="cal-add" title="Bu güne etkinlik ekle" aria-label="Bu güne ekle" onClick={() => addOn('event', k)}>＋</button>
-                    <button type="button" className="cal-add" title="Bu güne başka bir şey ekle" aria-label="Başka bir şey ekle" onClick={() => setAdding(adding === k ? null : k)}>▾</button>
+                    <button type="button" className="cal-add" title={t('calendar.page.addEvent')} aria-label={t('calendar.page.addEventAria')} onClick={() => addOn('event', k)}>＋</button>
+                    <button type="button" className="cal-add" title={t('calendar.page.addOther')} aria-label={t('calendar.page.addOtherAria')} onClick={() => setAdding(adding === k ? null : k)}>▾</button>
                   </div>
                   {adding === k && (
                     <div className="cal-addmenu" role="menu">
                       {cals.some((c) => c.writable) && (
-                        <button type="button" role="menuitem" onClick={() => { setAdding(null); setDialog({ day: k }); }}>📅 Google Takvim etkinliği</button>
+                        <button type="button" role="menuitem" onClick={() => { setAdding(null); setDialog({ day: k }); }}>{t('calendar.page.googleEvent')}</button>
                       )}
-                      {types.map((t) => (
-                        <button key={t.id} type="button" role="menuitem" onClick={() => addOn(t.id, k)}>{t.icon} {t.label}</button>
+                      {types.map((ty) => (
+                        <button key={ty.id} type="button" role="menuitem" onClick={() => addOn(ty.id, k)}>{ty.icon} {ty.label}</button>
                       ))}
                     </div>
                   )}
                   {shown.map((e) => renderEntry(e, k))}
                   {all.length > MAX_PER_DAY && (
                     <button type="button" className="cal-more" onClick={() => setOpenDay(open ? null : k)}>
-                      {open ? 'Daha az' : `+${all.length - MAX_PER_DAY} daha`}
+                      {open ? t('calendar.page.less') : t('calendar.page.more', { count: all.length - MAX_PER_DAY })}
                     </button>
                   )}
                 </div>
@@ -351,12 +351,12 @@ export default function CalendarPage() {
               <div key={k} className={`agenda-day ${k === today ? 'today' : ''} ${k < today ? 'past' : ''}`}>
                 <div className="agenda-date">
                   <span className="agenda-n">{parseDay(k).getDate()}</span>
-                  <span className="agenda-wd">{WDAY.format(parseDay(k))}</span>
+                  <span className="agenda-wd">{weekdayName(parseDay(k))}</span>
                 </div>
                 <div className="agenda-items">{entriesOf(k).map((e) => renderEntry(e, k, true))}</div>
               </div>
             ))}
-            {!monthDays.some((k) => entriesOf(k).length) && <p className="muted">Bu ay için bir şey yok.</p>}
+            {!monthDays.some((k) => entriesOf(k).length) && <p className="muted">{t('calendar.page.empty')}</p>}
           </div>
         )}
       </div>

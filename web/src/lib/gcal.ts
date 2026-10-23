@@ -3,6 +3,7 @@
 // Google Takvim'de etkinliğin tarihi değişirse nottaki tarih de değişir; etkinlik silinirse o tarih alanı boşalır.
 // Elle eklenen (Thalamus'a ait olmayan) etkinliklere dokunulmaz. Yalnızca calendar.app.created izni.
 
+import { t } from '../i18n';
 import { getMeta, setMeta } from './db';
 import { addDays, displayTitle } from './format';
 import { accessToken, cloud, loadAuth } from './google';
@@ -86,9 +87,9 @@ async function ensureCalendar(cs: CalendarSettings): Promise<string> {
   }
   const r = await call('/calendars', {
     method: 'POST',
-    body: JSON.stringify({ summary: 'Thalamus', description: 'Thalamus notlarındaki tarihler (son başvurular, teslimler, deneyler…)', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+    body: JSON.stringify({ summary: 'Thalamus', description: t('calendar.gcal.description'), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
   });
-  if (!r.ok) throw new Error(`Takvim oluşturulamadı (${r.status})`);
+  if (!r.ok) throw new Error(t('calendar.gcal.createFailed', { status: r.status }));
   const id = ((await r.json()) as { id: string }).id;
   const s = useStore.getState().settings;
   await saveSettings({ ...s, calendar: { ...calSettings(s), calendarId: id } });
@@ -196,7 +197,7 @@ async function pullCalendar(state: CalState, base: string, localHash: Map<string
       state.syncToken = undefined;
       return pullCalendar(state, base, localHash);
     }
-    if (!r.ok) throw new Error(`Takvim okunamadı (${r.status})`);
+    if (!r.ok) throw new Error(t('calendar.gcal.readFailed', { status: r.status }));
     const d = (await r.json()) as { items?: GEvent[]; nextPageToken?: string; nextSyncToken?: string };
     items.push(...(d.items ?? []));
     if (d.nextPageToken) page = d.nextPageToken;
@@ -287,7 +288,7 @@ export function syncCalendar(force = false) {
           r = await call(base, { method: 'POST', body: JSON.stringify({ ...d.body, id: d.id }) });
           if (r.ok) res.created++;
         } else if (r.ok) res.updated++;
-        if (!r.ok) throw new Error(`Takvim etkinliği yazılamadı (${r.status})`);
+        if (!r.ok) throw new Error(t('calendar.gcal.writeFailed', { status: r.status }));
         state.events[d.id] = d.hash;
       }
       for (const id of Object.keys(state.events)) {
@@ -318,7 +319,7 @@ export async function disconnectCalendar(deleteCalendar: boolean) {
   const cs = calSettings(s);
   if (deleteCalendar && cs.calendarId) {
     const r = await call(`/calendars/${encodeURIComponent(cs.calendarId)}`, { method: 'DELETE' });
-    if (!r.ok && r.status !== 404) throw new Error(`Takvim silinemedi (${r.status})`);
+    if (!r.ok && r.status !== 404) throw new Error(t('calendar.gcal.deleteFailed', { status: r.status }));
   }
   await setMeta('gcalState', null);
   await saveSettings({ ...s, calendar: { ...cs, enabled: false, calendarId: deleteCalendar ? undefined : cs.calendarId } });
