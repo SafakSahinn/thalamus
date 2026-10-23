@@ -64,13 +64,13 @@ export const PLUGINS: Plugin[] = [
     name: 'Desenli not kâğıtları',
     icon: '🌸',
     category: 'tool',
-    summary: 'Yapışkan notlara kurşun kalemle çizilmiş gibi desenli kâğıtlar: çiçek, şehir, deniz…',
+    summary: 'Yapışkan notlara kurşun kalemle çizilmiş gibi desenli kâğıtlar: çiçek, şehir, deniz, araba, kimya…',
     description: [
       'Marketlerde satılan desenli not kâğıtları ya da desenli peçeteler gibi: kâğıdın üstü baştan sona, kuru boyayla çizilmiş küçük resimlerle kaplı.',
       'Yazdıkların desenin üstünde okunur kalır. Eklentiyi kaldırırsan desenli kâğıtlar düz renge döner, notların silinmez.',
     ],
     features: [
-      '8 desen: çiçekler, lavanta, şehir, yapraklar, deniz, dağlar, gece, kiraz çiçeği',
+      '12 desen: çiçekler, lavanta, şehir, yapraklar, deniz, dağlar, gece, kiraz çiçeği, arabalar, Vahşi Batı, matematik, kimya',
       'Renk menüsünden tek tıkla seçilir',
       'Telefonda sağ alttaki karelerde desenin küçük bir parçası görünür',
     ],

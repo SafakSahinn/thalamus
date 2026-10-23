@@ -30,7 +30,7 @@ export const COLORS: { id: StickyColor; label: string }[] = [
   { id: 'white', label: 'Beyaz' },
 ];
 
-export type StickyPattern = 'cicek' | 'lavanta' | 'sehir' | 'yaprak' | 'deniz' | 'dag' | 'gece' | 'kiraz';
+export type StickyPattern = 'cicek' | 'lavanta' | 'sehir' | 'yaprak' | 'deniz' | 'dag' | 'gece' | 'kiraz' | 'araba' | 'western' | 'matematik' | 'kimya';
 
 /** Kurşun kalem desenleri (public/stickies/*.svg). `color`: eklenti kaldırılınca kâğıdın düşeceği düz renk. */
 export const PATTERNS: { id: StickyPattern; label: string; color: StickyColor }[] = [
@@ -42,6 +42,10 @@ export const PATTERNS: { id: StickyPattern; label: string; color: StickyColor }[
   { id: 'dag', label: 'Dağlar', color: 'green' },
   { id: 'gece', label: 'Gece', color: 'purple' },
   { id: 'kiraz', label: 'Kiraz çiçeği', color: 'pink' },
+  { id: 'araba', label: 'Arabalar', color: 'white' },
+  { id: 'western', label: 'Vahşi Batı', color: 'yellow' },
+  { id: 'matematik', label: 'Matematik', color: 'white' },
+  { id: 'kimya', label: 'Kimya', color: 'green' },
 ];
 
 export const isPattern = (id: string): id is StickyPattern => PATTERNS.some((p) => p.id === id);

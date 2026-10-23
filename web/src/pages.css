@@ -299,6 +299,10 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 .c-dag { --sk: #f1f7ee; --sk-head: #dcebd5; --sk-art: url(/stickies/dag.svg); }
 .c-gece { --sk: #e9ecf8; --sk-head: #d6dbf1; --sk-art: url(/stickies/gece.svg); }
 .c-kiraz { --sk: #fdf3f6; --sk-head: #f6dce4; --sk-art: url(/stickies/kiraz.svg); }
+.c-araba { --sk: #f6f6f4; --sk-head: #e6e5e1; --sk-art: url(/stickies/araba.svg); }
+.c-western { --sk: #fbf1e2; --sk-head: #f1dfc0; --sk-art: url(/stickies/western.svg); }
+.c-matematik { --sk: #fcfdff; --sk-head: #e3ecf6; --sk-art: url(/stickies/matematik.svg); }
+.c-kimya { --sk: #eef8f3; --sk-head: #d6ede1; --sk-art: url(/stickies/kimya.svg); }
 .sticky-swatch.pat, .sticky-tab.pat { background: var(--sk-art) -4px -6px / 64px, var(--sk); }
 
 .sticky-layer { position: fixed; inset: 0; z-index: 32; pointer-events: none; }

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+<defs>
+<filter id="p" filterUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="14" stitchTiles="stitch" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.35 1.5" numOctaves="2" seed="29" stitchTiles="stitch" result="g"/>
+<feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -0.75" result="ga"/>
+<feComposite in="d" in2="ga" operator="in"/>
+</filter>
+</defs>
+<!-- kareli defter -->
+<path d="M0,0.5 H120 M0,20.5 H120 M0,40.5 H120 M0,60.5 H120 M0,80.5 H120 M0,100.5 H120 M0.5,0 V120 M20.5,0 V120 M40.5,0 V120 M60.5,0 V120 M80.5,0 V120 M100.5,0 V120" fill="none" stroke="#bcd3ea" stroke-width="0.6"/>
+<g filter="url(#p)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<!-- π -->
+<path d="M19,24 H39 M24,24 C24,32 23,37 20,39 M33,24 C33,32 33,36 36,38" stroke="#d0645a"/>
+<!-- √x -->
+<path d="M74,24 L78,22 L82,32 L87,14 H106 M91,18 L99,28 M99,18 L91,28" stroke="#5d8fc4"/>
+<!-- Σ -->
+<path d="M96,80 H80 L90,90 L80,100 H96" stroke="#5f9a4d"/>
+<!-- 1+2=3 -->
+<path d="M8,92 L11,90 V104 M18,97 H26 M22,93 V101 M31,93 C32,89 39,89 39,94 C39,98 31,101 31,104 H40 M44,96 H52 M44,101 H52 M56,91 C60,89 64,91 62,95 C61,97 59,97 58,97 C62,97 65,100 62,103 C60,106 56,105 55,103" stroke="#d98a3d"/>
+<!-- dik üçgen -->
+<path d="M54,66 H70 L54,50Z" fill="#e3d6f5" stroke="#8a6cc0"/>
+<path d="M54,61 H59 V66" stroke="#8a6cc0" stroke-width="1.2"/>
+<g fill="#5d8fc4" stroke="none"><circle cx="66" cy="20" r="1.2"/><circle cx="12" cy="66" r="1.2"/><circle cx="112" cy="58" r="1.2"/></g>
+</g>
+</svg>

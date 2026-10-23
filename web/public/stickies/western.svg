@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+<defs>
+<filter id="p" filterUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="13" stitchTiles="stitch" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.35 1.5" numOctaves="2" seed="27" stitchTiles="stitch" result="g"/>
+<feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -0.75" result="ga"/>
+<feComposite in="d" in2="ga" operator="in"/>
+</filter>
+</defs>
+<g filter="url(#p)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<!-- kaktüs -->
+<g transform="translate(28,38)" fill="#9fcf8a" stroke="#5f9049">
+<path d="M-4,4 H-11 C-13,4 -14,3 -14,1 V-8 C-14,-11 -10,-11 -10,-8 V0 H-4Z"/>
+<path d="M4,8 H11 C13,8 14,7 14,5 V-4 C14,-7 10,-7 10,-4 V4 H4Z"/>
+<path d="M-4,22 V-14 C-4,-20 4,-20 4,-14 V22Z"/>
+<path d="M0,-12 V18 M-2,-6 L-3,-7 M2,2 L3,1 M-2,10 L-3,9" fill="none"/>
+</g>
+<path d="M12,60 H46" fill="none" stroke="#c9a46e"/>
+<!-- kovboy şapkası -->
+<g transform="translate(90,26)">
+<path d="M-9,3 C-10,-6 -7,-11 -3,-9 L0,-7 L3,-9 C7,-11 10,-6 9,3Z" fill="#d1a173" stroke="#8c6337"/>
+<path d="M-9,0 H9" fill="none" stroke="#b85a4c" stroke-width="2"/>
+<path d="M-18,4 C-12,9 12,9 18,4 C14,2 10,3 8,3 H-8 C-10,3 -14,2 -18,4Z" fill="#d1a173" stroke="#8c6337"/>
+</g>
+<!-- at nalı -->
+<g transform="translate(88,90) rotate(180)">
+<path d="M-9,-10 C-12,0 -9,10 0,10 C9,10 12,0 9,-10 H4 C6,-2 5,5 0,5 C-5,5 -6,-2 -4,-10Z" fill="#c3c9d0" stroke="#6f7780"/>
+<g fill="#6f7780" stroke="none"><circle cx="-8" cy="-4" r="0.9"/><circle cx="-6" cy="4" r="0.9"/><circle cx="8" cy="-4" r="0.9"/><circle cx="6" cy="4" r="0.9"/></g>
+</g>
+<!-- şerif yıldızı -->
+<g transform="translate(30,96)" fill="#f2cf57" stroke="#b9952a">
+<path d="M0,-9 L2.5,-4.33 L7.79,-4.5 L5,0 L7.79,4.5 L2.5,4.33 L0,9 L-2.5,4.33 L-7.79,4.5 L-5,0 L-7.79,-4.5 L-2.5,-4.33Z"/>
+<circle cx="0" cy="-9.5" r="1.5"/><circle cx="8.2" cy="-4.7" r="1.5"/><circle cx="8.2" cy="4.7" r="1.5"/>
+<circle cx="0" cy="9.5" r="1.5"/><circle cx="-8.2" cy="4.7" r="1.5"/><circle cx="-8.2" cy="-4.7" r="1.5"/>
+<circle cx="0" cy="0" r="2.4" fill="#e5b94a"/>
+</g>
+<g fill="#d9b88a" stroke="none">
+<circle cx="62" cy="58" r="1.6"/><circle cx="66" cy="60" r="1.1"/><circle cx="112" cy="58" r="1.3"/><circle cx="58" cy="112" r="1.3"/><circle cx="60" cy="16" r="1.2"/>
+</g>
+</g>
+</svg>

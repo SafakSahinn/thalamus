@@ -162,9 +162,10 @@ function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw:
   const menu = (x: number, y: number) => {
     const pick = (c: string) => patchSticky(s.id, paperPatch(c));
     const items: MenuItem[] = [{ key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ ...c, on: !patterned && c.id === s.color })), pick }];
-    // desenler iki sıra hâlinde (Desenli not kâğıtları eklentisi)
+    // desenler renk sırasıyla aynı genişlikte, 6'şarlı sıralar hâlinde (Desenli not kâğıtları eklentisi)
     if (art) {
-      for (const [i, row] of [PATTERNS.slice(0, 4), PATTERNS.slice(4)].entries()) {
+      for (let i = 0; i < PATTERNS.length; i += COLORS.length) {
+        const row = PATTERNS.slice(i, i + COLORS.length);
         items.push({ key: `pat${i}`, className: 'sticky-swatch pat', swatches: row.map((p) => ({ id: p.id, label: p.label, on: s.pattern === p.id })), pick });
       }
     }
