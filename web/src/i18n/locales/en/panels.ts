@@ -27,7 +27,7 @@ export default {
     aria: 'Welcome to Thalamus',
     hello: 'Welcome!',
     helloName: 'Welcome, {name}!',
-    intro: 'Like the brain’s relay centre that connects information, Thalamus connects everything you read and learn.',
+    intro: 'Like the brain’s relay center that connects information, Thalamus connects everything you read and learn.',
     p1Title: 'Everything in one place',
     p1: 'Books, papers, courses, movies, talks and your journal.',
     p2Title: 'Connected',

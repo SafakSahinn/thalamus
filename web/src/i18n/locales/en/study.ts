@@ -14,7 +14,7 @@ export default {
       kiraz: 'Cherry blossom',
       araba: 'Cars',
       western: 'Wild West',
-      matematik: 'Maths',
+      matematik: 'Math',
       kimya: 'Chemistry',
     },
     empty: 'Empty note',
