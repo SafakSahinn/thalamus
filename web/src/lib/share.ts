@@ -2,6 +2,7 @@
 // "bağlantıya sahip olan görebilir" ayarlı bir dosya olarak yazılır; bağlantı o dosyanın kimliğidir.
 // İçindeki Drive görselleri de herkese açık yapılır; sunucuda kopyası tutulmaz.
 
+import { t } from '../i18n';
 import { publicProps } from './noteHtml';
 import { displayTitle, noteIcon } from './format';
 import { fnUrl } from './google';
@@ -30,7 +31,7 @@ async function publicContent(doc: unknown, files: Set<string>): Promise<unknown>
       return { ...n, attrs: { ...n.attrs, src: url } };
     }
     if ((n.type === 'image' || n.type === 'fileBlock') && src.startsWith('local://')) {
-      return { type: 'paragraph', content: [{ type: 'text', text: '[Bu cihazda saklanan dosya paylaşılmadı]' }] };
+      return { type: 'paragraph', content: [{ type: 'text', text: t('dialogs.share.localFile') }] };
     }
     if (n.type === 'wikiLink') return { type: 'text', text: String(n.attrs?.label ?? ''), marks: [{ type: 'bold' }] };
     if (!n.content) return n;
@@ -49,7 +50,7 @@ export async function publishShare(note: Note): Promise<string> {
     thalamus_share: 1, title: displayTitle(note), icon: noteIcon(note), props: publicProps(note, notes), content,
     updated_at: new Date().toISOString(),
   };
-  if (JSON.stringify(page).length > 1_900_000) throw new Error('Not paylaşmak için çok büyük.');
+  if (JSON.stringify(page).length > 1_900_000) throw new Error(t('dialogs.share.tooBig'));
   const id = await writeShareFile(note.props.__share, note.id, page.title, page);
   if (note.props.__share !== id) setProp(note.id, '__share', id);
   if (files.size) setProp(note.id, '__shareFiles', [...files]);
@@ -76,6 +77,6 @@ export async function loadShare(id: string): Promise<SharedPage | null> {
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
   const r = await fetch(`${fnUrl}?share=${encodeURIComponent(id)}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
   if (r.status === 404) return null;
-  if (!r.ok) throw new Error('Sayfa yüklenemedi');
+  if (!r.ok) throw new Error(t('dialogs.share.loadFailed'));
   return (await r.json()) as SharedPage;
 }

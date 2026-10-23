@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from '@tiptap/react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
@@ -70,15 +71,15 @@ function SyncedView({ node, editor }: ReactNodeViewProps) {
   return (
     <NodeViewWrapper className="synced-block" data-drag-handle="">
       <div className="synced-head" contentEditable={false}>
-        <span className="synced-badge">↻ Senkron blok</span>
-        <button type="button" className="linkbtn small" onClick={() => setShowWhere(!showWhere)}>{usage.length} sayfada</button>
+        <span className="synced-badge">{t('writing.synced.badge')}</span>
+        <button type="button" className="linkbtn small" onClick={() => setShowWhere(!showWhere)}>{t('writing.synced.pages', { count: usage.length })}</button>
         <span className="spacer" />
         <button
           type="button"
           className="linkbtn small"
-          title="Bu bloğun bir kopyasını başka sayfaya eklemek için: o sayfada / → “Senkron blok (mevcut)”"
+          title={t('writing.synced.copyTitle')}
           onClick={() => void navigator.clipboard?.writeText(sid)}
-        >Kimliği kopyala</button>
+        >{t('writing.synced.copyId')}</button>
       </div>
       {showWhere && (
         <div className="synced-where" contentEditable={false}>
@@ -86,13 +87,13 @@ function SyncedView({ node, editor }: ReactNodeViewProps) {
         </div>
       )}
       <div className="synced-body">
-        <Suspense fallback={<p className="muted small">Yükleniyor…</p>}>
+        <Suspense fallback={<p className="muted small">{t('common.loading')}</p>}>
           <NoteEditor
             docKey={`synced-${sid}`}
             content={data?.content ?? null}
             rev={rev}
             readOnly={!editor.isEditable}
-            placeholder="Senkron blok: buraya yazdıkların bu bloğun bulunduğu her sayfada görünür…"
+            placeholder={t('writing.synced.placeholder')}
             onChange={(doc) => {
               saveSynced(sid, doc);
               window.dispatchEvent(new CustomEvent<SyncedEvent>(EVENT, { detail: { sid, from: me.current } }));
@@ -137,6 +138,6 @@ export function syncedList(): { sid: string; label: string }[] {
       walk(v.content, (x) => {
         if (!text && x.type === 'text' && x.text) text = x.text;
       });
-      return { sid, label: text.slice(0, 60) || '(boş senkron blok)' };
+      return { sid, label: text.slice(0, 60) || t('writing.synced.empty') };
     });
 }

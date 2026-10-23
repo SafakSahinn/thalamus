@@ -2,6 +2,7 @@
 // İsteğe bağlı "tam takvim" izniyle: Thalamus Takvim sayfasında görünür, taşınır, düzenlenir, silinir, eklenir.
 // Hiçbir şey sunucuya gitmez; istekler tarayıcıdan doğrudan Google'a. Notlara dönüşmez (Thalamus takviminden farklı).
 
+import { t } from '../i18n';
 import { calSettings, call } from './gcal';
 
 export interface ExtCal {
@@ -62,7 +63,7 @@ async function ok(r: Response, what: string) {
 /** Thalamus'un kendi takvimi dışındaki bütün takvimler */
 export async function listCalendars(): Promise<ExtCal[]> {
   const own = calSettings().calendarId;
-  const r = await ok(await call('/users/me/calendarList?maxResults=250'), 'Takvimler okunamadı');
+  const r = await ok(await call('/users/me/calendarList?maxResults=250'), t('dialogs.gcal.listFailed'));
   const d = (await r.json()) as { items?: { id: string; summary?: string; summaryOverride?: string; backgroundColor?: string; primary?: boolean; accessRole?: string }[] };
   return (d.items ?? [])
     .filter((c) => c.id !== own && c.summary !== 'Thalamus')
@@ -78,7 +79,7 @@ export async function listCalendars(): Promise<ExtCal[]> {
 
 function toExt(e: GEvent, calId: string): ExtEvent | null {
   if (e.status === 'cancelled' || !e.start) return null;
-  const base = { id: e.id, calId, summary: e.summary || '(başlıksız)', location: e.location, description: e.description, htmlLink: e.htmlLink, recurring: Boolean(e.recurringEventId), raw: e };
+  const base = { id: e.id, calId, summary: e.summary || t('dialogs.extEvent.untitled'), location: e.location, description: e.description, htmlLink: e.htmlLink, recurring: Boolean(e.recurringEventId), raw: e };
   if (e.start.date) {
     const endDate = e.end?.date ? shiftDay(e.end.date, -1) : e.start.date;
     return { ...base, date: e.start.date, endDate: endDate < e.start.date ? e.start.date : endDate };
@@ -102,7 +103,7 @@ export async function listEvents(cal: ExtCal, from: string, to: string): Promise
       maxResults: '2500',
     });
     if (page) q.set('pageToken', page);
-    const r = await ok(await call(`/calendars/${encodeURIComponent(cal.id)}/events?${q}`), `“${cal.summary}” okunamadı`);
+    const r = await ok(await call(`/calendars/${encodeURIComponent(cal.id)}/events?${q}`), t('dialogs.gcal.readFailed', { name: cal.summary }));
     const d = (await r.json()) as { items?: GEvent[]; nextPageToken?: string };
     for (const e of d.items ?? []) {
       const x = toExt(e, cal.id);
@@ -140,14 +141,14 @@ function body(v: EventInput) {
 const evUrl = (calId: string, id = '') => `/calendars/${encodeURIComponent(calId)}/events${id ? `/${encodeURIComponent(id)}` : ''}`;
 
 export async function createEvent(calId: string, v: EventInput) {
-  await ok(await call(evUrl(calId), { method: 'POST', body: JSON.stringify(body(v)) }), 'Etkinlik eklenemedi');
+  await ok(await call(evUrl(calId), { method: 'POST', body: JSON.stringify(body(v)) }), t('dialogs.gcal.addFailed'));
 }
 
 export async function updateEvent(ev: ExtEvent, v: EventInput) {
   // Çok günlü tüm gün etkinliğin süresini koru
   const b = body(v);
   if (!v.time && ev.endDate > ev.date && !ev.time) b.end = { date: shiftDay(v.date, Math.round((Date.parse(ev.endDate) - Date.parse(ev.date)) / 86_400_000) + 1), dateTime: null };
-  await ok(await call(evUrl(ev.calId, ev.id), { method: 'PATCH', body: JSON.stringify(b) }), 'Etkinlik güncellenemedi');
+  await ok(await call(evUrl(ev.calId, ev.id), { method: 'PATCH', body: JSON.stringify(b) }), t('dialogs.gcal.updateFailed'));
 }
 
 /** Sürükle-bırak: etkinliği gün sayısı kadar kaydır (saati ve süresi aynı kalır) */
@@ -156,12 +157,12 @@ export async function moveEvent(ev: ExtEvent, days: number) {
   const e = ev.raw.end ?? {};
   const shift = (t: { date?: string; dateTime?: string; timeZone?: string }) =>
     t.date ? { date: shiftDay(t.date, days) } : { dateTime: new Date(Date.parse(t.dateTime!) + days * 86_400_000).toISOString(), timeZone: t.timeZone ?? tz() };
-  await ok(await call(evUrl(ev.calId, ev.id), { method: 'PATCH', body: JSON.stringify({ start: shift(s), end: shift(e) }) }), 'Etkinlik taşınamadı');
+  await ok(await call(evUrl(ev.calId, ev.id), { method: 'PATCH', body: JSON.stringify({ start: shift(s), end: shift(e) }) }), t('dialogs.gcal.moveFailed'));
 }
 
 export async function deleteEvent(ev: ExtEvent) {
   const r = await call(evUrl(ev.calId, ev.id), { method: 'DELETE' });
-  if (!r.ok && r.status !== 410 && r.status !== 404) await ok(r, 'Etkinlik silinemedi');
+  if (!r.ok && r.status !== 410 && r.status !== 404) await ok(r, t('dialogs.gcal.deleteFailed'));
 }
 
 /** Açıklamayı (HTML olabilir) düz metne çevir */

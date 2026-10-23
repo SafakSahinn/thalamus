@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { cloud } from '../lib/google';
 import { publishShare, shareUrl, unpublishShare } from '../lib/share';
@@ -31,34 +32,34 @@ export default function ShareDialog({ note, onClose }: { note: Note; onClose: ()
 
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal prompt share-dialog" role="dialog" aria-label="Paylaş">
-        <div className="row"><h3>🌐 Herkese açık paylaş</h3><span className="spacer" /><button className="iconbtn" onClick={onClose}>×</button></div>
+      <div className="modal prompt share-dialog" role="dialog" aria-label={t('dialogs.share.aria')}>
+        <div className="row"><h3>{t('dialogs.share.title')}</h3><span className="spacer" /><button className="iconbtn" onClick={onClose} aria-label={t('common.close')}>×</button></div>
         {!cloud || !account ? (
-          <p className="muted">Paylaşmak için Google ile giriş yapmış olman gerekiyor.</p>
+          <p className="muted">{t('dialogs.share.needLogin')}</p>
         ) : id ? (
           <>
-            <p>Bu not bağlantıya sahip olan herkese açık. Bağlantıyı açan kişi giriş yapmadan notu (salt okunur) görebilir.</p>
+            <p>{t('dialogs.share.live')}</p>
             <div className="row">
               <input className="grow share-link" readOnly value={shareUrl(id)} onFocus={(e) => e.target.select()} />
-              <button className="btn" onClick={() => void copy()}>{copied ? 'Kopyalandı ✓' : 'Kopyala'}</button>
+              <button className="btn" onClick={() => void copy()}>{copied ? t('dialogs.share.copied') : t('common.copy')}</button>
             </div>
-            <p className="muted small">Notu düzenledikçe paylaşılan sayfa birkaç saniye içinde güncellenir (not bu cihazda açıkken). Bağlantı verdiğin diğer notlar paylaşılmaz; yalnızca adları görünür.</p>
+            <p className="muted small">{t('dialogs.share.liveHint')}</p>
             <div className="row end">
-              <a className="btn ghost" href={shareUrl(id)} target="_blank" rel="noopener noreferrer">Sayfayı aç ↗</a>
-              <button className="btn danger" disabled={busy} onClick={() => void run(() => unpublishShare(live))}>{busy ? '…' : 'Paylaşımı kaldır'}</button>
+              <a className="btn ghost" href={shareUrl(id)} target="_blank" rel="noopener noreferrer">{t('dialogs.share.openPage')}</a>
+              <button className="btn danger" disabled={busy} onClick={() => void run(() => unpublishShare(live))}>{busy ? '…' : t('dialogs.share.unpublish')}</button>
             </div>
           </>
         ) : (
           <>
-            <p>Notun bir kopyası herkese açık bir bağlantıyla yayınlanır. Bağlantıyı bilen herkes notu görebilir, düzenleyemez.</p>
+            <p>{t('dialogs.share.intro')}</p>
             <ul className="muted small">
-              <li>Yayınlanan kopya Drive’ındaki Thalamus klasörüne “bağlantıya sahip olan görebilir” ayarlı bir dosya olarak yazılır; paylaşımı kaldırınca silinir.</li>
-              <li>Nottaki Drive görselleri ve dosyaları “bağlantıya sahip olan görebilir” yapılır.</li>
-              <li>Yalnızca bu cihazda saklanan dosyalar paylaşılmaz. Bağlantı verdiğin diğer notlar paylaşılmaz.</li>
+              <li>{t('dialogs.share.li1')}</li>
+              <li>{t('dialogs.share.li2')}</li>
+              <li>{t('dialogs.share.li3')}</li>
             </ul>
             <div className="row end">
-              <button className="btn ghost" onClick={onClose}>Vazgeç</button>
-              <button className="btn primary" disabled={busy} onClick={() => void run(() => publishShare(live))}>{busy ? 'Yayınlanıyor…' : 'Bağlantıyla paylaş'}</button>
+              <button className="btn ghost" onClick={onClose}>{t('common.cancel')}</button>
+              <button className="btn primary" disabled={busy} onClick={() => void run(() => publishShare(live))}>{busy ? t('dialogs.share.publishing') : t('dialogs.share.publish')}</button>
             </div>
           </>
         )}

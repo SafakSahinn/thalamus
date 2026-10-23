@@ -1,5 +1,6 @@
 // Dışa aktarma: tek not (.md), bütün notlar (.zip: koleksiyon klasörleri + ekler), yazdırma.
 
+import { localeTag, lower, t } from '../i18n';
 import JSZip from 'jszip';
 import { displayTitle } from './format';
 import { noteToLatex } from './latex';
@@ -35,7 +36,7 @@ export async function exportNoteLatex(note: Note): Promise<{ cited: number; figu
       const blob = await (await fetch(await resolveFileUrl(src))).blob();
       const ext = blob.type.includes('png') ? 'png' : blob.type.includes('jpeg') ? 'jpg' : '';
       if (!ext) continue;
-      const path = `figures/sekil${figs.size + 1}.${ext}`;
+      const path = `figures/${t('capture.export.figure')}${figs.size + 1}.${ext}`;
       zip.file(path, blob);
       figs.set(src, path);
     } catch {
@@ -75,18 +76,18 @@ export async function exportAllZip(onProgress?: (done: number, total: number) =>
     for (const src of assetsOf(n)) {
       if (assetPath.has(src)) continue;
       const [, rest] = src.split('://');
-      const [id, name = 'dosya'] = rest.split('#');
-      assetPath.set(src, `ekler/${id.slice(0, 8)}-${safeName(decodeURIComponent(name))}`);
+      const [id, name = t('capture.export.file')] = rest.split('#');
+      assetPath.set(src, `${t('capture.export.attachments')}/${id.slice(0, 8)}-${safeName(decodeURIComponent(name))}`);
     }
   }
   let done = 0;
   const total = list.length + assetPath.size;
   for (const n of list) {
-    const folder = n.type === 'daily' ? 'Günlükler' : safeName(typeOf(n.type).plural);
+    const folder = n.type === 'daily' ? t('capture.export.journal') : safeName(typeOf(n.type).plural);
     let base = n.type === 'daily' && typeof n.props.date === 'string' ? n.props.date : safeName(displayTitle(n));
     let path = `${folder}/${base}.md`;
-    for (let i = 2; used.has(path.toLocaleLowerCase('tr')); i++) path = `${folder}/${base} (${i}).md`;
-    used.add(path.toLocaleLowerCase('tr'));
+    for (let i = 2; used.has(lower(path)); i++) path = `${folder}/${base} (${i}).md`;
+    used.add(lower(path));
     // Notun klasöründen eklere göreli yol
     zip.file(path, noteToMarkdown(n, { notes, synced: useStore.getState().settings.synced, asset: (src) => (assetPath.has(src) ? `../${assetPath.get(src)}` : null) }));
     onProgress?.(++done, total);
@@ -101,7 +102,7 @@ export async function exportAllZip(onProgress?: (done: number, total: number) =>
     }
     onProgress?.(++done, total);
   }
-  zip.file('README.md', `# Thalamus dışa aktarımı\n\n${new Date().toLocaleString('tr-TR')} tarihinde oluşturuldu. ${list.length} not, ${assetPath.size - missing} ek.\n\nHer koleksiyon ayrı bir klasörde; not alanları dosyaların başındaki YAML bölümünde. Bağlantılar [[Not adı]] biçiminde olduğu için klasör Obsidian'da doğrudan açılabilir.\n`);
+  zip.file('README.md', t('capture.export.readme', { date: new Date().toLocaleString(localeTag()), notes: list.length, assets: assetPath.size - missing }));
   const blob = await zip.generateAsync({ type: 'blob' });
   download(`thalamus-${new Date().toISOString().slice(0, 10)}.zip`, blob);
   return { notes: list.length, assets: assetPath.size - missing, missing };

@@ -1,3 +1,4 @@
+import { getLocale } from '../i18n';
 import '@fontsource/unifrakturmaguntia/400.css';
 import '@fontsource/old-standard-tt/400.css';
 import '@fontsource/old-standard-tt/400-italic.css';
@@ -16,7 +17,8 @@ type Entry = { kind: OtdKind; it?: OtdItem };
 type Head = { kind: OtdKind; page: number; atStart: boolean };
 
 export default function OnThisDay() {
-  const lang: OtdLang = useStore((s) => s.settings.otdLang) ?? 'tr';
+  // Seçilmemişse uygulama dili (Wikipedia akışı yalnız tr/en)
+  const lang: OtdLang = useStore((s) => s.settings.otdLang) ?? (getLocale() === 'tr' ? 'tr' : 'en');
   const L = OTD_LABELS[lang];
   const day = todayStr();
   const [feed, setFeed] = useState<OtdFeed | null>(() => cachedOnThisDay(lang));

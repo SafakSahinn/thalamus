@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { generateHTML, type JSONContent } from '@tiptap/core';
 import katex from 'katex';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -6,16 +7,16 @@ import type { Version } from '../lib/history';
 import { noteVersions, restoreVersion, useStore } from '../lib/store';
 import type { Note } from '../lib/types';
 
-const fmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const fmt = (d: Date) => d.toLocaleString(localeTag(), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function Preview({ content }: { content: unknown }) {
   const ref = useRef<HTMLDivElement>(null);
   const html = useMemo(() => {
-    if (!content) return '<p class="muted">Bu sürümde içerik yok.</p>';
+    if (!content) return `<p class="muted">${t('writing.history.noContent')}</p>`;
     try {
       return generateHTML(content as JSONContent, schemaExtensions());
     } catch {
-      return '<p class="muted">Önizleme oluşturulamadı.</p>';
+      return `<p class="muted">${t('writing.history.noPreview')}</p>`;
     }
   }, [content]);
   useEffect(() => {
@@ -77,34 +78,34 @@ export default function HistoryDialog({ note, onClose }: { note: Note; onClose: 
 
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal history" role="dialog" aria-label="Sayfa geçmişi">
-        <div className="row"><h3>🕓 Sayfa geçmişi</h3><span className="spacer" /><button className="iconbtn" onClick={onClose}>×</button></div>
+      <div className="modal history" role="dialog" aria-label={t('writing.history.aria')}>
+        <div className="row"><h3>{t('writing.history.title')}</h3><span className="spacer" /><button className="iconbtn" onClick={onClose} aria-label={t('common.close')}>×</button></div>
         <div className="history-body">
           <div className="history-list">
-            {list === null && <p className="muted small">Yükleniyor…</p>}
-            {list?.length === 0 && <p className="muted small">Henüz kayıtlı sürüm yok. Notu düzenledikçe en fazla 10 dakikada bir sürüm saklanır.</p>}
+            {list === null && <p className="muted small">{t('common.loading')}</p>}
+            {list?.length === 0 && <p className="muted small">{t('writing.history.none')}</p>}
             {list?.map((v) => (
               <button key={v.key} type="button" className={`hist-item ${sel?.key === v.key ? 'on' : ''}`} onClick={() => setSel(v)}>
-                <span>{fmt.format(new Date(v.at))}</span>
-                <span className="muted small">{v.source === 'drive' ? '☁ Drive' : '💻 Bu cihaz'}{v.at === current?.updated_at ? ' · şu anki' : ''}</span>
+                <span>{fmt(new Date(v.at))}</span>
+                <span className="muted small">{v.source === 'drive' ? '☁ Drive' : t('writing.history.device')}{v.at === current?.updated_at ? t('writing.history.current') : ''}</span>
               </button>
             ))}
           </div>
           <div className="history-view">
             {err && <p className="err small">{err}</p>}
-            {sel && !loaded && !err && <p className="muted small">Sürüm yükleniyor…</p>}
+            {sel && !loaded && !err && <p className="muted small">{t('writing.history.loading')}</p>}
             {loaded && (
               <>
-                <h2 className="history-title">{loaded.title || 'Adsız'}</h2>
+                <h2 className="history-title">{loaded.title || t('common.untitled')}</h2>
                 <Preview content={loaded.content} />
               </>
             )}
           </div>
         </div>
         <div className="row end">
-          <span className="muted small grow">Geri yükleme yapınca şu anki hal de geçmişe kaydedilir; yani geri alınabilir.</span>
-          <button className="btn ghost" onClick={onClose}>Kapat</button>
-          <button className="btn primary" disabled={!loaded || busy} onClick={() => void restore()}>Bu sürümü geri yükle</button>
+          <span className="muted small grow">{t('writing.history.restoreHint')}</span>
+          <button className="btn ghost" onClick={onClose}>{t('common.close')}</button>
+          <button className="btn primary" disabled={!loaded || busy} onClick={() => void restore()}>{t('writing.history.restore')}</button>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { generateHTML, type JSONContent } from '@tiptap/core';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -5,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { schemaExtensions } from '../editor/extensions';
 import { loadShare, type SharedPage as Page } from '../lib/share';
 
-const fmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmt = (d: Date) => d.toLocaleDateString(localeTag(), { day: 'numeric', month: 'long', year: 'numeric' });
 
 /** Herkese açık paylaşılan not (giriş gerekmez, salt okunur) */
 export default function SharedPage({ id }: { id: string }) {
@@ -22,7 +23,7 @@ export default function SharedPage({ id }: { id: string }) {
     try {
       return generateHTML(page.content as JSONContent, schemaExtensions());
     } catch {
-      return '<p>İçerik gösterilemedi.</p>';
+      return `<p>${t('capture.shared.failed')}</p>`;
     }
   }, [page]);
 
@@ -59,14 +60,14 @@ export default function SharedPage({ id }: { id: string }) {
     <div className="shared-page">
       <div className="shared-bar">
         <a href={import.meta.env.BASE_URL}><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={20} height={20} /> Thalamus</a>
-        <span className="muted small">ile paylaşıldı</span>
+        <span className="muted small">{t('capture.shared.sharedWith')}</span>
       </div>
       <div className="page">
-        {page === undefined && !err && <p className="muted">Yükleniyor…</p>}
+        {page === undefined && !err && <p className="muted">{t('common.loading')}</p>}
         {err && <p className="err">{err}</p>}
         {page === null && (
           <div className="empty">
-            <p>Bu sayfa bulunamadı. Paylaşım kaldırılmış olabilir.</p>
+            <p>{t('capture.shared.notFound')}</p>
           </div>
         )}
         {page && (
@@ -81,7 +82,7 @@ export default function SharedPage({ id }: { id: string }) {
               </div>
             )}
             <div ref={ref} className="prose" dangerouslySetInnerHTML={{ __html: html }} />
-            <p className="muted small shared-foot">Son güncelleme: {fmt.format(new Date(page.updated_at))}</p>
+            <p className="muted small shared-foot">{t('capture.shared.updated', { date: fmt(new Date(page.updated_at)) })}</p>
           </>
         )}
       </div>

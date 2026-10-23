@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useRef, useState } from 'react';
 import { bibFile, citeOf, parseBibtex } from '../lib/bibtex';
 import { createPaperFromMeta, importPaper } from '../lib/paperImport';
@@ -20,15 +21,15 @@ export default function PaperImportButton({ extraProps, rows }: { extraProps?: (
   const [msg, setMsg] = useState('');
   const file = useRef<HTMLInputElement>(null);
   const run = async () => {
-    const v = await promptText('DOI ya da arXiv ile makale ekle', '', {
-      hint: 'DOI (10.1109/…), doi.org ya da arxiv.org bağlantısı yapıştır. Başlık, yazarlar, yıl, dergi/konferans, özet ve PDF bağlantısı kendiliğinden dolar.',
+    const v = await promptText(t('dialogs.paper.promptTitle'), '', {
+      hint: t('dialogs.paper.promptHint'),
     });
     if (!v?.trim()) return;
     setBusy(true);
     setMsg('');
     try {
       const r = await importPaper(v, extraProps?.() ?? {});
-      if (r.existed) setMsg('Bu makale zaten kayıtlı, onu açtım.');
+      if (r.existed) setMsg(t('dialogs.paper.existed'));
       openPeek(r.note.id);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
@@ -39,23 +40,23 @@ export default function PaperImportButton({ extraProps, rows }: { extraProps?: (
   const exportBib = () => {
     const notes = useStore.getState().notes;
     const list = (rows ?? []).filter((n) => n.type === 'paper');
-    if (!list.length) return setMsg('Bu görünümde makale yok.');
+    if (!list.length) return setMsg(t('dialogs.paper.noneInView'));
     download('thalamus.bib', bibFile(list.map((n) => citeOf(n, notes))));
-    setMsg(`${list.length} makale BibTeX olarak indirildi.`);
+    setMsg(t('dialogs.paper.exported', { count: list.length }));
   };
   const importBib = async (f: File | undefined) => {
     if (!f) return;
     const metas = parseBibtex(await f.text());
     let added = 0;
     for (const m of metas) if (!createPaperFromMeta(m, extraProps?.() ?? {}).existed) added++;
-    setMsg(`${metas.length} kayıt okundu, ${added} yeni makale eklendi${metas.length - added ? ` (${metas.length - added} zaten vardı)` : ''}.`);
+    setMsg(t(metas.length - added ? 'dialogs.paper.importedSkipped' : 'dialogs.paper.imported', { count: metas.length, added, skipped: metas.length - added }));
     if (file.current) file.current.value = '';
   };
   return (
     <>
-      <button className="btn" onClick={() => void run()} disabled={busy} title="DOI ya da arXiv bağlantısıyla makale ekle">{busy ? 'Aranıyor…' : '🔎 DOI / arXiv'}</button>
-      <button className="btn" onClick={exportBib} title="Görünümdeki makaleleri .bib olarak indir (LaTeX için)">⬇ .bib</button>
-      <button className="btn" onClick={() => file.current?.click()} title=".bib dosyasından makale ekle (Zotero, Mendeley, Google Scholar)">⬆ .bib</button>
+      <button className="btn" onClick={() => void run()} disabled={busy} title={t('dialogs.paper.doiTitle')}>{busy ? t('dialogs.paper.searching') : '🔎 DOI / arXiv'}</button>
+      <button className="btn" onClick={exportBib} title={t('dialogs.paper.exportTitle')}>⬇ .bib</button>
+      <button className="btn" onClick={() => file.current?.click()} title={t('dialogs.paper.importTitle')}>⬆ .bib</button>
       <input ref={file} type="file" accept=".bib,.bibtex,.txt" hidden onChange={(e) => void importBib(e.target.files?.[0])} />
       {msg && <span className="muted small paper-msg">{msg}</span>}
     </>

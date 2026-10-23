@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 // Makale bilgisi: DOI ya da arXiv kimliğinden başlık, yazarlar, yıl, dergi/konferans, cilt/sayı/sayfa, özet.
 // Açık kaynaklar, anahtar gerekmez: Crossref (dergi/konferans DOI'leri), DataCite (arXiv ve diğer DataCite DOI'leri).
 // Atıf bilgisi notun gizli alanında (props.__cite) saklanır; BibTeX ve kaynakça buradan üretilir.
@@ -99,7 +100,7 @@ async function fromDatacite(doi: string): Promise<CiteMeta | null> {
 export async function fetchMeta(ident: Ident): Promise<CiteMeta> {
   const doi = ident.kind === 'arxiv' ? `10.48550/arXiv.${ident.id}` : ident.id;
   const m = ident.kind === 'arxiv' ? await fromDatacite(doi) : (await fromCrossref(doi)) ?? (await fromDatacite(doi));
-  if (!m || !m.title) throw new Error('Bu kimlikle bir yayın bulunamadı. DOI ya da arXiv numarasını kontrol et.');
+  if (!m || !m.title) throw new Error(t('capture.scholar.notFound'));
   return m;
 }
 

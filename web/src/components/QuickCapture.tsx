@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { go } from '../lib/router';
 import { createNote, useStore } from '../lib/store';
@@ -68,8 +69,8 @@ export default function QuickCapture() {
         return;
       }
     }
-    const t = typeOf(type);
-    const urlKey = t.props.find((p) => p.kind === 'url' && (p.key === 'url' || p.key === 'doi'))?.key;
+    const ty = typeOf(type);
+    const urlKey = ty.props.find((p) => p.kind === 'url' && (p.key === 'url' || p.key === 'doi'))?.key;
     const content = [
       ...(note.trim() ? note.trim().split(/\n+/).map((line) => ({ type: 'paragraph', content: [{ type: 'text', text: line }] })) : []),
       ...(shared.url ? [{ type: 'bookmark', attrs: { url: shared.url, title: shared.title || '' } }] : []),
@@ -82,28 +83,28 @@ export default function QuickCapture() {
 
   return (
     <div className="modal-back">
-      <div className="modal capture" role="dialog" aria-label="Thalamus’a kaydet">
-        <h3>📥 Thalamus’a kaydet</h3>
+      <div className="modal capture" role="dialog" aria-label={t('capture.quick.aria')}>
+        <h3>{t('capture.quick.title')}</h3>
         {shared.url && <div className="capture-url muted small">🔗 {shared.url}</div>}
         <label className="capture-field">
-          <span>Başlık</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Başlık" autoFocus />
+          <span>{t('capture.quick.titleField')}</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('capture.quick.titleField')} autoFocus />
         </label>
         <label className="capture-field">
-          <span>Koleksiyon</span>
+          <span>{t('capture.quick.collection')}</span>
           <select value={type} onChange={(e) => setType(e.target.value)}>
-            {TYPES.filter((t) => !['daily', 'word'].includes(t.id)).map((t) => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+            {TYPES.filter((ty) => !['daily', 'word'].includes(ty.id)).map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.label}</option>)}
           </select>
         </label>
         <label className="capture-field">
-          <span>Not</span>
-          <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="İstersen bir not ekle…" />
+          <span>{t('capture.quick.note')}</span>
+          <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('capture.quick.notePlaceholder')} />
         </label>
-        {type === 'paper' && ident && <p className="muted small">🔎 Bu bir {ident.kind === 'arxiv' ? 'arXiv' : 'DOI'} bağlantısı: başlık, yazarlar, yıl ve özet kendiliğinden doldurulacak.</p>}
+        {type === 'paper' && ident && <p className="muted small">{t('capture.quick.ident', { kind: ident.kind === 'arxiv' ? 'arXiv' : 'DOI' })}</p>}
         {err && <p className="err small">{err}</p>}
         <div className="capture-actions">
-          <button type="button" className="btn" onClick={close}>Vazgeç</button>
-          <button type="button" className="btn primary" disabled={busy} onClick={() => void save()}>{busy ? 'Bilgiler alınıyor…' : 'Kaydet'}</button>
+          <button type="button" className="btn" onClick={close}>{t('common.cancel')}</button>
+          <button type="button" className="btn primary" disabled={busy} onClick={() => void save()}>{busy ? t('capture.quick.fetching') : t('common.save')}</button>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import type { Messages } from '../../types';
 import app from './app';
+import capture from './capture';
 import common from './common';
+import dialogs from './dialogs';
 import market from './market';
 import misc from './misc';
 import options from './options';
@@ -11,10 +13,13 @@ import settings from './settings';
 import sidebar from './sidebar';
 import time from './time';
 import types from './types';
+import writing from './writing';
 
 export default {
   app,
+  capture,
   common,
+  dialogs,
   market,
   misc,
   options,
@@ -25,4 +30,5 @@ export default {
   sidebar,
   time,
   types,
+  writing,
 } satisfies Messages;

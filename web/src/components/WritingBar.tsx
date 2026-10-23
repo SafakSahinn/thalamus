@@ -1,3 +1,4 @@
+import { fmtNumber, t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { fmtNum, textStats } from '../lib/format';
@@ -50,7 +51,7 @@ export default function WritingBar({ note }: { note: Note }) {
   }, [reached, celebrated, session]);
 
   const editGoal = async () => {
-    const v = await promptText('Kelime hedefi (kaldırmak için boş bırak)', goal ? String(goal) : '1000');
+    const v = await promptText(t('writing.bar.goalPrompt'), goal ? String(goal) : '1000');
     if (v === null) return;
     const n = Math.round(Number(v.replace(/\D/g, '')));
     setProp(note.id, '__goal', n > 0 ? n : undefined);
@@ -61,14 +62,14 @@ export default function WritingBar({ note }: { note: Note }) {
     <div className={`writing-bar ${focus ? 'focus' : ''}`}>
       {goal > 0 && <div className={`wb-progress ${reached ? 'done' : ''}`}><span style={{ width: `${pct}%` }} /></div>}
       <div className="wb-row">
-        <span><b>{fmtNum(stats.words)}</b>{goal > 0 && <span className="muted"> / {fmtNum(goal)}</span>} kelime</span>
-        <span className="muted">{fmtNum(stats.chars)} karakter</span>
-        <span className="muted">~{stats.minutes} dk okuma</span>
-        {session !== 0 && <span className={session > 0 ? 'wb-plus' : 'muted'}>bu oturumda {session > 0 ? '+' : ''}{fmtNum(session)}</span>}
-        {celebrated && <span className="wb-plus">🎉 hedefe ulaştın</span>}
+        <span><b>{fmtNum(stats.words)}</b>{goal > 0 && <span className="muted"> / {fmtNum(goal)}</span>} {t('writing.bar.words')}</span>
+        <span className="muted">{t('writing.bar.chars', { count: fmtNum(stats.chars) })}</span>
+        <span className="muted">{t('writing.bar.reading', { count: stats.minutes })}</span>
+        {session !== 0 && <span className={session > 0 ? 'wb-plus' : 'muted'}>{t('writing.bar.session', { count: `${session > 0 ? '+' : ''}${fmtNum(session)}` })}</span>}
+        {celebrated && <span className="wb-plus">{t('writing.bar.reached')}</span>}
         <span className="spacer" />
-        <button className="linkbtn" onClick={() => void editGoal()}>🎯 {goal ? `%${Math.floor(pct)}` : 'Hedef koy'}</button>
-        <button className="linkbtn" title="Her şeyi gizle, yalnızca metin kalsın (Esc ile çık)" onClick={() => setFocus(!focus)}>{focus ? '✕ Odaktan çık' : '⛶ Odak modu'}</button>
+        <button className="linkbtn" onClick={() => void editGoal()}>🎯 {goal ? fmtNumber(pct / 100, { style: 'percent', maximumFractionDigits: 0 }) : t('writing.bar.setGoal')}</button>
+        <button className="linkbtn" title={t('writing.bar.focusTitle')} onClick={() => setFocus(!focus)}>{focus ? t('writing.bar.exitFocus') : t('writing.bar.focus')}</button>
       </div>
     </div>
   );

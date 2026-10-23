@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from '@tiptap/react';
 import { useMemo, useState } from 'react';
@@ -28,7 +29,7 @@ function BibView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const notes = useStore((s) => s.notes);
   const papers = useMemo(() => citedPapers(noteId ? notes[noteId] : undefined, notes), [noteId, notes]);
   const [copied, setCopied] = useState('');
-  const sorted = style === 'apa' ? [...papers].sort((a, b) => (citeOf(a, notes).authors[0]?.family ?? a.title).localeCompare(citeOf(b, notes).authors[0]?.family ?? b.title, 'tr')) : papers;
+  const sorted = style === 'apa' ? [...papers].sort((a, b) => (citeOf(a, notes).authors[0]?.family ?? a.title).localeCompare(citeOf(b, notes).authors[0]?.family ?? b.title, localeTag())) : papers;
   const lines = sorted.map((p, i) => (style === 'ieee' ? `[${i + 1}] ` : '') + formatCite(citeOf(p, notes), style));
   const copy = (what: 'text' | 'bib') => {
     void navigator.clipboard.writeText(what === 'text' ? lines.join('\n') : bibFile(sorted.map((p) => citeOf(p, notes))));
@@ -38,20 +39,20 @@ function BibView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   return (
     <NodeViewWrapper className="bib-block" data-drag-handle="">
       <div className="bib-head" contentEditable={false}>
-        <b>📚 Kaynakça</b>
+        <b>{t('capture.bib.title')}</b>
         <div className="seg">
           {(['ieee', 'apa'] as const).map((s) => <button key={s} type="button" className={style === s ? 'on' : ''} onClick={() => updateAttributes({ style: s })}>{s.toUpperCase()}</button>)}
         </div>
         <span className="spacer" />
         {papers.length > 0 && (
           <>
-            <button type="button" className="btn small" onClick={() => copy('text')}>{copied === 'text' ? '✓ Kopyalandı' : 'Metni kopyala'}</button>
-            <button type="button" className="btn small" onClick={() => copy('bib')}>{copied === 'bib' ? '✓ Kopyalandı' : 'BibTeX kopyala'}</button>
+            <button type="button" className="btn small" onClick={() => copy('text')}>{copied === 'text' ? t('capture.bib.copied') : t('capture.bib.copyText')}</button>
+            <button type="button" className="btn small" onClick={() => copy('bib')}>{copied === 'bib' ? t('capture.bib.copied') : t('capture.bib.copyBib')}</button>
           </>
         )}
       </div>
       {papers.length === 0 ? (
-        <p className="muted small" contentEditable={false}>Bu notta henüz makaleye atıf yok. Metinde <code>[[</code> yazıp bir makaleyi seçtiğinde burada listelenir.</p>
+        <p className="muted small" contentEditable={false}>{t.rich('capture.bib.empty', { code: <code>[[</code> })}</p>
       ) : (
         <ol className={`bib-list ${style}`} contentEditable={false}>
           {sorted.map((p, i) => (

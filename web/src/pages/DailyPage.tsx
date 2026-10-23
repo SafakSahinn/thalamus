@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useMemo } from 'react';
 import DatePicker from '../components/DatePicker';
 import NoteEditor from '../editor/Editor';
@@ -19,7 +20,7 @@ export function RoutineChecks({ date, compact }: { date: string; compact?: boole
     const cur = (useStore.getState().notes[n.id].props.routines as Checks) ?? {};
     setProp(n.id, 'routines', { ...cur, [r.id]: !cur[r.id] });
   };
-  if (!routines.length) return <p className="muted small">Rutin tanımlı değil. <a href="#/settings">Ayarlar</a>’dan ekleyebilirsin.</p>;
+  if (!routines.length) return <p className="muted small">{t.rich('writing.daily.noRoutines', { link: <a href="#/settings">{t('writing.daily.settings')}</a> })}</p>;
   return (
     <div className={`routines ${compact ? 'compact' : ''}`} data-tour="routines">
       {routines.map((r) => (
@@ -77,7 +78,7 @@ function Heatmap({ date }: { date: string }) {
       </div>
       <div className="streaks">
         {streaks.map(({ r, s }) => (
-          <span key={r.id} className="streak" title="Bugüne kadar kesintisiz gün">{r.icon} {s} gün</span>
+          <span key={r.id} className="streak" title={t('writing.daily.streakTitle')}>{r.icon} {t('writing.daily.streak', { count: s })}</span>
         ))}
       </div>
     </div>
@@ -105,22 +106,22 @@ export default function DailyPage({ date: d }: { date?: string }) {
   return (
     <div className="page">
       <div className="daily-nav">
-        <button className="iconbtn" onClick={() => go(`/daily/${addDays(date, -1)}`)} title="Önceki gün">‹</button>
+        <button className="iconbtn" onClick={() => go(`/daily/${addDays(date, -1)}`)} title={t('writing.daily.prevDay')}>‹</button>
         <h1 className="daily-title">{fmtDay(date)}</h1>
-        <button className="iconbtn" onClick={() => go(`/daily/${addDays(date, 1)}`)} title="Sonraki gün">›</button>
-        {!isToday && <button className="btn small" onClick={() => go('/daily')}>Bugün</button>}
+        <button className="iconbtn" onClick={() => go(`/daily/${addDays(date, 1)}`)} title={t('writing.daily.nextDay')}>›</button>
+        {!isToday && <button className="btn small" onClick={() => go('/daily')}>{t('writing.daily.today')}</button>}
         <span className="spacer" />
-        <DatePicker value={date} marks={marks} label="Gün seç" onChange={(v) => go(`/daily/${v}`)} />
+        <DatePicker value={date} marks={marks} label={t('writing.daily.pickDay')} onChange={(v) => go(`/daily/${v}`)} />
       </div>
-      <h3>Rutinler</h3>
+      <h3>{t('writing.daily.routines')}</h3>
       <RoutineChecks date={date} />
       <Heatmap date={date} />
-      <h3>Günlük notu</h3>
+      <h3>{t('writing.daily.note')}</h3>
       <NoteEditor
         docKey={`daily-${date}`}
         content={daily?.content ?? null}
         rev={rev}
-        placeholder="Bugün neler yaptın, ne öğrendin? ‘[[’ ile okuduğun kitaba/makaleye bağlantı ver…"
+        placeholder={t('writing.daily.placeholder')}
         onChange={(doc) => updateNote(ensureDaily(date).id, { content: doc })}
       />
       {daily && <Backlinks note={daily} />}
