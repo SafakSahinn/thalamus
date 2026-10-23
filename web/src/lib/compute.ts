@@ -2,7 +2,7 @@
 
 import { evaluate, FormulaError, toDate, toNum, toStr } from './formula';
 import { norm } from './links';
-import { relationIds, typeOf, type Note, type PropDef } from './types';
+import { builtinSourceLabel, relationIds, typeOf, type Note, type PropDef } from './types';
 
 const MAX_DEPTH = 4;
 
@@ -29,7 +29,8 @@ export function backIds(note: Note, back: { type: string; key: string }, notes: 
 function findProp(note: Note, name: string): PropDef | undefined {
   const props = typeOf(note.type).props;
   const n = norm(name);
-  return props.find((p) => p.key === name) ?? props.find((p) => norm(p.label) === n);
+  return props.find((p) => p.key === name) ?? props.find((p) => norm(p.label) === n)
+    ?? props.find((p) => norm(builtinSourceLabel(note.type, p.key) ?? '') === n);
 }
 
 /** Bir notun alan değeri (hesaplananlar dahil). Formül hatasında { error } döner. */

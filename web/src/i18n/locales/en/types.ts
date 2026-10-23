@@ -1,0 +1,155 @@
+import type { Messages } from '../../types';
+
+export default {
+  shared: { topics: 'Topics', words: 'Words' },
+  book: {
+    label: 'Book',
+    plural: 'Books',
+    props: {
+      author: 'Author',
+      status: 'Status',
+      rating: 'Rating',
+      started: 'Started',
+      finished: 'Finished',
+      pages: 'Pages',
+      cover: 'Cover image (link)',
+    },
+  },
+  paper: {
+    label: 'Publication',
+    plural: 'Papers & Proceedings',
+    props: {
+      kind: 'Type',
+      authors: 'Authors',
+      venue: 'Journal / Conference',
+      year: 'Year',
+      status: 'Status',
+      context: 'Context',
+      course: 'Course',
+      rating: 'Rating',
+      doi: 'DOI / Link',
+      pdf: 'PDF',
+      cites: 'Cites',
+    },
+  },
+  movie: {
+    label: 'Movie',
+    plural: 'Movies & Series',
+    props: {
+      kind: 'Type',
+      director: 'Director',
+      year: 'Year',
+      status: 'Status',
+      rating: 'Rating',
+      watched: 'Date watched',
+      cover: 'Poster (link)',
+    },
+  },
+  talk: {
+    label: 'Talk',
+    plural: 'Talks',
+    props: {
+      speakers: 'Speakers',
+      event: 'Event / Channel',
+      date: 'Date',
+      status: 'Status',
+      url: 'Link',
+    },
+  },
+  course: {
+    label: 'Course',
+    plural: 'Courses',
+    props: {
+      code: 'Code',
+      instructor: 'Instructor',
+      term: 'Term',
+      status: 'Status',
+    },
+  },
+  lab: {
+    label: 'Experiment',
+    plural: 'Lab experiments',
+    props: {
+      course: 'Course',
+      date: 'Experiment date',
+      status: 'Status',
+      due: 'Report due',
+      partners: 'Lab partners',
+      equipment: 'Equipment used',
+      grade: 'Grade',
+      report: 'Report (PDF)',
+    },
+  },
+  conference: {
+    label: 'Conference',
+    plural: 'Conferences',
+    props: {
+      acronym: 'Acronym',
+      status: 'Status',
+      deadline: 'Deadline',
+      start: 'Start',
+      end: 'End',
+      location: 'Location',
+      role: 'Participation',
+      papers: 'My papers',
+      url: 'Website',
+    },
+  },
+  event: {
+    label: 'Event',
+    plural: 'Events',
+    props: {
+      date: 'Date',
+      time: 'Time',
+      endTime: 'End time',
+      location: 'Location',
+      people: 'People',
+    },
+  },
+  note: {
+    label: 'Note',
+    plural: 'Notes',
+    props: {
+      course: 'Course',
+      source: 'Source',
+    },
+  },
+  word: {
+    label: 'Word',
+    plural: 'Dictionary',
+    props: {
+      meaning: 'Meaning',
+      language: 'Language',
+      pos: 'Part of speech',
+      example: 'Example sentence',
+      learned: 'Learned',
+    },
+  },
+  person: {
+    label: 'Person',
+    plural: 'People',
+    props: {
+      role: 'Title / Role',
+      affiliation: 'Affiliation',
+      url: 'Link',
+    },
+  },
+  concept: {
+    label: 'Concept',
+    plural: 'Concepts',
+    props: {
+      definition: 'Definition',
+      related: 'Related concepts',
+    },
+  },
+  daily: {
+    label: 'Journal',
+    plural: 'Journal entries',
+    props: {
+      date: 'Date',
+    },
+  },
+  statusGroups: { todo: 'To do', doing: 'In progress', done: 'Done' },
+  backLabel: '{label} (back)',
+  routines: { read: 'Read a book', paper: 'Read a paper', sport: 'Exercise', study: 'Studied' },
+} satisfies Messages['types'];

@@ -186,6 +186,11 @@ export function tList(key: GroupKey): string[] {
 
 /** Anahtar dinamikse (ör. `types.${id}`) var olup olmadığını sorar */
 export const hasMsg = (key: string) => lookup(active.messages, key) !== undefined || lookup(tr, key) !== undefined;
+/** Kaynak dildeki metin (ör. eski adla yazılmış formülleri çözmek için) */
+export const tSource = (key: string) => {
+  const m = lookup(tr, key);
+  return typeof m === 'string' ? m : m?.other ?? key;
+};
 /** Dinamik anahtar için: yoksa yedek metni döndürür */
 export const tOr = (key: string, fallback: string, params?: Params) => (hasMsg(key) ? t(key as MsgKey, params) : fallback);
 
