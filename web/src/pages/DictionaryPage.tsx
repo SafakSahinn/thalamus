@@ -53,7 +53,7 @@ export default function DictionaryPage() {
       <div className="wordrow add big">
         <input ref={wRef} className="word" value={w} placeholder={t('blocks.dict.word')} onChange={(e) => setW(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <input className="meaning" value={m} placeholder={t('blocks.dict.meaning')} onChange={(e) => setM(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
-        <select value={l} onChange={(e) => setL(e.target.value)}>{LANGS.map((x) => <option key={x}>{x}</option>)}</select>
+        <select value={l} onChange={(e) => setL(e.target.value)}>{LANGS.map((x) => <option key={x} value={x}>{optionLabel(x)}</option>)}</select>
         <button className="btn primary" disabled={!w.trim() || Boolean(existing)} onClick={add}>{t('common.add')}</button>
       </div>
       {existing && <p className="small warn-text">{t.rich('blocks.dict.exists', { title: existing.title, link: <a href={`#/n/${existing.id}`}>{t('blocks.dict.open')}</a> })}</p>}
