@@ -7,7 +7,7 @@
 //
 // Değerler: sayı, metin, mantıksal, tarih (Date) ve liste. Hata durumunda FormulaError fırlatılır.
 
-import { t } from '../i18n';
+import { localeTag, t } from '../i18n';
 import { optionLabel } from './types';
 
 export class FormulaError extends Error {}
@@ -193,9 +193,9 @@ const FUNCS: Record<string, Fn> = {
   concat: (a) => a.map(toStr).join(''),
   join: ([list, sep]) => (Array.isArray(list) ? list.map(toStr).join(toStr(sep ?? ', ')) : toStr(list)),
   length: ([v]) => (Array.isArray(v) ? v.length : toStr(v).length),
-  lower: ([v]) => toStr(v).toLocaleLowerCase('tr'),
-  upper: ([v]) => toStr(v).toLocaleUpperCase('tr'),
-  contains: ([s, sub]) => (Array.isArray(s) ? s.map(toStr).includes(toStr(sub)) : toStr(s).toLocaleLowerCase('tr').includes(toStr(sub).toLocaleLowerCase('tr'))),
+  lower: ([v]) => toStr(v).toLocaleLowerCase(localeTag()),
+  upper: ([v]) => toStr(v).toLocaleUpperCase(localeTag()),
+  contains: ([s, sub]) => (Array.isArray(s) ? s.map(toStr).includes(toStr(sub)) : toStr(s).toLocaleLowerCase(localeTag()).includes(toStr(sub).toLocaleLowerCase(localeTag()))),
   replace: ([s, a, b]) => toStr(s).split(toStr(a)).join(toStr(b)),
   slice: ([s, a, b]) => toStr(s).slice(toNum(a), b === undefined ? undefined : toNum(b)),
   format: ([v]) => toStr(v),
@@ -222,7 +222,7 @@ const FUNCS: Record<string, Fn> = {
   day: ([d]) => toDate(d)?.getDate() ?? '',
   formatDate: ([d]) => {
     const x = toDate(d);
-    return x ? new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).format(x) : '';
+    return x ? new Intl.DateTimeFormat(localeTag(), { day: 'numeric', month: 'long', year: 'numeric' }).format(x) : '';
   },
 };
 
@@ -282,7 +282,7 @@ function evalNode(n: Node, ctx: FormulaCtx): unknown {
 function cmp(a: unknown, b: unknown) {
   const da = toDate(a), db = toDate(b);
   if (da && db) return da.getTime() - db.getTime();
-  if (typeof a === 'string' && typeof b === 'string' && Number.isNaN(Number(a))) return a.localeCompare(b, 'tr');
+  if (typeof a === 'string' && typeof b === 'string' && Number.isNaN(Number(a))) return a.localeCompare(b, localeTag());
   return toNum(a) - toNum(b);
 }
 

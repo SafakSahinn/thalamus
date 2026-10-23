@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
@@ -35,7 +36,7 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
 
   const editor = useEditor(
     {
-      extensions: editorExtensions(placeholder ?? "Yazmaya başla…  ‘/’ ile komutlar, ‘[[’ ile not bağlantısı, ‘@’ ile tarih", noteId),
+      extensions: editorExtensions(placeholder ?? t('editor.placeholder'), noteId),
       content: (content as JSONContent) ?? '',
       immediatelyRender: true,
       editorProps: {
@@ -109,7 +110,7 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
 
   const setLink = async () => {
     const prev = (editor.getAttributes('link').href as string) ?? '';
-    const url = await promptText('Bağlantı adresi', prev, { hint: 'Boş bırakırsan bağlantı kaldırılır.' });
+    const url = await promptText(t('editor.linkPrompt'), prev, { hint: t('editor.linkHint') });
     if (url === null) return;
     const c = editor.chain().focus().extendMarkRange('link');
     (url.trim() ? c.setLink({ href: url.trim() }) : c.unsetLink()).run();
@@ -140,19 +141,19 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
       <BlockHandle editor={editor} container={box} />
       {find !== null && <FindBar key={find} editor={editor} initial={find} onClose={() => setFind(null)} />}
       <BubbleMenu editor={editor} className="bubble" shouldShow={({ editor: e, from, to, state }) => e.isFocused && from !== to && !(state.selection as { node?: unknown }).node && !e.isActive('codeBlock') && !e.isActive('image')}>
-        <button className={state.bold ? 'on' : ''} onClick={() => editor.chain().focus().toggleBold().run()} title="Kalın (Ctrl+B)"><b>B</b></button>
-        <button className={state.italic ? 'on' : ''} onClick={() => editor.chain().focus().toggleItalic().run()} title="İtalik (Ctrl+I)"><i>I</i></button>
-        <button className={state.underline ? 'on' : ''} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Altı çizili (Ctrl+U)"><u>U</u></button>
-        <button className={state.strike ? 'on' : ''} onClick={() => editor.chain().focus().toggleStrike().run()} title="Üstü çizili"><s>S</s></button>
-        <button className={state.highlight ? 'on' : ''} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Vurgula">🖍</button>
-        <button className={state.code ? 'on' : ''} onClick={() => editor.chain().focus().toggleCode().run()} title="Kod">{'</>'}</button>
-        <button className={state.link ? 'on' : ''} onClick={() => void setLink()} title="Bağlantı">🔗</button>
-        <button onClick={toMath} title="Seçimi formüle çevir">∑</button>
+        <button className={state.bold ? 'on' : ''} onClick={() => editor.chain().focus().toggleBold().run()} title={t('editor.bold')}><b>B</b></button>
+        <button className={state.italic ? 'on' : ''} onClick={() => editor.chain().focus().toggleItalic().run()} title={t('editor.italic')}><i>I</i></button>
+        <button className={state.underline ? 'on' : ''} onClick={() => editor.chain().focus().toggleUnderline().run()} title={t('editor.underline')}><u>U</u></button>
+        <button className={state.strike ? 'on' : ''} onClick={() => editor.chain().focus().toggleStrike().run()} title={t('editor.strike')}><s>S</s></button>
+        <button className={state.highlight ? 'on' : ''} onClick={() => editor.chain().focus().toggleHighlight().run()} title={t('editor.highlight')}>🖍</button>
+        <button className={state.code ? 'on' : ''} onClick={() => editor.chain().focus().toggleCode().run()} title={t('editor.code')}>{'</>'}</button>
+        <button className={state.link ? 'on' : ''} onClick={() => void setLink()} title={t('editor.link')}>🔗</button>
+        <button onClick={toMath} title={t('editor.toMath')}>∑</button>
         {noteId && (
-          <button title="Yorum ekle" onClick={async () => {
+          <button title={t('editor.comment')} onClick={async () => {
             const { from, to } = editor.state.selection;
             const quote = editor.state.doc.textBetween(from, to, ' ').trim();
-            const text = await promptText('Yorum', '', { multiline: true, hint: quote ? `“${quote.slice(0, 80)}${quote.length > 80 ? '…' : ''}” hakkında` : undefined });
+            const text = await promptText(t('editor.commentPrompt'), '', { multiline: true, hint: quote ? t('editor.commentAbout', { quote: `${quote.slice(0, 80)}${quote.length > 80 ? '…' : ''}` }) : undefined });
             if (!text?.trim()) return;
             const id = uid();
             editor.chain().focus().setTextSelection({ from, to }).setMark('comment', { id }).run();
@@ -161,10 +162,10 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
           }}>💬</button>
         )}
         <span className="bubble-colors">
-          <button className={colors ? 'on' : ''} onClick={() => setColors(!colors)} title="Renk">A<small>▾</small></button>
+          <button className={colors ? 'on' : ''} onClick={() => setColors(!colors)} title={t('editor.color')}>A<small>▾</small></button>
           {colors && (
             <div className="color-pop" onMouseLeave={() => setColors(false)}>
-              <div className="bm-h">Yazı rengi</div>
+              <div className="bm-h">{t('editor.textColor')}</div>
               <div className="swatches">
                 {TEXT_COLORS.map((c) => (
                   <button key={c.id} title={c.label} className={`sw tc-${c.id}`} onClick={() => {
@@ -173,7 +174,7 @@ export default function NoteEditor({ docKey, content, onChange, placeholder, rev
                   }}>A</button>
                 ))}
               </div>
-              <div className="bm-h">Arka plan</div>
+              <div className="bm-h">{t('editor.background')}</div>
               <div className="swatches">
                 {BG_COLORS.map((c) => (
                   <button key={c.id} title={c.label} className={`sw bgsw-${c.id}`} onClick={() => {

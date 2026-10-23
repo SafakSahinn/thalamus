@@ -2,7 +2,7 @@
 // İsteğe bağlı "tam takvim" izniyle: Thalamus Takvim sayfasında görünür, taşınır, düzenlenir, silinir, eklenir.
 // Hiçbir şey sunucuya gitmez; istekler tarayıcıdan doğrudan Google'a. Notlara dönüşmez (Thalamus takviminden farklı).
 
-import { t } from '../i18n';
+import { localeTag, t } from '../i18n';
 import { calSettings, call } from './gcal';
 
 export interface ExtCal {
@@ -74,7 +74,7 @@ export async function listCalendars(): Promise<ExtCal[]> {
       primary: Boolean(c.primary),
       writable: c.accessRole === 'owner' || c.accessRole === 'writer',
     }))
-    .sort((a, b) => Number(b.primary) - Number(a.primary) || a.summary.localeCompare(b.summary, 'tr'));
+    .sort((a, b) => Number(b.primary) - Number(a.primary) || a.summary.localeCompare(b.summary, localeTag()));
 }
 
 function toExt(e: GEvent, calId: string): ExtEvent | null {

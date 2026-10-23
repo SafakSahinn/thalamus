@@ -56,7 +56,7 @@ export default function CommandPalette() {
     const out: Item[] = found.map((n) => {
       let snippet: string | undefined;
       if (q) {
-        const i = n.text.toLocaleLowerCase('tr').indexOf(q.toLocaleLowerCase('tr'));
+        const i = n.text.toLocaleLowerCase(localeTag()).indexOf(q.toLocaleLowerCase(localeTag()));
         if (i >= 0) snippet = (i > 30 ? '…' : '') + n.text.slice(Math.max(0, i - 30), i + 60).replace(/\s+/g, ' ');
       }
       return { key: n.id, icon: noteIcon(n), label: displayTitle(n), hint: typeOf(n.type).label, snippet, run: () => go(`/n/${n.id}`) };

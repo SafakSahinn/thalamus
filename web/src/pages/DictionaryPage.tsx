@@ -1,4 +1,4 @@
-import { t } from '../i18n';
+import { localeTag, t } from '../i18n';
 import { useMemo, useRef, useState } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
 import { norm } from '../lib/links';
@@ -27,7 +27,7 @@ export default function DictionaryPage() {
         && (!lang || n.props.language === lang)
         && (!state || (state === 'learned') === Boolean(n.props.learned))
         && (!nq || norm(n.title).includes(nq) || norm(String(n.props.meaning ?? '')).includes(nq)))
-      .sort((a, b) => a.title.localeCompare(b.title, 'tr'));
+      .sort((a, b) => a.title.localeCompare(b.title, localeTag()));
   }, [alive, q, lang, state]);
 
   const existing = w.trim() ? findByTitle(alive, w, 'word') : undefined;
@@ -71,7 +71,7 @@ export default function DictionaryPage() {
       </div>
       <div className="dict">
         {words.map((wd) => {
-          const first = wd.title.charAt(0).toLocaleUpperCase('tr');
+          const first = wd.title.charAt(0).toLocaleUpperCase(localeTag());
           const head = first !== letter ? (letter = first) : null;
           const src = (backlinks.get(wd.id) ?? []).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
           return (

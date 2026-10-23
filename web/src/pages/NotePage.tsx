@@ -1,3 +1,4 @@
+import { localeTag } from '../i18n';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import HistoryDialog from '../components/HistoryDialog';
 import MoveDialog from '../components/MoveDialog';
@@ -53,7 +54,7 @@ function TemplateStarter({ note }: { note: Note }) {
 
 function SubPages({ note }: { note: Note }) {
   const { alive } = useIndex();
-  const kids = alive.filter((n) => relationIds(n.props.parent).includes(note.id)).sort((a, b) => a.title.localeCompare(b.title, 'tr'));
+  const kids = alive.filter((n) => relationIds(n.props.parent).includes(note.id)).sort((a, b) => a.title.localeCompare(b.title, localeTag()));
   return (
     <section className="subpages">
       {kids.length > 0 && <h3>Alt sayfalar <span className="count">{kids.length}</span></h3>}

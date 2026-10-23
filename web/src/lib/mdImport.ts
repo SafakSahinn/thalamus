@@ -4,6 +4,7 @@
 // - YAML başlığı (--- … ---): title başlık olur, diğer alanlar "ek bilgi" olarak saklanır
 // - Klasörler → üst sayfa; içindeki notlar onun alt sayfası olur
 
+import { localeTag } from '../i18n';
 import type { JSONContent } from '@tiptap/core';
 import JSZip from 'jszip';
 import { mdToDoc } from './notionImport';
@@ -18,7 +19,7 @@ export interface MdFile {
 const base = (p: string) => p.split('/').pop() ?? p;
 const stem = (p: string) => base(p).replace(/\.md$/i, '');
 const dirOf = (p: string) => p.split('/').slice(0, -1).join('/');
-const keyName = (s: string) => s.trim().toLocaleLowerCase('tr');
+const keyName = (s: string) => s.trim().toLocaleLowerCase(localeTag());
 const IGNORE = /(^|\/)(\.obsidian|\.trash|\.git|node_modules|__MACOSX)(\/|$)/;
 
 /** Seçilen dosyalar (klasör seçiminde webkitRelativePath) ya da .zip içeriği */

@@ -1,0 +1,22 @@
+// Not editörü: yer tutucu, seçim menüsü, kod bloğu
+export default {
+  placeholder: 'Yazmaya başla…  ‘/’ ile komutlar, ‘[[’ ile not bağlantısı, ‘@’ ile tarih',
+  linkPrompt: 'Bağlantı adresi',
+  linkHint: 'Boş bırakırsan bağlantı kaldırılır.',
+  bold: 'Kalın (Ctrl+B)',
+  italic: 'İtalik (Ctrl+I)',
+  underline: 'Altı çizili (Ctrl+U)',
+  strike: 'Üstü çizili',
+  highlight: 'Vurgula',
+  code: 'Kod',
+  link: 'Bağlantı',
+  toMath: 'Seçimi formüle çevir',
+  comment: 'Yorum ekle',
+  commentPrompt: 'Yorum',
+  commentAbout: '“{quote}” hakkında',
+  color: 'Renk',
+  textColor: 'Yazı rengi',
+  background: 'Arka plan',
+  plainText: 'Düz metin',
+  copied: 'Kopyalandı ✓',
+};

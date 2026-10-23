@@ -1,3 +1,4 @@
+import { localeTag } from '../i18n';
 import { relationIds, typeOf, type Note } from './types';
 
 interface PMNode {
@@ -97,7 +98,7 @@ export function linkVia(source: Note, targetId: string): string | null {
 export function snippetAround(source: Note, label: string, radius = 70): string | null {
   if (!label) return null;
   const text = source.text.replace(/\s+/g, ' ');
-  const i = text.toLocaleLowerCase('tr').indexOf(label.toLocaleLowerCase('tr'));
+  const i = text.toLocaleLowerCase(localeTag()).indexOf(label.toLocaleLowerCase(localeTag()));
   if (i < 0) return null;
   const start = Math.max(0, i - radius);
   const end = Math.min(text.length, i + label.length + radius);

@@ -7,6 +7,7 @@ import coll from './coll';
 import collPage from './collPage';
 import common from './common';
 import dialogs from './dialogs';
+import editor from './editor';
 import importer from './importer';
 import market from './market';
 import misc from './misc';
@@ -21,6 +22,7 @@ import reading from './reading';
 import schema from './schema';
 import settings from './settings';
 import sidebar from './sidebar';
+import slash from './slash';
 import study from './study';
 import time from './time';
 import types from './types';
@@ -36,6 +38,7 @@ export default {
   collPage,
   common,
   dialogs,
+  editor,
   importer,
   market,
   misc,
@@ -50,6 +53,7 @@ export default {
   schema,
   settings,
   sidebar,
+  slash,
   study,
   time,
   types,

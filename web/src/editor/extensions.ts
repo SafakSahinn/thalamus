@@ -1,3 +1,4 @@
+import { localeTag, lower, t } from '../i18n';
 import { Extension, type AnyExtension, type Editor } from '@tiptap/core';
 import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
 import Highlight from '@tiptap/extension-highlight';
@@ -27,9 +28,9 @@ import { suggestConfig, type Entry } from './suggest';
 import { WikiLink } from './WikiLink';
 
 const editMath = async (editor: Editor, kind: 'inline' | 'block', latex: string, pos: number) => {
-  const v = await promptText(kind === 'inline' ? 'Satır içi formül (LaTeX)' : 'Blok formül (LaTeX)', latex, {
+  const v = await promptText(kind === 'inline' ? t('slash.prompts.inlineMath') : t('slash.prompts.blockMath'), latex, {
     multiline: kind === 'block',
-    hint: 'Örnek: V = I \\cdot R  ·  \\frac{1}{2\\pi f C}  ·  Boş bırakırsan formül silinir.',
+    hint: t('slash.prompts.mathEditHint'),
   });
   if (v === null) return;
   const chain = editor.chain().setNodeSelection(pos);
@@ -44,8 +45,8 @@ const editMath = async (editor: Editor, kind: 'inline' | 'block', latex: string,
 export async function insertFile(editor: Editor, file: File, pos?: number) {
   if (file.type.startsWith('image/')) return insertImageFile(editor, file, pos);
   try {
-    const src = await uploadFile(file, file.name || 'dosya');
-    const node = { type: 'fileBlock', attrs: { src, name: file.name || 'dosya', size: file.size, mime: file.type } };
+    const src = await uploadFile(file, file.name || t('slash.prompts.file'));
+    const node = { type: 'fileBlock', attrs: { src, name: file.name || t('slash.prompts.file'), size: file.size, mime: file.type } };
     const chain = editor.chain().focus();
     (pos !== undefined ? chain.insertContentAt(pos, node) : chain.insertContent(node)).run();
   } catch (e) {
@@ -111,97 +112,97 @@ function insertColumns(e: Editor, r: { from: number; to: number }, n: number) {
 }
 
 const SLASH: (Omit<Entry, 'key'> & { keys?: string })[] = [
-  { icon: 'H1', label: 'Başlık 1', action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 1 }).run() },
-  { icon: 'H2', label: 'Başlık 2', action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 2 }).run() },
-  { icon: 'H3', label: 'Başlık 3', action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 3 }).run() },
-  { icon: '•', label: 'Madde listesi', keys: 'liste bullet', action: (e, r) => e.chain().focus().deleteRange(r).toggleBulletList().run() },
-  { icon: '1.', label: 'Numaralı liste', keys: 'liste ordered', action: (e, r) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
-  { icon: '☑', label: 'Yapılacaklar', keys: 'todo gorev checkbox', action: (e, r) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
-  { icon: '❝', label: 'Alıntı', keys: 'quote', action: (e, r) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
-  { icon: '{}', label: 'Kod bloğu', keys: 'code c cpp python matlab verilog program', action: (e, r) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
-  { icon: '∑', label: 'Formül (blok)', keys: 'math latex denklem', action: (e, r) => {
+  { icon: 'H1', get label() { return t('slash.h1'); }, action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 1 }).run() },
+  { icon: 'H2', get label() { return t('slash.h2'); }, action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 2 }).run() },
+  { icon: 'H3', get label() { return t('slash.h3'); }, action: (e, r) => e.chain().focus().deleteRange(r).setHeading({ level: 3 }).run() },
+  { icon: '•', get label() { return t('slash.bullet'); }, keys: 'liste bullet', action: (e, r) => e.chain().focus().deleteRange(r).toggleBulletList().run() },
+  { icon: '1.', get label() { return t('slash.ordered'); }, keys: 'liste ordered', action: (e, r) => e.chain().focus().deleteRange(r).toggleOrderedList().run() },
+  { icon: '☑', get label() { return t('slash.todo'); }, keys: 'todo gorev checkbox', action: (e, r) => e.chain().focus().deleteRange(r).toggleTaskList().run() },
+  { icon: '❝', get label() { return t('slash.quote'); }, keys: 'quote', action: (e, r) => e.chain().focus().deleteRange(r).toggleBlockquote().run() },
+  { icon: '{}', get label() { return t('slash.code'); }, keys: 'code c cpp python matlab verilog program', action: (e, r) => e.chain().focus().deleteRange(r).toggleCodeBlock().run() },
+  { icon: '∑', get label() { return t('slash.mathBlock'); }, keys: 'math latex denklem', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Blok formül (LaTeX)', '', { multiline: true, hint: 'Örnek: H(s) = \\frac{1}{1 + sRC}' }).then((v) => {
+    void promptText(t('slash.prompts.blockMath'), '', { multiline: true, hint: t('slash.prompts.blockMathHint') }).then((v) => {
       if (v?.trim()) e.chain().focus().insertBlockMath({ latex: v }).run();
     });
   } },
-  { icon: '𝑥', label: 'Formül (satır içi)', keys: 'math latex inline', action: (e, r) => {
+  { icon: '𝑥', get label() { return t('slash.mathInline'); }, keys: 'math latex inline', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Satır içi formül (LaTeX)', '', { hint: 'Kısayol: metin içinde $$V=IR$$ yaz.' }).then((v) => {
+    void promptText(t('slash.prompts.inlineMath'), '', { hint: t('slash.prompts.inlineMathHint') }).then((v) => {
       if (v?.trim()) e.chain().focus().insertInlineMath({ latex: v }).run();
     });
   } },
-  { icon: '▦', label: 'Tablo', keys: 'table', action: (e, r) => e.chain().focus().deleteRange(r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { icon: '―', label: 'Ayırıcı çizgi', keys: 'hr divider', action: (e, r) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
-  { icon: '🖼', label: 'Görsel yükle', keys: 'image resim foto', action: (e, r) => {
+  { icon: '▦', get label() { return t('slash.table'); }, keys: 'table', action: (e, r) => e.chain().focus().deleteRange(r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+  { icon: '―', get label() { return t('slash.divider'); }, keys: 'hr divider', action: (e, r) => e.chain().focus().deleteRange(r).setHorizontalRule().run() },
+  { icon: '🖼', get label() { return t('slash.image'); }, keys: 'image resim foto', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
     pickFile(e, 'image/*');
   } },
-  { icon: '📎', label: 'Dosya / PDF / ses / video', keys: 'file pdf ek belge dosya yukle ses video audio mp3 mp4 kayit', action: (e, r) => {
+  { icon: '📎', get label() { return t('slash.file'); }, keys: 'file pdf ek belge dosya yukle ses video audio mp3 mp4 kayit', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
     pickFile(e);
   } },
-  { icon: '▸', label: 'Açılır bölüm (toggle)', keys: 'toggle details katla gizle', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().run() && openDetailsAt(e) },
-  { icon: '▸1', label: 'Açılır başlık 1', keys: 'toggle heading baslik katla h1', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e) },
-  { icon: '▸2', label: 'Açılır başlık 2', keys: 'toggle heading baslik katla h2', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e) },
-  { icon: '▸3', label: 'Açılır başlık 3', keys: 'toggle heading baslik katla h3', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e) },
-  { icon: '💡', label: 'Bilgi kutusu (callout)', keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
-  { icon: '▥', label: '2 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
-  { icon: '▥', label: '3 sütun', keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
-  { icon: '📚', label: 'Kaynakça', keys: 'kaynakca bibliography references atif ieee apa bibtex', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'bibliography' }).run() },
-  { icon: '▶', label: 'Düğme', keys: 'button dugme sablon ekle tekrar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'buttonBlock' }).run() },
-  { icon: '↻', label: 'Senkron blok (yeni)', keys: 'synced senkron esitlenen ortak blok kopya', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'syncedBlock', attrs: { sid: newSyncedId() } }).run() },
-  { icon: '↻', label: 'Senkron blok (mevcut)', keys: 'synced senkron esitlenen ortak blok kopya yapistir mevcut', action: (e, r) => {
+  { icon: '▸', get label() { return t('slash.toggle'); }, keys: 'toggle details katla gizle', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().run() && openDetailsAt(e) },
+  { icon: '▸1', get label() { return t('slash.toggle1'); }, keys: 'toggle heading baslik katla h1', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e) },
+  { icon: '▸2', get label() { return t('slash.toggle2'); }, keys: 'toggle heading baslik katla h2', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e) },
+  { icon: '▸3', get label() { return t('slash.toggle3'); }, keys: 'toggle heading baslik katla h3', action: (e, r) => e.chain().focus().deleteRange(r).setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e) },
+  { icon: '💡', get label() { return t('slash.callout'); }, keys: 'callout not uyari kutu', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'callout', content: [{ type: 'paragraph' }] }).run() },
+  { icon: '▥', get label() { return t('slash.cols2'); }, keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 2) },
+  { icon: '▥', get label() { return t('slash.cols3'); }, keys: 'columns kolon yan yana', action: (e, r) => insertColumns(e, r, 3) },
+  { icon: '📚', get label() { return t('slash.bib'); }, keys: 'kaynakca bibliography references atif ieee apa bibtex', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'bibliography' }).run() },
+  { icon: '▶', get label() { return t('slash.button'); }, keys: 'button dugme sablon ekle tekrar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'buttonBlock' }).run() },
+  { icon: '↻', get label() { return t('slash.syncedNew'); }, keys: 'synced senkron esitlenen ortak blok kopya', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'syncedBlock', attrs: { sid: newSyncedId() } }).run() },
+  { icon: '↻', get label() { return t('slash.syncedExisting'); }, keys: 'synced senkron esitlenen ortak blok kopya yapistir mevcut', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
     const list = syncedList();
-    void promptText('Hangi senkron blok?', '', {
+    void promptText(t('slash.prompts.whichSynced'), '', {
       hint: list.length
-        ? `Senkron bloğun üstündeki “Kimliği kopyala”ya basıp buraya yapıştır ya da ilk kelimelerini yaz. Son bloklar: ${list.slice(0, 5).map((x) => `“${x.label}”`).join(', ')}`
-        : 'Henüz senkron blok yok. Önce / → “Senkron blok (yeni)” ile bir tane oluştur.',
+        ? t('slash.prompts.syncedHint', { list: list.slice(0, 5).map((x) => `“${x.label}”`).join(', ') })
+        : t('slash.prompts.noSynced'),
     }).then((v) => {
-      const q = v?.trim().toLocaleLowerCase('tr');
+      const q = v?.trim().toLocaleLowerCase(localeTag());
       if (!q) return;
-      const hit = list.find((x) => x.sid === v!.trim()) ?? list.find((x) => x.label.toLocaleLowerCase('tr').startsWith(q)) ?? list.find((x) => x.label.toLocaleLowerCase('tr').includes(q));
+      const hit = list.find((x) => x.sid === v!.trim()) ?? list.find((x) => lower(x.label).startsWith(q)) ?? list.find((x) => lower(x.label).includes(q));
       if (hit) e.chain().focus().insertContent({ type: 'syncedBlock', attrs: { sid: hit.sid } }).run();
     });
   } },
-  { icon: '🗂', label: 'Sayfa içinde koleksiyon', keys: 'veritabani database tablo pano koleksiyon inline liste', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'collectionView' }).run() },
-  { icon: '☰', label: 'İçindekiler', keys: 'toc icindekiler basliklar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'toc' }).run() },
-  { icon: '🔀', label: 'Diyagram (Mermaid)', keys: 'mermaid diyagram akis sema flowchart graph', action: (e, r) => {
+  { icon: '🗂', get label() { return t('slash.collection'); }, keys: 'veritabani database tablo pano koleksiyon inline liste', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'collectionView' }).run() },
+  { icon: '☰', get label() { return t('slash.toc'); }, keys: 'toc icindekiler basliklar', action: (e, r) => e.chain().focus().deleteRange(r).insertContent({ type: 'toc' }).run() },
+  { icon: '🔀', get label() { return t('slash.mermaid'); }, keys: 'mermaid diyagram akis sema flowchart graph', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Diyagram (Mermaid)', 'graph LR\n  A[Giriş] --> B[Filtre] --> C[Çıkış]', { multiline: true, hint: 'Akış şeması, sıralama diyagramı, durum makinesi… Ayrıntı: mermaid.js.org' }).then((v) => {
+    void promptText(t('slash.mermaid'), t('slash.prompts.mermaidExample'), { multiline: true, hint: t('slash.prompts.mermaidHint') }).then((v) => {
       if (v?.trim()) e.chain().focus().insertContent({ type: 'mermaid', attrs: { code: v } }).run();
     });
   } },
-  { icon: '▶', label: 'YouTube videosu', keys: 'youtube video', action: (e, r) => {
+  { icon: '▶', get label() { return t('slash.youtube'); }, keys: 'youtube video', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('YouTube bağlantısı', '', { hint: 'https://www.youtube.com/watch?v=…' }).then((v) => {
-      if (v?.trim() && !e.commands.setYoutubeVideo({ src: v.trim() })) alert('Geçerli bir YouTube bağlantısı değil.');
+    void promptText(t('slash.prompts.youtube'), '', { hint: 'https://www.youtube.com/watch?v=…' }).then((v) => {
+      if (v?.trim() && !e.commands.setYoutubeVideo({ src: v.trim() })) alert(t('slash.prompts.badYoutube'));
     });
   } },
-  { icon: '🌐', label: 'Sayfa göm', keys: 'embed iframe harita maps figma spotify desmos', action: (e, r) => {
+  { icon: '🌐', get label() { return t('slash.embed'); }, keys: 'embed iframe harita maps figma spotify desmos', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Gömülecek sayfanın adresi', 'https://', { hint: 'Google Haritalar "Haritayı yerleştir" adresi, Figma, Desmos, Spotify, Google Slaytlar yayın bağlantısı…' }).then((v) => {
+    void promptText(t('slash.prompts.embed'), 'https://', { hint: t('slash.prompts.embedHint') }).then((v) => {
       if (v?.trim()?.startsWith('http')) e.chain().focus().insertContent({ type: 'embed', attrs: { src: v.trim() } }).run();
     });
   } },
-  { icon: '🔖', label: 'Yer imi (bağlantı kartı)', keys: 'bookmark link url web', action: (e, r) => {
+  { icon: '🔖', get label() { return t('slash.bookmark'); }, keys: 'bookmark link url web', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Bağlantı adresi', 'https://').then((v) => {
+    void promptText(t('slash.prompts.bookmark'), 'https://').then((v) => {
       if (v?.trim()?.startsWith('http')) e.chain().focus().insertContent({ type: 'bookmark', attrs: { url: v.trim() } }).run();
     });
   } },
-  { icon: '📅', label: 'Tarih', keys: 'date tarih bugun yarin gun', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('@').run() },
-  { icon: '📄', label: 'Alt sayfa', keys: 'sayfa page subpage alt', action: (e, r) => {
+  { icon: '📅', get label() { return t('slash.date'); }, keys: 'date tarih bugun yarin gun', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('@').run() },
+  { icon: '📄', get label() { return t('slash.subpage'); }, keys: 'sayfa page subpage alt', action: (e, r) => {
     e.chain().focus().deleteRange(r).run();
-    void promptText('Alt sayfanın adı', '').then((v) => {
+    void promptText(t('slash.prompts.subpage'), '').then((v) => {
       if (!v?.trim()) return;
       const parent = (e.storage as unknown as { noteCtx?: { noteId: string | null } }).noteCtx?.noteId ?? undefined;
       const n = createNote('note', v.trim(), parent ? { parent: [parent] } : {});
       e.chain().focus().insertContent([{ type: 'wikiLink', attrs: { id: n.id, label: n.title } }, { type: 'text', text: ' ' }]).run();
     });
   } },
-  { icon: '🔗', label: 'Not bağlantısı [[ ]]', keys: 'link wiki baglanti', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('[[').run() },
+  { icon: '🔗', get label() { return t('slash.wikilink'); }, keys: 'link wiki baglanti', action: (e, r) => e.chain().focus().deleteRange(r).insertContent('[[').run() },
 ];
 
 const SlashCommand = Extension.create({

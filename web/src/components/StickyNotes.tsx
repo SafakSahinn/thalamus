@@ -1,4 +1,4 @@
-import { t } from '../i18n';
+import { localeTag, t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { useInstalled } from '../lib/plugins';
 import { go } from '../lib/router';
@@ -58,7 +58,7 @@ export default function StickyNotes({ home }: { home: boolean }) {
           {list.map((s) => (
             <button key={s.id} className={`sticky-tab ${paperClass(s, art)} ${s.id === open ? 'on' : ''}`} title={s.text.split('\n')[0] || t('study.sticky.empty')}
               onClick={() => useStickyUi.setState({ open: s.id === open ? null : s.id })}>
-              {s.text.trim().charAt(0).toLocaleUpperCase('tr')}
+              {s.text.trim().charAt(0).toLocaleUpperCase(localeTag())}
             </button>
           ))}
         </div>

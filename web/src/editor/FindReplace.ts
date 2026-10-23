@@ -1,3 +1,4 @@
+import { localeTag } from '../i18n';
 import { Extension, type Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
@@ -19,7 +20,7 @@ interface FindState {
 
 export const findKey = new PluginKey<FindState>('findReplace');
 
-const fold = (s: string, cs: boolean) => (cs ? s : s.toLocaleLowerCase('tr'));
+const fold = (s: string, cs: boolean) => (cs ? s : s.toLocaleLowerCase(localeTag()));
 
 export function findMatches(doc: PMNode, query: string, caseSensitive: boolean): Range[] {
   const out: Range[] = [];

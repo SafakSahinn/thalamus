@@ -14,7 +14,7 @@ const ASKABLE = new Set(['text', 'longtext', 'number', 'date', 'select', 'multis
 function RelationPick({ def, value, onChange }: { def: PropDef; value: string[]; onChange: (v: string[]) => void }) {
   const { alive } = useIndex();
   const target = def.target?.[0] ?? 'note';
-  const options = useMemo(() => alive.filter((n) => n.type === target).sort((a, b) => displayTitle(a).localeCompare(displayTitle(b), 'tr')).slice(0, 300), [alive, target]);
+  const options = useMemo(() => alive.filter((n) => n.type === target).sort((a, b) => displayTitle(a).localeCompare(displayTitle(b), localeTag())).slice(0, 300), [alive, target]);
   const byId = new Map(options.map((n) => [n.id, n]));
   return (
     <div className="form-rel">

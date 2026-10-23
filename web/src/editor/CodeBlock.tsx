@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from '@tiptap/react';
 import arduino from 'highlight.js/lib/languages/arduino';
@@ -62,9 +63,9 @@ function CodeView({ node, updateAttributes, editor }: ReactNodeViewProps) {
     <NodeViewWrapper className="codeblock">
       <div className="codeblock-head" contentEditable={false}>
         <select value={lowlight.registered(lang) ? lang : 'plaintext'} onChange={(e) => updateAttributes({ language: e.target.value })} disabled={!editor.isEditable}>
-          {LANGS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          {LANGS.map(([id, label]) => <option key={id} value={id}>{id === 'plaintext' ? t('editor.plainText') : label}</option>)}
         </select>
-        <button type="button" onClick={() => void copy()}>{copied ? 'Kopyalandı ✓' : 'Kopyala'}</button>
+        <button type="button" onClick={() => void copy()}>{copied ? t('editor.copied') : t('common.copy')}</button>
       </div>
       <pre>
         <NodeViewContent<'code'> as="code" className={`hljs language-${lang}`} />

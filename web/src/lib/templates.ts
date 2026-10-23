@@ -1,5 +1,6 @@
 // Şablonlar: hazır (kodda) + kullanıcının kaydettikleri (props.__template işaretli notlar).
 
+import { localeTag, t } from '../i18n';
 import type { JSONContent } from '@tiptap/core';
 import { createNote, refreshEditor, saveSettings, updateNote, useStore } from './store';
 import type { Note, TypeId } from './types';
@@ -16,16 +17,16 @@ export interface Template {
 }
 
 // ---------- belge yapı taşları ----------
-const t = (text: string): JSONContent => ({ type: 'text', text });
-const h = (level: number, text: string): JSONContent => ({ type: 'heading', attrs: { level }, content: [t(text)] });
-const p = (text = ''): JSONContent => (text ? { type: 'paragraph', content: [t(text)] } : { type: 'paragraph' });
+const txt = (text: string): JSONContent => ({ type: 'text', text });
+const h = (level: number, text: string): JSONContent => ({ type: 'heading', attrs: { level }, content: [txt(text)] });
+const p = (text = ''): JSONContent => (text ? { type: 'paragraph', content: [txt(text)] } : { type: 'paragraph' });
 const bullets = (items: string[]): JSONContent => ({ type: 'bulletList', content: items.map((x) => ({ type: 'listItem', content: [p(x)] })) });
 const numbered = (items: string[]): JSONContent => ({ type: 'orderedList', content: items.map((x) => ({ type: 'listItem', content: [p(x)] })) });
 const tasks = (items: string[]): JSONContent => ({ type: 'taskList', content: items.map((x) => ({ type: 'taskItem', attrs: { checked: false }, content: [p(x)] })) });
 const quote = (text = ''): JSONContent => ({ type: 'blockquote', content: [p(text)] });
 const callout = (emoji: string, text: string, color = 'gray'): JSONContent => ({ type: 'callout', attrs: { emoji, color }, content: [p(text)] });
 const toggle = (summary: string, body: JSONContent[]): JSONContent => ({
-  type: 'details', content: [{ type: 'detailsSummary', content: [t(summary)] }, { type: 'detailsContent', content: body }],
+  type: 'details', content: [{ type: 'detailsSummary', content: [txt(summary)] }, { type: 'detailsContent', content: body }],
 });
 const cell = (text: string, header = false): JSONContent => ({ type: header ? 'tableHeader' : 'tableCell', content: [p(text)] });
 const table = (head: string[], rows: number): JSONContent => ({
@@ -133,7 +134,7 @@ export const isTemplate = (n: Pick<Note, 'props'>) => Boolean(n.props.__template
 export function templatesFor(type: TypeId, notes: Record<string, Note>): Template[] {
   const user = Object.values(notes)
     .filter((n) => n.type === type && isTemplate(n) && !n.deleted_at)
-    .sort((a, b) => a.title.localeCompare(b.title, 'tr'))
+    .sort((a, b) => a.title.localeCompare(b.title, localeTag()))
     .map<Template>((n) => ({ id: `u:${n.id}`, noteId: n.id, type, name: n.title || 'Adsız şablon', icon: (n.props.icon as string) || '🧩', props: n.props, content: n.content as JSONContent | null }));
   return [...user, ...BUILTIN_TEMPLATES.filter((x) => x.type === type)];
 }
