@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { buildMdNotes, collectFiles } from '../lib/mdImport';
 import { insertNotes, syncNow, uploadFile, useIndex } from '../lib/store';
@@ -13,15 +14,15 @@ export default function MarkdownImport() {
     if (!list?.length) return;
     setErr(null);
     setMsg(null);
-    setBusy('Dosyalar okunuyor…');
+    setBusy(t('panels.mdImport.reading'));
     try {
       const files = await collectFiles(list);
-      if (!files.some((f) => /\.md$/i.test(f.path))) throw new Error('Seçilenler arasında .md dosyası bulunamadı.');
-      const r = await buildMdNotes(files, alive, (b, name) => uploadFile(b, name), (d, t) => setBusy(`${d}/${t} not hazırlanıyor…`));
+      if (!files.some((f) => /\.md$/i.test(f.path))) throw new Error(t('panels.mdImport.noMd'));
+      const r = await buildMdNotes(files, alive, (b, name) => uploadFile(b, name), (done, total) => setBusy(t('panels.mdImport.preparing', { done, total })));
       insertNotes(r.notes);
       void syncNow();
       const notes = r.notes.length - r.folders;
-      setMsg(`${notes} not${r.folders ? `, ${r.folders} klasör sayfası` : ''}${r.images ? ` ve ${r.images} görsel` : ''} aktarıldı. Notlar “Notlar” koleksiyonunda; klasörler kenar çubuğundaki sayfa ağacında.`);
+      setMsg(`${t(r.folders ? 'panels.mdImport.doneFolders' : 'panels.mdImport.done', { notes, folders: r.folders })}${r.images ? ` ${t('panels.mdImport.images', { count: r.images })}` : ''}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -33,16 +34,15 @@ export default function MarkdownImport() {
     <section className="md-import">
       <h2 className="import-h">Markdown / Obsidian</h2>
       <p className="muted small">
-        Obsidian kasanı ya da Markdown notlarını aktar. <code>[[bağlantılar]]</code> not bağlantısına, <code>![[görsel.png]]</code> görsele dönüşür;
-        YAML başlığındaki <code>title</code> notun adı olur, diğer alanlar ek bilgi olarak saklanır; klasörler üst sayfa olur.
+        {t.rich('panels.mdImport.intro', { links: <code>{t('panels.mdImport.linksExample')}</code>, img: <code>{t('panels.mdImport.imgExample')}</code>, title: <code>title</code> })}
       </p>
       <div className="row">
         <label className="btn">
-          📁 Klasör seç
+          {t('panels.mdImport.folder')}
           <input type="file" hidden multiple {...({ webkitdirectory: '' } as object)} onChange={(e) => void run(e.target.files)} />
         </label>
         <label className="btn">
-          📄 .md / .zip dosyaları seç
+          {t('panels.mdImport.files')}
           <input type="file" hidden multiple accept=".md,.markdown,.zip,image/*" onChange={(e) => void run(e.target.files)} />
         </label>
         {busy && <span className="muted small">{busy}</span>}

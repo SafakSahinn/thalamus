@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useState } from 'react';
 import { calSettings } from '../lib/gcal';
 import { listCalendars, type ExtCal } from '../lib/gcalFull';
@@ -51,26 +52,22 @@ export default function ExternalCalendars() {
 
   return (
     <div className="ext-cals">
-      <div className="bm-h">Diğer Google takvimlerim</div>
+      <div className="bm-h">{t('panels.extCals.title')}</div>
       {!full ? (
         <>
-          <p className="muted small">
-            Ana takvimin, CFP Calendar’ın eklediği konferanslar, ders programın… hepsi Thalamus’un <b>Takvim</b> sayfasında görünsün;
-            oradan taşıyabilir, düzenleyebilir, silebilir ve yeni etkinlik ekleyebilirsin. Bunun için Google senden bütün takvimlerini görme ve
-            düzenleme izni ister. Takvim verilerin sunucumuza gelmez; tarayıcın doğrudan Google’la konuşur.
-          </p>
-          <button className="btn primary" disabled={busy} onClick={() => void connect()}>{busy ? 'Bağlanıyor…' : '🗓 Bütün takvimlerimi bağla'}</button>
+          <p className="muted small">{t.rich('panels.extCals.intro', { page: <b>{t('panels.extCals.page')}</b> })}</p>
+          <button className="btn primary" disabled={busy} onClick={() => void connect()}>{busy ? t('panels.extCals.connecting') : t('panels.extCals.connect')}</button>
         </>
       ) : (
         <>
-          <p className="muted small">Takvim sayfasında gösterilecek takvimler:</p>
-          {!cals && !msg && <p className="muted small">Yükleniyor…</p>}
+          <p className="muted small">{t('panels.extCals.shown')}</p>
+          {!cals && !msg && <p className="muted small">{t('common.loading')}</p>}
           <div className="ext-cal-list">
             {cals?.map((c) => (
               <label key={c.id} className="small">
                 <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} />
                 <span className="ext-dot" style={{ background: c.color }} />
-                <span>{c.summary}{c.primary ? ' (ana takvim)' : ''}{!c.writable ? ' · salt okunur' : ''}</span>
+                <span>{c.summary}{c.primary ? t('panels.extCals.primary') : ''}{!c.writable ? t('panels.extCals.readOnly') : ''}</span>
               </label>
             ))}
           </div>

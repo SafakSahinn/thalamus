@@ -1,5 +1,6 @@
 // Yaklaşan tarihler (son başvuru, rapor teslimi, deney, konferans…) ve takvime ekleme.
 
+import { t } from '../i18n';
 import { addDays, displayTitle } from './format';
 import { todayStr } from './store';
 import { typeOf, type Note, type PropDef } from './types';
@@ -38,7 +39,8 @@ export function upcoming(notes: Note[], daysAhead = 14, daysBack = 2, today = to
 }
 
 export const whenText = (days: number) =>
-  days === 0 ? 'bugün' : days === 1 ? 'yarın' : days === -1 ? 'dün' : days < 0 ? `${-days} gün önce` : `${days} gün sonra`;
+  days === 0 ? t('panels.when.today') : days === 1 ? t('panels.when.tomorrow') : days === -1 ? t('panels.when.yesterday')
+    : days < 0 ? t('panels.when.ago', { count: -days }) : t('panels.when.in', { count: days });
 
 const compact = (d: string) => d.replace(/-/g, '');
 

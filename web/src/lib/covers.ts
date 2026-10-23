@@ -1,5 +1,6 @@
 // Kitap kapağı ve film afişi arama (anahtar gerektirmeyen açık servisler) ve görseli indirme.
 
+import { t } from '../i18n';
 import { cloud, fnUrl } from './google';
 
 export interface CoverHit {
@@ -86,11 +87,11 @@ export async function fetchImageBlob(url: string): Promise<Blob> {
   } catch {
     /* CORS izni yok: aracıyı dene */
   }
-  if (!cloud) throw new Error('Bu görsel doğrudan indirilemiyor.');
+  if (!cloud) throw new Error(t('pages.covers.noDirect'));
   const r = await fetch(`${fnUrl}?image=${encodeURIComponent(url)}`, {
     headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string },
   });
-  if (!r.ok) throw new Error('Görsel indirilemedi.');
+  if (!r.ok) throw new Error(t('pages.covers.failed'));
   return r.blob();
 }
 

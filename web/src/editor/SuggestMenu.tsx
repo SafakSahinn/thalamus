@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 export interface MenuItem {
@@ -46,7 +47,7 @@ export const SuggestMenu = forwardRef<SuggestMenuHandle, { items: MenuItem[]; em
     if (!items.length && !empty) return <div ref={listRef} hidden />;
     return (
       <div className="suggest" ref={listRef}>
-        {items.length === 0 && <div className="suggest-empty">{empty ?? 'Sonuç yok'}</div>}
+        {items.length === 0 && <div className="suggest-empty">{empty ?? t('misc.noResults')}</div>}
         {items.map((it, i) => (
           <button
             key={it.key}

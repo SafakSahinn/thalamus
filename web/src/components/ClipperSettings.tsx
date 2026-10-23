@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -15,12 +16,9 @@ export default function ClipperSettings() {
   }, [app]);
   return (
     <section>
-      <h3>Bilgisayardan kaydet</h3>
-      <p className="muted small">
-        Aşağıdaki düğmeyi tarayıcının <b>yer imleri çubuğuna sürükle</b> (çubuk görünmüyorsa Ctrl+Shift+B). Okuduğun bir sayfada ona
-        tıklayınca sayfanın başlığı ve adresi — seçtiğin bir metin varsa o da — Thalamus’a gelir; koleksiyonu seçip kaydedersin.
-      </p>
-      <a ref={link} className="btn clipper" onClick={(e) => e.preventDefault()} draggable title="Yer imleri çubuğuna sürükle">📥 Thalamus’a kaydet</a>
+      <h3>{t('misc.clipper.title')}</h3>
+      <p className="muted small">{t.rich('misc.clipper.body', { drag: <b>{t('misc.clipper.drag')}</b> })}</p>
+      <a ref={link} className="btn clipper" onClick={(e) => e.preventDefault()} draggable title={t('misc.clipper.dragTitle')}>{t('misc.clipper.button')}</a>
     </section>
   );
 }

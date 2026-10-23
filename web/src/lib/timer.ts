@@ -1,6 +1,7 @@
 // Çalışma süresi takibi: bir notta (ders, makale, proje…) zamanlayıcı başlat; durdurunca oturum o notun
 // gizli alanına (props.__time) yazılır. İsteğe bağlı pomodoro (25 dk). Çalışan zamanlayıcı sayfa yenilense de sürer.
 
+import { t } from '../i18n';
 import { create } from 'zustand';
 import { showNotification } from './notify';
 import { relationIds, type Note } from './types';
@@ -61,7 +62,8 @@ export function stopTimer(): Session | null {
   return s;
 }
 
-export const fmtMin = (m: number) => (m < 60 ? `${m} dk` : `${Math.floor(m / 60)} sa${m % 60 ? ` ${m % 60} dk` : ''}`);
+export const fmtMin = (m: number) =>
+  m < 60 ? t('misc.minutes', { count: m }) : m % 60 ? t('misc.hoursMinutes', { h: Math.floor(m / 60), m: m % 60 }) : t('misc.hours', { count: m / 60 });
 
 /** Pomodoro bitince bildir ve kaydet (uygulama açıkken saniyede bir kontrol) */
 export function watchTimer() {
@@ -70,7 +72,7 @@ export function watchTimer() {
     if (!r?.pomo || Date.now() - r.start < r.pomo * 60_000) return;
     const n = useStore.getState().notes[r.noteId];
     stopTimer();
-    void showNotification({ title: '🍅 Pomodoro bitti', body: `${n?.title || 'Çalışma'}: ${r.pomo} dakika tamam. Kısa bir mola ver.`, noteId: r.noteId, key: `pomo-${r.start}` }).catch(() => undefined);
+    void showNotification({ title: t('misc.pomo.title'), body: t('misc.pomo.body', { title: n?.title || t('misc.pomo.study'), count: r.pomo }), noteId: r.noteId, key: `pomo-${r.start}` }).catch(() => undefined);
   }, 1000);
   return () => clearInterval(id);
 }

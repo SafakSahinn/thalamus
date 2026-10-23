@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Component, type ReactNode } from 'react';
 
 /** Bir sayfa çökerse bütün uygulama boş kalmasın: hata mesajı ve yenile düğmesi göster */
@@ -17,12 +18,12 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
     if (!this.state.error) return this.props.children;
     return (
       <div className="page">
-        <h2>Bir şeyler ters gitti</h2>
-        <p className="muted">Bu sayfa gösterilirken bir hata oluştu. Notların güvende; sayfayı yenilemek genellikle yeter.</p>
+        <h2>{t('misc.error.title')}</h2>
+        <p className="muted">{t('misc.error.body')}</p>
         <p className="muted small"><code>{this.state.error.message}</code></p>
         <div className="row">
-          <button className="btn primary" onClick={() => location.reload()}>Sayfayı yenile</button>
-          <button className="btn" onClick={() => { location.hash = '#/'; this.setState({ error: null }); }}>Ana sayfaya dön</button>
+          <button className="btn primary" onClick={() => location.reload()}>{t('misc.error.reload')}</button>
+          <button className="btn" onClick={() => { location.hash = '#/'; this.setState({ error: null }); }}>{t('misc.error.home')}</button>
         </div>
       </div>
     );

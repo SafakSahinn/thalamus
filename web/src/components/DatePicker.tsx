@@ -1,14 +1,14 @@
+import { localeTag, t, weekdays } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { parseDay } from '../lib/format';
 import { todayStr } from '../lib/store';
 
-const WEEK = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pa'];
-const MONTH = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' });
+
 const p2 = (n: number) => String(n).padStart(2, '0');
 const ymd = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
 /** Açılır ay takvimi (tarayıcının kendi tarih seçicisi yerine). marks: noktayla işaretlenecek günler (0–1 doluluk) */
-export default function DatePicker({ value, onChange, marks, label = 'Tarih seç' }: {
+export default function DatePicker({ value, onChange, marks, label = t('pages.datePicker.pick') }: {
   value: string;
   onChange: (day: string) => void;
   marks?: Map<string, number>;
@@ -49,14 +49,14 @@ export default function DatePicker({ value, onChange, marks, label = 'Tarih seç
         📅 {label}
       </button>
       {open && (
-        <div className="dp-pop" role="dialog" aria-label="Tarih seç">
+        <div className="dp-pop" role="dialog" aria-label={t('pages.datePicker.pick')}>
           <div className="dp-head">
-            <button type="button" className="cal-nav" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Önceki ay">‹</button>
-            <b>{MONTH.format(cursor)}</b>
-            <button type="button" className="cal-nav" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label="Sonraki ay">›</button>
+            <button type="button" className="cal-nav" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label={t('pages.datePicker.prevMonth')}>‹</button>
+            <b>{cursor.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })}</b>
+            <button type="button" className="cal-nav" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label={t('pages.datePicker.nextMonth')}>›</button>
           </div>
           <div className="dp-grid">
-            {WEEK.map((w) => <span key={w} className="dp-wd">{w}</span>)}
+            {weekdays('short').map((w) => <span key={w} className="dp-wd">{w}</span>)}
             {days.map((d) => {
               const k = ymd(d);
               const m = marks?.get(k);
@@ -74,8 +74,8 @@ export default function DatePicker({ value, onChange, marks, label = 'Tarih seç
             })}
           </div>
           <div className="dp-foot">
-            <button type="button" className="btn small" onClick={() => pick(today)}>Bugün</button>
-            {marks && <span className="muted small"><span className="dp-dot inline" /> günlük yazılmış</span>}
+            <button type="button" className="btn small" onClick={() => pick(today)}>{t('pages.datePicker.today')}</button>
+            {marks && <span className="muted small"><span className="dp-dot inline" /> {t('pages.datePicker.written')}</span>}
           </div>
         </div>
       )}

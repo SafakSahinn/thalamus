@@ -1,3 +1,4 @@
+import { t, weekdays } from '../i18n';
 import { useMemo, useState } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
 import { useStore } from '../lib/store';
@@ -5,7 +6,6 @@ import { fmtMin, studyStats } from '../lib/timer';
 
 // Çalışma istatistikleri (#/calisma): günlük toplam süre (çubuk grafik) + ders/proje bazında dağılım.
 
-const DAY_NAMES = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
 export default function StudyPage() {
   const notes = useStore((s) => s.notes);
@@ -18,25 +18,25 @@ export default function StudyPage() {
   const bw = W / s.days.length;
   const label = (day: string) => {
     const [y, m, d] = day.split('-').map(Number);
-    return days === 7 ? DAY_NAMES[new Date(y, m - 1, d).getDay()] : String(d);
+    return days === 7 ? weekdays('short', false)[new Date(y, m - 1, d).getDay()] : String(d);
   };
 
   return (
     <div className="page study-page">
       <div className="review-top">
-        <h1>⏱ Çalışma</h1>
+        <h1>{t('pages.study.title')}</h1>
         <span className="spacer" />
         <div className="seg">
-          {[7, 30].map((d) => <button key={d} className={`${days === d ? 'on' : ''}`} onClick={() => setDays(d)}>Son {d} gün</button>)}
+          {[7, 30].map((d) => <button key={d} className={`${days === d ? 'on' : ''}`} onClick={() => setDays(d)}>{t('pages.study.lastDays', { count: d })}</button>)}
         </div>
       </div>
       <div className="study-kpis">
-        <div><b>{fmtMin(s.total)}</b><span className="muted small">toplam</span></div>
-        <div><b>{fmtMin(avg)}</b><span className="muted small">günlük ortalama</span></div>
-        <div><b>{s.days.filter((d) => d.min > 0).length} / {days}</b><span className="muted small">çalışılan gün</span></div>
+        <div><b>{fmtMin(s.total)}</b><span className="muted small">{t('pages.study.total')}</span></div>
+        <div><b>{fmtMin(avg)}</b><span className="muted small">{t('pages.study.avg')}</span></div>
+        <div><b>{s.days.filter((d) => d.min > 0).length} / {days}</b><span className="muted small">{t('pages.study.daysStudied')}</span></div>
       </div>
       <div className="chart-view">
-        <svg viewBox={`0 0 ${W} ${H + 22}`} className="study-chart" role="img" aria-label="Günlük çalışma süresi">
+        <svg viewBox={`0 0 ${W} ${H + 22}`} className="study-chart" role="img" aria-label={t('pages.study.chart')}>
           <line x1={0} x2={W} y1={H} y2={H} stroke="var(--border)" />
           {s.days.map((d, i) => {
             const h = (d.min / max) * (H - 16);
@@ -52,9 +52,9 @@ export default function StudyPage() {
           })}
         </svg>
       </div>
-      <h3>Nerede çalıştım?</h3>
+      <h3>{t('pages.study.where')}</h3>
       {s.groups.length === 0 ? (
-        <p className="muted">Bu dönemde kayıtlı çalışma yok. Bir notun (ders, makale, proje…) başlığındaki <b>⏱ Çalış</b> düğmesiyle zamanlayıcıyı başlat; makale ve deneyler bağlı oldukları dersin altında toplanır.</p>
+        <p className="muted">{t.rich('pages.study.none', { btn: <b>{t('pages.study.btn')}</b> })}</p>
       ) : (
         <div className="study-groups">
           {s.groups.map((g) => (

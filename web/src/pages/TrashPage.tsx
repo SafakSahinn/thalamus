@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { displayTitle, noteIcon, relTime } from '../lib/format';
 import { emptyTrash, purgeNote, restoreNote, useStore } from '../lib/store';
@@ -21,31 +22,31 @@ export default function TrashPage() {
   return (
     <div className="page">
       <div className="row">
-        <h1>🗑 Çöp kutusu</h1>
+        <h1>{t('pages.trash.title')}</h1>
         <span className="spacer" />
-        {trash.length > 0 && !confirmAll && <button className="btn danger small" onClick={() => setConfirmAll(true)}>Çöpü boşalt</button>}
+        {trash.length > 0 && !confirmAll && <button className="btn danger small" onClick={() => setConfirmAll(true)}>{t('pages.trash.empty')}</button>}
       </div>
-      <p className="muted small">Çöpe atılan notlar 30 gün sonra kendiliğinden kalıcı olarak silinir. Kalıcı silinen not Drive’ından ve bütün cihazlarından kaldırılır, geri getirilemez.</p>
+      <p className="muted small">{t('pages.trash.info')}</p>
       {confirmAll && (
         <div className="danger-box">
-          <p>Çöpteki <b>{trash.length}</b> not kalıcı olarak silinsin mi? Bu geri alınamaz.</p>
+          <p>{t('pages.trash.confirmAll', { count: trash.length })}</p>
           <div className="row">
-            <button className="btn ghost" onClick={() => setConfirmAll(false)} disabled={busy}>Vazgeç</button>
-            <button className="btn danger" disabled={busy} onClick={() => void run(async () => { await emptyTrash(); setConfirmAll(false); })}>{busy ? 'Siliniyor…' : 'Kalıcı olarak sil'}</button>
+            <button className="btn ghost" onClick={() => setConfirmAll(false)} disabled={busy}>{t('common.cancel')}</button>
+            <button className="btn danger" disabled={busy} onClick={() => void run(async () => { await emptyTrash(); setConfirmAll(false); })}>{busy ? t('pages.trash.deleting') : t('pages.trash.purge')}</button>
           </div>
         </div>
       )}
-      {!trash.length && <p className="muted">Çöp kutusu boş.</p>}
+      {!trash.length && <p className="muted">{t('pages.trash.none')}</p>}
       <div className="list">
         {trash.map((n) => (
           <div key={n.id} className="rowlink">
             <span>{noteIcon(n)}</span>
             <a className="grow" href={`#/n/${n.id}`}>{displayTitle(n)} <span className="muted small">· {typeOf(n.type).label}</span></a>
             <span className="muted small">{relTime(n.deleted_at!)}</span>
-            <button className="btn small" disabled={busy} onClick={() => restoreNote(n.id)}>Geri yükle</button>
-            <button className="btn small ghost danger" disabled={busy} title="Kalıcı olarak sil" onClick={() => {
-              if (confirm(`"${displayTitle(n)}" kalıcı olarak silinsin mi? Geri getirilemez.`)) void run(() => purgeNote(n.id));
-            }}>Kalıcı sil</button>
+            <button className="btn small" disabled={busy} onClick={() => restoreNote(n.id)}>{t('pages.trash.restore')}</button>
+            <button className="btn small ghost danger" disabled={busy} title={t('pages.trash.purge')} onClick={() => {
+              if (confirm(t('pages.trash.confirmOne', { title: displayTitle(n) }))) void run(() => purgeNote(n.id));
+            }}>{t('pages.trash.purgeOne')}</button>
           </div>
         ))}
       </div>

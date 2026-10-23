@@ -1,12 +1,13 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 
-const GROUPS: [string, string][] = [
-  ['Sık', '💡⭐📌✅❗❓⚠️🔥🎯📎🔗🗂️📝✏️🖊️📖📚📄📑🗒️📅⏰🧠💭'],
-  ['Akademik', '🎓🏫🔬🧪🧫🧬⚗️🔭📐📏🧮💻🖥️⌨️🖱️💾📊📈📉🗃️🏛️📜🧾✒️🔍'],
-  ['Elektronik', '⚡🔌🔋💡📡🛰️🤖⚙️🔧🔩🧲📟📠☎️📱🎛️🎚️🔊📶🌐💽🧯🛠️⛓️'],
-  ['Kişiler', '😀🙂😊🤔😎🤓🧐😴🥳😮😢😡👍👎👏🙏💪🫶👀🗣️👤👥🧑‍🎓🧑‍🏫🧑‍🔬'],
-  ['Doğa', '🌱🌿🍀🌳🌸🌻🌍🌙☀️⭐🌈❄️🌊🔥🐱🐶🦉🐝🦋🍎☕🍵🍫🎵🎨🎬'],
-  ['Semboller', '❤️🧡💛💚💙💜🖤🤍✔️❌➕➖➗♾️🔺🔻🔷🔶⬛⬜🟥🟧🟨🟩🟦🟪'],
+const GROUPS: ['frequent' | 'academic' | 'electronics' | 'people' | 'nature' | 'symbols', string][] = [
+  ['frequent', '💡⭐📌✅❗❓⚠️🔥🎯📎🔗🗂️📝✏️🖊️📖📚📄📑🗒️📅⏰🧠💭'],
+  ['academic', '🎓🏫🔬🧪🧫🧬⚗️🔭📐📏🧮💻🖥️⌨️🖱️💾📊📈📉🗃️🏛️📜🧾✒️🔍'],
+  ['electronics', '⚡🔌🔋💡📡🛰️🤖⚙️🔧🔩🧲📟📠☎️📱🎛️🎚️🔊📶🌐💽🧯🛠️⛓️'],
+  ['people', '😀🙂😊🤔😎🤓🧐😴🥳😮😢😡👍👎👏🙏💪🫶👀🗣️👤👥🧑‍🎓🧑‍🏫🧑‍🔬'],
+  ['nature', '🌱🌿🍀🌳🌸🌻🌍🌙☀️⭐🌈❄️🌊🔥🐱🐶🦉🐝🦋🍎☕🍵🍫🎵🎨🎬'],
+  ['symbols', '❤️🧡💛💚💙💜🖤🤍✔️❌➕➖➗♾️🔺🔻🔷🔶⬛⬜🟥🟧🟨🟩🟦🟪'],
 ];
 
 interface Props {
@@ -48,7 +49,7 @@ export function EmojiPicker({ onPick, onClose, colors, color, onColor, allowRemo
       <div className="ep-scroll">
         {GROUPS.map(([name, chars]) => (
           <div key={name}>
-            <div className="ep-group">{name}</div>
+            <div className="ep-group">{t(`pages.emoji.${name}`)}</div>
             <div className="ep-grid">
               {split(chars).map((e, i) => (
                 <button key={i} type="button" onClick={() => onPick(e)}>{e}</button>
@@ -58,8 +59,8 @@ export function EmojiPicker({ onPick, onClose, colors, color, onColor, allowRemo
         ))}
       </div>
       <div className="ep-foot">
-        <input value={custom} placeholder="Başka emoji yapıştır" onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && custom.trim() && onPick(custom.trim())} />
-        {allowRemove && <button type="button" className="btn small ghost" onClick={() => onPick('')}>Kaldır</button>}
+        <input value={custom} placeholder={t('pages.emoji.paste')} onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && custom.trim() && onPick(custom.trim())} />
+        {allowRemove && <button type="button" className="btn small ghost" onClick={() => onPick('')}>{t('common.remove')}</button>}
       </div>
     </div>
   );

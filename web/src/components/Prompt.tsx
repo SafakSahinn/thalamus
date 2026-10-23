@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 
@@ -54,8 +55,8 @@ export function PromptHost() {
         )}
         {req.hint && <p className="muted small">{req.hint}</p>}
         <div className="row end">
-          <button className="btn ghost" onClick={() => close(null)}>Vazgeç</button>
-          <button className="btn primary" onClick={() => close(val)}>Tamam</button>
+          <button className="btn ghost" onClick={() => close(null)}>{t('common.cancel')}</button>
+          <button className="btn primary" onClick={() => close(val)}>{t('common.ok')}</button>
         </div>
       </div>
     </div>

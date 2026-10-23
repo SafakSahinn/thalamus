@@ -2,6 +2,7 @@
 // Sunucu kullanılmadığı için yalnızca Thalamus bir sekmede ya da yüklü uygulama olarak açıkken (arka planda da olsa)
 // çalışır. Uygulama tamamen kapalıyken hatırlatma için Google Takvim eşitlemesi kullanılır.
 
+import { t } from '../i18n';
 import { displayTitle } from './format';
 import { parseTime } from './gcal';
 import type { Note } from './types';
@@ -16,7 +17,7 @@ export interface Reminder {
   noteId: string;
 }
 
-const DEADLINE = /son|teslim|başvuru|deadline|bitiş/i;
+const DEADLINE = /son|teslim|başvuru|deadline|bitiş|due|end|finish/i;
 const p2 = (n: number) => String(n).padStart(2, '0');
 const localDay = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
@@ -28,15 +29,15 @@ export function planReminders(notes: Note[], now: Date): Reminder[] {
     const time = u.note.type === 'event' && u.def.key === 'date' ? parseTime(u.note.props.time) : null;
     if (time) {
       const at = new Date(`${u.date}T${time}:00`).getTime() - 30 * 60_000;
-      out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.${time}`, at, title: `🗓️ ${name}`, body: `${time}’da başlıyor${u.note.props.location ? ` · ${u.note.props.location}` : ''}`, noteId: u.note.id });
+      out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.${time}`, at, title: `🗓️ ${name}`, body: `${t('panels.notify.startsAt', { time })}${u.note.props.location ? ` · ${u.note.props.location}` : ''}`, noteId: u.note.id });
       continue;
     }
     // Tüm gün: o sabah 09:00; son başvuru/teslim gibi tarihlerde bir gün önce de
-    out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.0`, at: new Date(`${u.date}T09:00:00`).getTime(), title: `📌 ${name}`, body: `Bugün: ${u.def.label}`, noteId: u.note.id });
+    out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.0`, at: new Date(`${u.date}T09:00:00`).getTime(), title: `📌 ${name}`, body: t('panels.notify.today', { label: u.def.label }), noteId: u.note.id });
     if (DEADLINE.test(u.def.label)) {
       const d = new Date(`${u.date}T09:00:00`);
       d.setDate(d.getDate() - 1);
-      out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.1`, at: d.getTime(), title: `⏰ ${name}`, body: `Yarın: ${u.def.label}`, noteId: u.note.id });
+      out.push({ key: `${u.note.id}.${u.def.key}.${u.date}.1`, at: d.getTime(), title: `⏰ ${name}`, body: t('panels.notify.tomorrow', { label: u.def.label }), noteId: u.note.id });
     }
   }
   return out.sort((a, b) => a.at - b.at);
@@ -53,9 +54,9 @@ export const notifyEnabled = () => {
 };
 
 export async function enableNotifications(): Promise<boolean> {
-  if (typeof Notification === 'undefined') throw new Error('Bu tarayıcı bildirim desteklemiyor.');
+  if (typeof Notification === 'undefined') throw new Error(t('panels.notify.noSupport'));
   const p = await Notification.requestPermission();
-  if (p !== 'granted') throw new Error('Bildirim izni verilmedi. Tarayıcının site ayarlarından izin verebilirsin.');
+  if (p !== 'granted') throw new Error(t('panels.notify.denied'));
   localStorage.setItem(PREF, '1');
   return true;
 }

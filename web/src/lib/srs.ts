@@ -2,6 +2,7 @@
 // Kartlar: sözlükteki kelimeler (ön: kelime, arka: anlam/örnek) ve kavramlar (ön: kavram, arka: tanım).
 // Durum notun gizli alanında: props.__srs = { due, interval, ease, reps, lapses }
 
+import { fmtNumber, t } from '../i18n';
 import type { Note } from './types';
 
 export interface SrsState {
@@ -64,7 +65,7 @@ export function dueCards(notes: Note[], today: string, newLimit = 20): { due: No
 /** Bir sonraki aralığın yazıyla gösterimi (düğmelerin altında) */
 export function intervalText(prev: SrsState | null, grade: Grade, today: string): string {
   const d = review(prev, grade, today).interval;
-  return d < 30 ? `${d} gün` : d < 365 ? `${Math.round(d / 30)} ay` : `${(d / 365).toFixed(1)} yıl`;
+  return d < 30 ? t('misc.interval.days', { count: d }) : d < 365 ? t('misc.interval.months', { count: Math.round(d / 30) }) : t('misc.interval.years', { count: fmtNumber(+(d / 365).toFixed(1)) });
 }
 
 /** Günde desteye girecek yeni kart sayısı (bu cihaza özel) */

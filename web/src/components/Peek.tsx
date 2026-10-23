@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { lazy, Suspense, useEffect } from 'react';
 import { create } from 'zustand';
 import { go, useHash } from '../lib/router';
@@ -32,13 +33,13 @@ export default function Peek() {
   return (
     <>
       <div className="peek-scrim" onClick={closePeek} />
-      <aside className="peek" role="dialog" aria-label="Not">
+      <aside className="peek" role="dialog" aria-label={t('panels.peek.aria')}>
         <div className="peek-bar">
-          <button type="button" className="iconbtn" title="Kapat (Esc)" onClick={closePeek}>»</button>
-          <button type="button" className="btn small ghost" onClick={() => go(`/n/${id}`)}>⤢ Tam sayfa aç</button>
+          <button type="button" className="iconbtn" title={t('panels.peek.close')} onClick={closePeek}>»</button>
+          <button type="button" className="btn small ghost" onClick={() => go(`/n/${id}`)}>{t('panels.peek.full')}</button>
         </div>
         <div className="peek-body">
-          <Suspense fallback={<div className="page muted">Yükleniyor…</div>}>
+          <Suspense fallback={<div className="page muted">{t('common.loading')}</div>}>
             <NotePage key={id} id={id} />
           </Suspense>
         </div>

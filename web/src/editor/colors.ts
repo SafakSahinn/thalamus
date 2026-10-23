@@ -1,17 +1,9 @@
+import { t } from '../i18n';
 // Notion'daki renk paleti. Renkler CSS değişkeni olarak saklanır (var(--tc-red) gibi),
 // böylece açık ve koyu temada otomatik uyum sağlar.
 
-export const TEXT_COLORS = [
-  { id: 'default', label: 'Varsayılan' },
-  { id: 'gray', label: 'Gri' },
-  { id: 'brown', label: 'Kahverengi' },
-  { id: 'orange', label: 'Turuncu' },
-  { id: 'yellow', label: 'Sarı' },
-  { id: 'green', label: 'Yeşil' },
-  { id: 'blue', label: 'Mavi' },
-  { id: 'purple', label: 'Mor' },
-  { id: 'pink', label: 'Pembe' },
-  { id: 'red', label: 'Kırmızı' },
-] as const;
+const COLOR_IDS = ['default', 'gray', 'brown', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'red'] as const;
+
+export const TEXT_COLORS = COLOR_IDS.map((id) => ({ id, get label() { return t(`panels.colors.${id}`); } }));
 
 export const BG_COLORS = TEXT_COLORS;

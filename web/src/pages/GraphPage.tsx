@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useMemo, useState } from 'react';
 import GraphView from '../components/GraphView';
 import { displayTitle } from '../lib/format';
@@ -50,7 +51,7 @@ export default function GraphPage() {
   return (
     <div className="graph-page" data-tour="graph">
       <div className="graph-controls">
-        <input className="search" placeholder="Haritada ara…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="search" placeholder={t('panels.graph.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="typefilters">
           {TYPES.filter((t) => counts.get(t.id)).map((t) => (
             <button key={t.id} className={`tf ${off.has(t.id) ? 'off' : ''}`} style={{ '--c': t.color } as React.CSSProperties} onClick={() => toggle(t.id)}>
@@ -58,12 +59,12 @@ export default function GraphPage() {
             </button>
           ))}
         </div>
-        <label className="small"><input type="checkbox" checked={orphans} onChange={(e) => setOrphans(e.target.checked)} /> Bağlantısız notları da göster</label>
+        <label className="small"><input type="checkbox" checked={orphans} onChange={(e) => setOrphans(e.target.checked)} /> {t('panels.graph.orphans')}</label>
       </div>
       {nodes.length ? (
         <GraphView notes={nodes} highlight={highlight} onOpen={(id) => go(`/n/${id}`)} />
       ) : (
-        <div className="empty"><p>Harita boş. Notlar arasında bağlantı kurdukça (metinde <code>[[</code> veya yazar/kelime/konu alanları) burada görünecek.</p></div>
+        <div className="empty"><p>{t.rich('panels.graph.empty', { code: <code>[[</code> })}</p></div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { addComment, closeComments, deleteComment, replyComment, resolveComment, useCommentPanel, type Comment } from '../lib/comments';
 import { relTime } from '../lib/format';
@@ -15,7 +16,7 @@ function Thread({ noteId, c, focused }: { noteId: string; c: Comment; focused: b
   const jump = () => document.querySelector(`[data-comment="${c.id}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   return (
     <div ref={ref} className={`thread ${focused ? 'focused' : ''} ${c.resolved ? 'resolved' : ''}`}>
-      {c.quote && <button type="button" className="thread-quote" onClick={jump} title="Metinde göster">“{c.quote.length > 120 ? `${c.quote.slice(0, 119)}…` : c.quote}”</button>}
+      {c.quote && <button type="button" className="thread-quote" onClick={jump} title={t('pages.comments.showInText')}>“{c.quote.length > 120 ? `${c.quote.slice(0, 119)}…` : c.quote}”</button>}
       <div className="thread-msg">
         <div className="thread-text">{c.text}</div>
         <div className="muted small">{relTime(c.created_at)}</div>
@@ -28,12 +29,12 @@ function Thread({ noteId, c, focused }: { noteId: string; c: Comment; focused: b
       ))}
       {!c.resolved && (
         <form className="thread-reply" onSubmit={(e) => { e.preventDefault(); if (reply.trim()) { replyComment(noteId, c.id, reply.trim()); setReply(''); } }}>
-          <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Yanıtla…" />
+          <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t('pages.comments.reply')} />
         </form>
       )}
       <div className="thread-actions">
-        <button type="button" className="linkbtn small" onClick={() => resolveComment(noteId, c.id, !c.resolved)}>{c.resolved ? '↺ Yeniden aç' : '✓ Çözüldü'}</button>
-        <button type="button" className="linkbtn small danger-link" onClick={() => deleteComment(noteId, c.id)}>Sil</button>
+        <button type="button" className="linkbtn small" onClick={() => resolveComment(noteId, c.id, !c.resolved)}>{c.resolved ? t('pages.comments.reopen') : t('pages.comments.resolve')}</button>
+        <button type="button" className="linkbtn small danger-link" onClick={() => deleteComment(noteId, c.id)}>{t('common.delete')}</button>
       </div>
     </div>
   );
@@ -51,23 +52,23 @@ export default function CommentsPanel() {
   const open = list.filter((c) => !c.resolved);
   const done = list.filter((c) => c.resolved);
   return (
-    <aside className="comments-panel" aria-label="Yorumlar">
+    <aside className="comments-panel" aria-label={t('pages.comments.aria')}>
       <div className="comments-head">
-        <b>💬 Yorumlar</b>
-        <span className="muted small">{open.length} açık</span>
+        <b>{t('pages.comments.title')}</b>
+        <span className="muted small">{t('pages.comments.openCount', { count: open.length })}</span>
         <span className="spacer" />
-        <button type="button" className="iconbtn" onClick={closeComments} aria-label="Kapat">×</button>
+        <button type="button" className="iconbtn" onClick={closeComments} aria-label={t('common.close')}>×</button>
       </div>
       <form className="comment-new" onSubmit={(e) => { e.preventDefault(); if (text.trim()) { addComment(noteId, text.trim()); setText(''); } }}>
-        <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Sayfaya yorum ekle… (metinde bir yeri seçip 💬 ile o yere de yorum bırakabilirsin)"
+        <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={t('pages.comments.placeholder')}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) e.currentTarget.form?.requestSubmit(); }} />
-        <button type="submit" className="btn small primary" disabled={!text.trim()}>Yorum ekle</button>
+        <button type="submit" className="btn small primary" disabled={!text.trim()}>{t('pages.comments.add')}</button>
       </form>
-      {open.length === 0 && <p className="muted small">Açık yorum yok.</p>}
+      {open.length === 0 && <p className="muted small">{t('pages.comments.none')}</p>}
       {open.map((c) => <Thread key={c.id} noteId={noteId} c={c} focused={focus === c.id} />)}
       {done.length > 0 && (
         <>
-          <button type="button" className="linkbtn small" onClick={() => setShowResolved(!showResolved)}>{showResolved ? '▾' : '▸'} Çözülenler ({done.length})</button>
+          <button type="button" className="linkbtn small" onClick={() => setShowResolved(!showResolved)}>{showResolved ? '▾' : '▸'} {t('pages.comments.resolved', { count: done.length })}</button>
           {showResolved && done.map((c) => <Thread key={c.id} noteId={noteId} c={c} focused={focus === c.id} />)}
         </>
       )}

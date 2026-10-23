@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useState } from 'react';
 import { authErrorText, preloadGoogle, signInWithGoogle } from '../lib/google';
 import { onSignedIn, useStore } from '../lib/store';
@@ -37,26 +38,25 @@ export default function Login() {
       <div className="login-card">
         <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={64} height={64} />
         <h1>Thalamus</h1>
-        <p className="muted">Kitapların, makalelerin, derslerin ve kelimelerin; tek yerde ve birbirine bağlı.</p>
+        <p className="muted">{t('pages.login.tagline')}</p>
         <ul className="login-points">
-          <li>Notların <b>kendi Google Drive’ında</b> saklanır; sunucumuza gelmez.</li>
-          <li>Telefonda ve bilgisayarda aynı notlar, internetsiz de çalışır.</li>
-          <li>Ücretsiz.</li>
+          <li>{t.rich('pages.login.p1', { drive: <b>{t('pages.login.p1Drive')}</b> })}</li>
+          <li>{t('pages.login.p2')}</li>
+          <li>{t('pages.login.p3')}</li>
         </ul>
         {syncError && <p className="err small">{syncError}</p>}
         {needConsent ? (
           <button className="btn google" onClick={() => void go(true)} disabled={busy}>
-            <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google iznini onayla'}
+            <GoogleLogo /> {busy ? t('pages.login.connecting') : t('pages.login.consent')}
           </button>
         ) : (
           <button className="btn google" onClick={() => void go()} disabled={busy}>
-            <GoogleLogo /> {busy ? 'Bağlanıyor…' : 'Google ile devam et'}
+            <GoogleLogo /> {busy ? t('pages.login.connecting') : t('pages.login.google')}
           </button>
         )}
         {err && <p className="err small">{err}</p>}
         <p className="muted small">
-          Devam ederek <a href="terms.html">Kullanım Koşulları</a>’nı kabul etmiş olursun. Bizde yalnızca e-posta adresin, adın
-          ve giriş zamanların tutulur; notların ve oturumun kendi Google Drive’ında durur: <a href="privacy.html">Gizlilik ve KVKK Aydınlatma Metni</a>.
+          {t.rich('pages.login.legal', { terms: <a href="terms.html">{t('pages.login.terms')}</a>, privacy: <a href="privacy.html">{t('pages.login.privacy')}</a> })}
         </p>
       </div>
     </div>

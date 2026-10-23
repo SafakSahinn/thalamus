@@ -196,10 +196,13 @@ export const tOr = (key: string, fallback: string, params?: Params) => (hasMsg(k
 
 // --- Biçimlendirme ---
 
-export const fmtDate = (d: Date | number | string, o?: Intl.DateTimeFormatOptions) => new Date(d).toLocaleDateString(localeTag(), o);
-export const fmtTime = (d: Date | number | string, o?: Intl.DateTimeFormatOptions) =>
-  new Date(d).toLocaleTimeString(localeTag(), o ?? { hour: '2-digit', minute: '2-digit' });
-export const fmtDateTime = (d: Date | number | string, o?: Intl.DateTimeFormatOptions) => new Date(d).toLocaleString(localeTag(), o);
 export const fmtNumber = (n: number, o?: Intl.NumberFormatOptions) => n.toLocaleString(localeTag(), o);
+/** Gün adları; varsayılan pazartesiden başlar (takvim ızgaraları), mondayFirst=false ise Date.getDay() sırası */
+export function weekdays(style: 'short' | 'long' | 'narrow' = 'short', mondayFirst = true): string[] {
+  const f = new Intl.DateTimeFormat(localeTag(), { weekday: style });
+  // 1 Ocak 2024 pazartesi, 7 Ocak 2024 pazar
+  return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, mondayFirst ? 1 + i : i === 0 ? 7 : i)));
+}
+
 /** Arama/sıralama için dile duyarlı küçük harf (Türkçede I → ı) */
 export const lower = (s: string) => s.toLocaleLowerCase(localeTag());
