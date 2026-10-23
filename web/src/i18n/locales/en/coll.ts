@@ -70,4 +70,7 @@ export default {
     pickOf: '+ Choose {label}…',
   },
   files: { one: '{count} file', other: '{count} files' },
+  subItems: { one: '{count} sub-item', other: '{count} sub-items' },
+  noSubItems: 'No sub-items',
+  toggleSubItems: 'Expand/collapse sub-items',
 } satisfies Messages['coll'];

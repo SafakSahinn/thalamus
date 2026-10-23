@@ -69,4 +69,7 @@ export default {
     pickOf: '+ {label} seç…',
   },
   files: '{count} dosya',
+  subItems: '{count} alt öğe',
+  noSubItems: 'Alt öğe yok',
+  toggleSubItems: 'Alt öğeleri aç/kapat',
 };

@@ -35,7 +35,7 @@ function TitleCell({ n, depth = 0, kids = 0, nest }: { n: Note; depth?: number; 
   return (
     <div className="tname-cell" style={depth ? { paddingLeft: depth * 22 } : undefined}>
       {nest && (
-        <button type="button" className={`sub-toggle ${kids ? '' : 'empty'} ${nest.open.has(n.id) ? 'open' : ''}`} onClick={() => nest.toggle(n.id)} title={kids ? `${kids} alt öğe` : 'Alt öğe yok'} aria-label="Alt öğeleri aç/kapat">▸</button>
+        <button type="button" className={`sub-toggle ${kids ? '' : 'empty'} ${nest.open.has(n.id) ? 'open' : ''}`} onClick={() => nest.toggle(n.id)} title={kids ? t('coll.subItems', { count: kids }) : t('coll.noSubItems')} aria-label={t('coll.toggleSubItems')}>▸</button>
       )}
       <span className="ticon">{noteIcon(n)}</span>
       <input
