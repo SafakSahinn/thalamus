@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { go } from '../lib/router';
@@ -8,49 +9,49 @@ export const openShortcuts = () => useShortcutsHelp.setState({ open: true });
 
 const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 
-const GROUPS: [string, [string, string][]][] = [
-  ['Genel', [
-    [`${mod} K`, 'Ara / not oluştur'],
-    ['Alt N', 'Yeni not'],
-    ['Alt D', 'Bugünün günlüğü'],
-    ['Alt G', 'Bağlantı haritası'],
-    ['Alt Y', 'Yapışkan notları gizle / göster'],
-    [`${mod} /`, 'Bu kısayol listesi'],
-    ['Esc', 'Pencereyi kapat'],
+const groups = (): [string, [string, string][]][] => [
+  [t('keys.shortcuts.general'), [
+    [`${mod} K`, t('keys.shortcuts.search')],
+    ['Alt N', t('keys.shortcuts.newNote')],
+    ['Alt D', t('keys.shortcuts.daily')],
+    ['Alt G', t('keys.shortcuts.graph')],
+    ['Alt Y', t('keys.shortcuts.stickies')],
+    [`${mod} /`, t('keys.shortcuts.list')],
+    ['Esc', t('keys.shortcuts.close')],
   ]],
-  ['Not içinde', [
-    [`${mod} F`, 'Bul ve değiştir'],
-    ['/', 'Blok ekleme menüsü'],
-    ['[[', 'Nota bağlantı ver'],
-    ['@', 'Tarih ya da not ekle'],
-    [`${mod} Z  /  ${mod} Shift Z`, 'Geri al / yinele'],
+  [t('keys.shortcuts.inNote'), [
+    [`${mod} F`, t('keys.shortcuts.find')],
+    ['/', t('keys.shortcuts.slash')],
+    ['[[', t('keys.shortcuts.link')],
+    ['@', t('keys.shortcuts.mention')],
+    [`${mod} Z  /  ${mod} Shift Z`, t('keys.shortcuts.undo')],
   ]],
-  ['Biçim', [
-    [`${mod} B`, 'Kalın'],
-    [`${mod} I`, 'İtalik'],
-    [`${mod} U`, 'Altı çizili'],
-    [`${mod} Shift S`, 'Üstü çizili'],
-    [`${mod} Shift H`, 'Vurgula'],
-    [`${mod} E`, 'Satır içi kod'],
-    [`${mod} Alt 1 / 2 / 3`, 'Başlık 1 / 2 / 3'],
-    [`${mod} Shift 8`, 'Madde listesi'],
-    [`${mod} Shift 7`, 'Numaralı liste'],
-    [`${mod} Shift 9`, 'Yapılacaklar listesi'],
-    [`${mod} Shift B`, 'Alıntı'],
-    [`${mod} Alt C`, 'Kod bloğu'],
-    ['Tab / Shift Tab', 'Listede içeri / dışarı'],
+  [t('keys.shortcuts.format'), [
+    [`${mod} B`, t('keys.shortcuts.bold')],
+    [`${mod} I`, t('keys.shortcuts.italic')],
+    [`${mod} U`, t('keys.shortcuts.underline')],
+    [`${mod} Shift S`, t('keys.shortcuts.strike')],
+    [`${mod} Shift H`, t('keys.shortcuts.highlight')],
+    [`${mod} E`, t('keys.shortcuts.code')],
+    [`${mod} Alt 1 / 2 / 3`, t('keys.shortcuts.headings')],
+    [`${mod} Shift 8`, t('keys.shortcuts.bullet')],
+    [`${mod} Shift 7`, t('keys.shortcuts.ordered')],
+    [`${mod} Shift 9`, t('keys.shortcuts.todo')],
+    [`${mod} Shift B`, t('keys.shortcuts.quote')],
+    [`${mod} Alt C`, t('keys.shortcuts.codeBlock')],
+    ['Tab / Shift Tab', t('keys.shortcuts.indent')],
   ]],
-  ['Yazarken (Markdown)', [
-    ['# , ## , ###', 'Başlık'],
-    ['- veya *', 'Madde listesi'],
-    ['1.', 'Numaralı liste'],
-    ['[ ]', 'Yapılacak'],
-    ['>', 'Alıntı'],
-    ['```', 'Kod bloğu (```c gibi dil de yazılabilir)'],
-    ['---', 'Ayırıcı çizgi'],
-    ['$$x^2$$', 'Satır içi formül'],
-    ['**metin**', 'Kalın'],
-    ['==metin==', 'Vurgu'],
+  [t('keys.shortcuts.markdown'), [
+    ['# , ## , ###', t('keys.shortcuts.heading')],
+    [`- ${t('keys.shortcuts.or')} *`, t('keys.shortcuts.bullet')],
+    ['1.', t('keys.shortcuts.ordered')],
+    ['[ ]', t('keys.shortcuts.task')],
+    ['>', t('keys.shortcuts.quote')],
+    ['```', t('keys.shortcuts.codeBlockLang')],
+    ['---', t('keys.shortcuts.divider')],
+    ['$$x^2$$', t('keys.shortcuts.inlineMath')],
+    [`**${t('keys.shortcuts.text')}**`, t('keys.shortcuts.bold')],
+    [`==${t('keys.shortcuts.text')}==`, t('keys.shortcuts.mark')],
   ]],
 ];
 
@@ -77,10 +78,10 @@ export default function Shortcuts() {
   if (!open) return null;
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && useShortcutsHelp.setState({ open: false })}>
-      <div className="modal shortcuts" role="dialog" aria-label="Klavye kısayolları">
-        <div className="row"><h3>⌨ Klavye kısayolları</h3><span className="spacer" /><button className="iconbtn" onClick={() => useShortcutsHelp.setState({ open: false })}>×</button></div>
+      <div className="modal shortcuts" role="dialog" aria-label={t('keys.shortcuts.aria')}>
+        <div className="row"><h3>{t('keys.shortcuts.title')}</h3><span className="spacer" /><button className="iconbtn" onClick={() => useShortcutsHelp.setState({ open: false })} aria-label={t('common.close')}>×</button></div>
         <div className="sc-grid">
-          {GROUPS.map(([g, items]) => (
+          {groups().map(([g, items]) => (
             <section key={g}>
               <h4>{g}</h4>
               {items.map(([k, d]) => (

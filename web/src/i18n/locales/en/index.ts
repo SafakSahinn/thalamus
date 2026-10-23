@@ -10,6 +10,7 @@ import dialogs from './dialogs';
 import editor from './editor';
 import home from './home';
 import importer from './importer';
+import keys from './keys';
 import market from './market';
 import misc from './misc';
 import note from './note';
@@ -44,6 +45,7 @@ export default {
   editor,
   home,
   importer,
+  keys,
   market,
   misc,
   note,

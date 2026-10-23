@@ -1,6 +1,7 @@
 // Notion tarzı ek bloklar: bilgi kutusu, sütunlar, içindekiler, Mermaid diyagramı,
 // dosya/PDF, yer imi, sayfa gömme ve tarih rozeti.
 
+import { t } from '../i18n';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, useEditorState, type ReactNodeViewProps } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
@@ -25,7 +26,7 @@ function CalloutView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   return (
     <NodeViewWrapper className={`callout bg-${node.attrs.color}`} data-type="callout">
       <span className="callout-emoji" contentEditable={false}>
-        <button type="button" onClick={() => editor.isEditable && setPick(!pick)} title="Simgeyi değiştir">{node.attrs.emoji}</button>
+        <button type="button" onClick={() => editor.isEditable && setPick(!pick)} title={t('keys.blocks.changeIcon')}>{node.attrs.emoji}</button>
         {pick && (
           <EmojiPicker
             onPick={(e) => { updateAttributes({ emoji: e || '💡' }); setPick(false); }}
@@ -112,10 +113,10 @@ function TocView({ editor }: ReactNodeViewProps) {
   };
   return (
     <NodeViewWrapper className="toc" contentEditable={false}>
-      <div className="toc-title">İçindekiler</div>
-      {heads.length === 0 && <div className="muted small">Başlık eklediğinde burada listelenir.</div>}
+      <div className="toc-title">{t('keys.blocks.toc')}</div>
+      {heads.length === 0 && <div className="muted small">{t('keys.blocks.tocEmpty')}</div>}
       {heads.map((h, i) => (
-        <button key={i} type="button" className={`toc-item l${h.level}`} onClick={() => jump(h.pos)}>{h.text || 'Başlıksız'}</button>
+        <button key={i} type="button" className={`toc-item l${h.level}`} onClick={() => jump(h.pos)}>{h.text || t('keys.blocks.untitledHeading')}</button>
       ))}
     </NodeViewWrapper>
   );
@@ -170,17 +171,17 @@ function MermaidView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   }, [code]);
   const edit = async () => {
     if (!editor.isEditable) return;
-    const v = await promptText('Diyagram (Mermaid)', code, {
+    const v = await promptText(t('keys.blocks.mermaid'), code, {
       multiline: true,
-      hint: 'Örnek: graph LR; Giriş-->Filtre-->Çıkış · Ayrıntı: mermaid.js.org',
+      hint: t('keys.blocks.mermaidHint'),
     });
     if (v !== null) updateAttributes({ code: v });
   };
   return (
     <NodeViewWrapper className="mermaid-block" contentEditable={false}>
       <div ref={box} className="mermaid-svg" onDoubleClick={() => void edit()} />
-      {err && <div className="err small">Diyagram çizilemedi: {err}</div>}
-      <button type="button" className="block-edit" onClick={() => void edit()}>Düzenle</button>
+      {err && <div className="err small">{t('keys.blocks.mermaidError', { error: err })}</div>}
+      <button type="button" className="block-edit" onClick={() => void edit()}>{t('common.edit')}</button>
     </NodeViewWrapper>
   );
 }
@@ -234,8 +235,8 @@ function FileView({ node }: ReactNodeViewProps) {
         <span className="file-name">{name}</span>
         {size ? <span className="muted small">{fmtSize(size)}</span> : null}
         <span className="spacer" />
-        {isPdf && <button type="button" className="btn small ghost" onClick={() => void toggle()}>{preview ? 'Önizlemeyi kapat' : 'Önizle'}</button>}
-        <button type="button" className="btn small ghost" onClick={() => void open()}>Aç ↗</button>
+        {isPdf && <button type="button" className="btn small ghost" onClick={() => void toggle()}>{preview ? t('keys.blocks.closePreview') : t('keys.blocks.preview')}</button>}
+        <button type="button" className="btn small ghost" onClick={() => void open()}>{t('keys.blocks.open')}</button>
       </div>
       {err && <div className="err small">{err}</div>}
       {media === 'audio' && mediaUrl && <audio className="media-player" controls preload="metadata" src={mediaUrl} />}
@@ -301,7 +302,7 @@ function EmbedView({ node, updateAttributes }: ReactNodeViewProps) {
       <iframe
         src={node.attrs.src as string}
         style={{ height: h }}
-        title="gömülü içerik"
+        title={t('keys.blocks.embedded')}
         loading="lazy"
         sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
         allow="fullscreen; clipboard-write; encrypted-media"
@@ -344,7 +345,7 @@ export const DateChip = Node.create({
       const dom = document.createElement('span');
       dom.className = 'datechip';
       dom.textContent = `📅 ${fmtDay(node.attrs.date as string)}`;
-      dom.title = 'O günün günlüğünü aç';
+      dom.title = t('keys.blocks.openDaily');
       dom.addEventListener('click', () => go(`/daily/${node.attrs.date as string}`));
       return { dom };
     };
