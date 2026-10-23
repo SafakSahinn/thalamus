@@ -24,6 +24,8 @@ export interface Plugin {
   image: string;
   /** kurulunca nerede görüneceği / nasıl kullanılacağı */
   usage: string;
+  /** “Verisiyle birlikte kaldır” onayında silinecek verinin adı */
+  dataLabel: string;
 }
 
 export const CATEGORIES: { id: PluginCategory; label: string }[] = [
@@ -52,6 +54,7 @@ export const PLUGINS: Plugin[] = [
     author: 'Thalamus',
     image: 'plugins/sticky.webp',
     usage: 'Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” de ya da Ctrl K → “Yeni yapışkan not”.',
+    dataLabel: 'tüm yapışkan notların ve ayarları',
   },
   {
     id: 'otd',
@@ -71,6 +74,7 @@ export const PLUGINS: Plugin[] = [
     author: 'Thalamus',
     image: 'plugins/otd.webp',
     usage: 'Ana sayfada en altta görünür; sırasını Ayarlar > Ana sayfa’dan değiştirebilirsin.',
+    dataLabel: 'dil tercihi ve ana sayfadaki yeri',
   },
 ];
 
@@ -112,4 +116,29 @@ export function installPlugin(id: PluginId) {
 export function uninstallPlugin(id: PluginId) {
   const s = useStore.getState().settings;
   return saveSettings({ ...s, installed: installedList(s).filter((x) => x !== id) });
+}
+
+// Eklentilerin ayarlarda bıraktığı veriler ("Verisiyle birlikte kaldır")
+const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Settings) => Settings }> = {
+  sticky: {
+    has: (s) => !!s.stickies?.length || s.stickyScope !== undefined,
+    clear: ({ stickies: _a, stickyScope: _b, ...s }) => s,
+  },
+  otd: {
+    has: (s) => s.otdLang !== undefined || !!s.homeLayout?.some((x) => x.id === 'otd'),
+    clear: ({ otdLang: _a, ...s }) => ({ ...s, homeLayout: s.homeLayout?.filter((x) => x.id !== 'otd') }),
+  },
+};
+
+export const hasPluginData = (id: PluginId, s: Settings) => DATA[id].has(s);
+
+export function usePluginData(id: PluginId) {
+  return useStore((s) => DATA[id].has(s.settings));
+}
+
+/** Eklentiyi kaldırır ve ayarlarda bıraktığı verileri de siler (geri alınamaz) */
+export function purgePlugin(id: PluginId) {
+  const s = useStore.getState().settings;
+  if (id === 'sticky') try { localStorage.removeItem('stickyHidden'); } catch { /* yok say */ }
+  return saveSettings({ ...DATA[id].clear(s), installed: installedList(s).filter((x) => x !== id) });
 }

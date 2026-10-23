@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  CATEGORIES, installPlugin, PLUGINS, uninstallPlugin, useInstalledList, type Plugin, type PluginCategory,
+  CATEGORIES, installPlugin, PLUGINS, purgePlugin, uninstallPlugin, useInstalledList, usePluginData, type Plugin, type PluginCategory,
 } from '../lib/plugins';
 
 // Eklenti marketi: yerleşik eklentilerin kataloğu, kur / kaldır ve detay paneli (bkz. lib/plugins.ts)
@@ -28,6 +28,10 @@ function InstallButton({ p, on }: { p: Plugin; on: boolean }) {
 }
 
 function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => void }) {
+  const data = usePluginData(p.id);
+  const purge = () => {
+    if (confirm(`${p.name}${on ? ' kaldırılacak ve' : ':'} ${p.dataLabel} kalıcı olarak silinecek. Bu geri alınamaz. Devam edilsin mi?`)) void purgePlugin(p.id);
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     addEventListener('keydown', onKey);
@@ -54,7 +58,18 @@ function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => voi
             {p.features.map((f) => <li key={f}>{f}</li>)}
           </ul>
           <p className="market-usage small"><b>Nasıl kullanılır:</b> {p.usage}</p>
-          {on && <p className="muted small">Kaldırınca verilerin silinmez, yalnız gizlenir; yeniden kurduğunda kaldığın yerden devam eder.</p>}
+          {on && (
+            <div className="market-purge">
+              <p className="muted small">“Kaldır” verilerini silmez, yalnız gizler; yeniden kurduğunda kaldığın yerden devam edersin.</p>
+              <button className="btn small danger" onClick={purge}>Verisiyle birlikte kaldır</button>
+            </div>
+          )}
+          {!on && data && (
+            <div className="market-purge">
+              <p className="muted small">Bu eklentiyi daha önce kullanmışsın; verileri ({p.dataLabel}) hâlâ duruyor, yeniden kurarsan geri gelir.</p>
+              <button className="btn small danger" onClick={purge}>Kalan verileri sil</button>
+            </div>
+          )}
         </div>
       </div>
     </div>

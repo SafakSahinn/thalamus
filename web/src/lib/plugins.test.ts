@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { installedList } from './plugins';
+import { hasPluginData, installedList } from './plugins';
 import { DEFAULT_SETTINGS, type Settings } from './types';
 
 const s = (extra: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...extra });
@@ -17,5 +17,14 @@ describe('installedList', () => {
 
   it('kaydedilmiş liste varsa ona uyulur, bilinmeyen kimlikler atlanır', () => {
     expect(installedList(s({ installed: ['otd', 'eski'], stickies: [{ id: 'a', text: '', color: 'yellow', x: 0, y: 0, w: 200, h: 160 }] }))).toEqual(['otd']);
+  });
+});
+
+describe('hasPluginData', () => {
+  it('eklentinin ayarlarda bıraktığı veriyi görür', () => {
+    expect(hasPluginData('sticky', s({}))).toBe(false);
+    expect(hasPluginData('sticky', s({ stickyScope: 'home' }))).toBe(true);
+    expect(hasPluginData('otd', s({ otdLang: 'en' }))).toBe(true);
+    expect(hasPluginData('otd', s({ homeLayout: [{ id: 'today', on: true }] }))).toBe(false);
   });
 });
