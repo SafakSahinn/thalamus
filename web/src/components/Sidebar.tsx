@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { TimerPill } from './StudyTimer';
 import { dueCards, newPerDay } from '../lib/srs';
 import { useMemo, useState } from 'react';
@@ -11,17 +12,11 @@ import { openPalette } from './CommandPalette';
 import { openShortcuts } from './Shortcuts';
 import { newCollectionFlow } from './TypeEditor';
 
-const SYNC_LABEL: Record<SyncStatus, string> = {
-  local: 'Yalnızca bu cihazda',
-  idle: 'Eşitlendi',
-  syncing: 'Eşitleniyor…',
-  offline: 'Çevrimdışı',
-  error: 'Eşitleme hatası',
-};
+export const syncLabel = (s: SyncStatus) => t(`sidebar.sync.${s}`);
 
 export function SyncBadge() {
   const sync = useStore((s) => s.sync);
-  const label = sync.pending && sync.status !== 'syncing' ? `${sync.pending} değişiklik bekliyor` : SYNC_LABEL[sync.status];
+  const label = sync.pending && sync.status !== 'syncing' ? t('sidebar.sync.pending', { count: sync.pending }) : syncLabel(sync.status);
   return (
     <a href="#/settings" className={`sync ${sync.status} ${sync.pending ? 'pending' : ''}`} title={sync.error ?? label}>
       <i /> {label}
@@ -61,7 +56,7 @@ function PageTree({ active }: { active: (href: string) => string }) {
     const roots = alive.filter((n) => n.type === 'note' && !parentOf.has(n.id));
     // Elle sıralanmış olanlar önce (props.__order), sonra ada göre
     const ord = (n: Note) => (typeof n.props.__order === 'number' ? (n.props.__order as number) : 1e9);
-    const cmp = (a: Note, b: Note) => ord(a) - ord(b) || a.title.localeCompare(b.title, 'tr');
+    const cmp = (a: Note, b: Note) => ord(a) - ord(b) || a.title.localeCompare(b.title, localeTag());
     roots.sort(cmp);
     kids.forEach((v) => v.sort(cmp));
     return { roots, kids, parentOf };
@@ -129,7 +124,7 @@ function PageTree({ active }: { active: (href: string) => string }) {
           onDragLeave={() => hint?.id === n.id && setHint(null)}
           onDrop={(e) => { e.preventDefault(); drop(n, zoneOf(e)); }}
         >
-          <button type="button" className={`tree-toggle ${ch.length ? '' : 'empty'}`} onClick={() => toggle(n.id)} aria-label="Alt sayfaları aç/kapat">{isOpen ? '▾' : '▸'}</button>
+          <button type="button" className={`tree-toggle ${ch.length ? '' : 'empty'}`} onClick={() => toggle(n.id)} aria-label={t('sidebar.toggleKids')}>{isOpen ? '▾' : '▸'}</button>
           <a href={`#/n/${n.id}`} className={active(`#/n/${n.id}`)} draggable={false}>{noteIcon(n)} {displayTitle(n)}</a>
         </div>
         {isOpen && ch.length > 0 && depth < 8 && (
@@ -142,10 +137,10 @@ function PageTree({ active }: { active: (href: string) => string }) {
   const shown = all ? roots : roots.slice(0, 12);
   return (
     <>
-      <div className="side-h">Sayfalar <span className="muted" title="Sürükleyerek sırala; bir sayfanın ortasına bırakırsan onun altına girer">⇅</span></div>
+      <div className="side-h">{t('sidebar.pages')} <span className="muted" title={t('sidebar.pagesHint')}>⇅</span></div>
       {shown.map((n) => row(n, 0, new Set([n.id])))}
       {roots.length > 12 && (
-        <button type="button" className="searchbtn" onClick={() => setAll(!all)}>{all ? 'Daha az göster' : `+ ${roots.length - 12} sayfa daha`}</button>
+        <button type="button" className="searchbtn" onClick={() => setAll(!all)}>{all ? t('common.showLess') : t('sidebar.morePages', { count: roots.length - 12 })}</button>
       )}
     </>
   );
@@ -155,7 +150,7 @@ const collHref = (id: string) => (id === 'word' ? '#/dictionary' : id === 'daily
 
 export default function Sidebar({ route, onNav }: { route: Route; onNav: () => void }) {
   const { alive } = useIndex();
-  const pinned = useMemo(() => alive.filter((n) => n.pinned).sort((a, b) => a.title.localeCompare(b.title, 'tr')), [alive]);
+  const pinned = useMemo(() => alive.filter((n) => n.pinned).sort((a, b) => a.title.localeCompare(b.title, localeTag())), [alive]);
   const counts = useMemo(() => {
     const c = new Map<string, number>();
     for (const n of alive) c.set(n.type, (c.get(n.type) ?? 0) + 1);
@@ -174,20 +169,20 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
         <span>Thalamus</span>
       </div>
       <button className="searchbtn" onClick={() => { onNav(); openPalette(); }}>
-        🔍 Ara / oluştur <kbd>Ctrl K</kbd>
+        {t('sidebar.search')} <kbd>Ctrl K</kbd>
       </button>
-      <a href="#/" className={active('#/')}>🏠 Ana sayfa</a>
-      <a href="#/daily" data-tour="nav-daily" className={active('#/daily')}>📅 Günlük</a>
-      <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>📆 Takvim</a>
+      <a href="#/" className={active('#/')}>{t('sidebar.home')}</a>
+      <a href="#/daily" data-tour="nav-daily" className={active('#/daily')}>{t('sidebar.daily')}</a>
+      <a href="#/takvim" data-tour="nav-calendar" className={active('#/takvim')}>{t('sidebar.calendar')}</a>
       <ReviewLink active={active('#/tekrar')} />
-      <a href="#/calisma" className={active('#/calisma')}>⏱ Çalışma</a>
-      <a href="#/okuma" className={active('#/okuma')}>📈 Okuma</a>
+      <a href="#/calisma" className={active('#/calisma')}>{t('sidebar.study')}</a>
+      <a href="#/okuma" className={active('#/okuma')}>{t('sidebar.reading')}</a>
       <TimerPill />
-      <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>🕸 Bağlantı haritası</a>
+      <a href="#/graph" data-tour="nav-graph" className={active('#/graph')}>{t('sidebar.graph')}</a>
 
       {pinned.length > 0 && (
         <>
-          <div className="side-h">Sabitlenenler</div>
+          <div className="side-h">{t('sidebar.pinned')}</div>
           {pinned.map((n) => (
             <a key={n.id} href={`#/n/${n.id}`} className={active(`#/n/${n.id}`)}>
               {noteIcon(n)} {displayTitle(n)}
@@ -198,7 +193,7 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
 
       <PageTree active={active} />
 
-      <div className="side-h">Koleksiyonlar</div>
+      <div className="side-h">{t('sidebar.collections')}</div>
       {TYPES.filter((t) => t.id !== 'daily').map((t) => (
         <a key={t.id} href={collHref(t.id)} data-tour={`coll-${t.id}`} className={active(collHref(t.id))}>
           {t.icon} {t.plural}
@@ -208,14 +203,14 @@ export default function Sidebar({ route, onNav }: { route: Route; onNav: () => v
       <button type="button" className="searchbtn" onClick={async () => {
         const id = await newCollectionFlow((label) => createCollection(label));
         if (id) { onNav(); go(`/c/${id}/edit`); }
-      }}>＋ Yeni koleksiyon</button>
+      }}>{t('sidebar.newCollection')}</button>
 
       <div className="side-foot">
-        <a href="#/import" className={active('#/import')}>⬇ İçe aktar</a>
-        <a href="#/trash" className={active('#/trash')}>🗑 Çöp kutusu</a>
-        <a href="#/market" className={active('#/market')}>🧩 Market</a>
-        <a href="#/settings" data-tour="nav-settings" className={active('#/settings')}>⚙ Ayarlar</a>
-        <button type="button" className="searchbtn" onClick={() => { onNav(); openShortcuts(); }}>⌨ Kısayollar <kbd>Ctrl /</kbd></button>
+        <a href="#/import" className={active('#/import')}>{t('sidebar.import')}</a>
+        <a href="#/trash" className={active('#/trash')}>{t('sidebar.trash')}</a>
+        <a href="#/market" className={active('#/market')}>{t('sidebar.market')}</a>
+        <a href="#/settings" data-tour="nav-settings" className={active('#/settings')}>{t('sidebar.settings')}</a>
+        <button type="button" className="searchbtn" onClick={() => { onNav(); openShortcuts(); }}>{t('sidebar.shortcuts')} <kbd>Ctrl /</kbd></button>
         <SyncBadge />
       </div>
     </nav>
@@ -229,5 +224,5 @@ function ReviewLink({ active }: { active: string }) {
     const { due, fresh } = dueCards(Object.values(notes), todayStr(), newPerDay());
     return due.length + fresh.length;
   }, [notes]);
-  return <a href="#/tekrar" className={active}>🧠 Tekrar{n > 0 && <span className="cnt due-cnt">{n}</span>}</a>;
+  return <a href="#/tekrar" className={active}>{t('sidebar.review')}{n > 0 && <span className="cnt due-cnt">{n}</span>}</a>;
 }

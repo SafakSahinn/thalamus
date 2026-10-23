@@ -1,0 +1,23 @@
+// Birden çok yerde geçen kısa sözcükler
+export default {
+  close: 'Kapat',
+  cancel: 'Vazgeç',
+  save: 'Kaydet',
+  delete: 'Sil',
+  remove: 'Kaldır',
+  add: 'Ekle',
+  edit: 'Düzenle',
+  ok: 'Tamam',
+  yes: 'Evet',
+  no: 'Hayır',
+  loading: 'Yükleniyor…',
+  untitled: 'Adsız',
+  search: 'Ara',
+  back: 'Geri',
+  forward: 'İleri',
+  none: 'Yok',
+  open: 'Aç',
+  copy: 'Kopyala',
+  more: 'Daha fazla',
+  showLess: 'Daha az göster',
+};

@@ -1,30 +1,31 @@
 import { useEffect, useState } from 'react';
+import { t } from '../i18n';
 import {
-  CATEGORIES, installPlugin, pluginOf, PLUGINS, purgePlugin, uninstallPlugin, useInstalledList, usePluginData, type Plugin, type PluginCategory,
+  CATEGORIES, categoryLabel, installPlugin, pluginImage, pluginImageFallback, pluginOf, PLUGINS, purgePlugin, uninstallPlugin, useInstalledList,
+  usePluginData, type Plugin, type PluginCategory,
 } from '../lib/plugins';
 
 // Eklenti marketi: yerleşik eklentilerin kataloğu, kur / kaldır ve detay paneli (bkz. lib/plugins.ts)
 
 type Filter = 'all' | 'installed' | PluginCategory;
 
-const catLabel = (c: PluginCategory) => CATEGORIES.find((x) => x.id === c)!.label;
-
-/** Tanıtım görseli; dosya yoksa simgeli bir yer tutucu */
+/** Tanıtım görseli: etkin dildeki, yoksa kaynak dildeki; o da yoksa simgeli bir yer tutucu */
 function Shot({ p, big }: { p: Plugin; big?: boolean }) {
-  const [bad, setBad] = useState(false);
+  const [step, setStep] = useState(0);
+  const src = [pluginImage(p.id), pluginImageFallback(p.id)].filter((x, i, a) => a.indexOf(x) === i)[step];
   return (
     <div className={`market-shot ${big ? 'big' : ''}`}>
-      {bad
+      {!src
         ? <span className="market-shot-ph">{p.icon}</span>
-        : <img src={`${import.meta.env.BASE_URL}${p.image}`} alt={`${p.name} ekran görüntüsü`} loading="lazy" onError={() => setBad(true)} />}
+        : <img src={`${import.meta.env.BASE_URL}${src}`} alt={t('market.screenshot', { name: p.name })} loading="lazy" onError={() => setStep(step + 1)} />}
     </div>
   );
 }
 
 function InstallButton({ p, on }: { p: Plugin; on: boolean }) {
   return on
-    ? <button className="btn small" onClick={(e) => { e.stopPropagation(); void uninstallPlugin(p.id); }}>Kaldır</button>
-    : <button className="btn small primary" onClick={(e) => { e.stopPropagation(); void installPlugin(p.id); }}>Kur</button>;
+    ? <button className="btn small" onClick={(e) => { e.stopPropagation(); void uninstallPlugin(p.id); }}>{t('market.uninstall')}</button>
+    : <button className="btn small primary" onClick={(e) => { e.stopPropagation(); void installPlugin(p.id); }}>{t('market.install')}</button>;
 }
 
 function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => void }) {
@@ -34,7 +35,7 @@ function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => voi
   const needs = (p.requires ?? []).filter((id) => !installed.includes(id));
   const dependents = installed.filter((id) => pluginOf(id)?.requires?.includes(p.id));
   const purge = () => {
-    if (confirm(`${p.name}${on ? ' kaldırılacak ve' : ':'} ${p.dataLabel} kalıcı olarak silinecek. Bu geri alınamaz. Devam edilsin mi?`)) void purgePlugin(p.id);
+    if (confirm(t(on ? 'market.confirmPurgeInstalled' : 'market.confirmPurge', { name: p.name, data: p.dataLabel }))) void purgePlugin(p.id);
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -44,36 +45,36 @@ function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => voi
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal market-detail" role="dialog" aria-label={p.name}>
-        <button className="iconbtn market-close" onClick={onClose} aria-label="Kapat">×</button>
+        <button className="iconbtn market-close" onClick={onClose} aria-label={t('common.close')}>×</button>
         <Shot p={p} big />
         <div className="market-detail-body">
           <div className="market-head">
             <span className="market-icon">{p.icon}</span>
             <div>
               <h2>{p.name}</h2>
-              <div className="muted small">{p.author} · {catLabel(p.category)}</div>
+              <div className="muted small">{p.author} · {categoryLabel(p.category)}</div>
             </div>
             <span className="spacer" />
-            {on && <span className="market-badge">✓ Kurulu</span>}
+            {on && <span className="market-badge">{t('market.installed')}</span>}
             <InstallButton p={p} on={on} />
           </div>
           {p.description.map((d, i) => <p key={i}>{d}</p>)}
           <ul className="market-features">
             {p.features.map((f) => <li key={f}>{f}</li>)}
           </ul>
-          <p className="market-usage small"><b>Nasıl kullanılır:</b> {p.usage}</p>
-          {!on && needs.length > 0 && <p className="muted small">{names(needs)} eklentisini gerektirir; kurarken o da kurulur.</p>}
-          {on && dependents.length > 0 && <p className="muted small">Kaldırırsan ona bağlı {names(dependents)} eklentisi de kaldırılır.</p>}
+          <p className="market-usage small"><b>{t('market.howTo')}</b> {p.usage}</p>
+          {!on && needs.length > 0 && <p className="muted small">{t('market.requires', { names: names(needs) })}</p>}
+          {on && dependents.length > 0 && <p className="muted small">{t('market.dependents', { names: names(dependents) })}</p>}
           {on && (
             <div className="market-purge">
-              <p className="muted small">“Kaldır” verilerini silmez, yalnız gizler; yeniden kurduğunda kaldığın yerden devam edersin.</p>
-              <button className="btn small danger" onClick={purge}>Verisiyle birlikte kaldır</button>
+              <p className="muted small">{t('market.uninstallKeeps')}</p>
+              <button className="btn small danger" onClick={purge}>{t('market.purge')}</button>
             </div>
           )}
           {!on && data && (
             <div className="market-purge">
-              <p className="muted small">Bu eklentiyi daha önce kullanmışsın; verileri ({p.dataLabel}) hâlâ duruyor, yeniden kurarsan geri gelir.</p>
-              <button className="btn small danger" onClick={purge}>Kalan verileri sil</button>
+              <p className="muted small">{t('market.leftover', { data: p.dataLabel })}</p>
+              <button className="btn small danger" onClick={purge}>{t('market.purgeLeftover')}</button>
             </div>
           )}
         </div>
@@ -88,18 +89,21 @@ export default function MarketPage() {
   const [open, setOpen] = useState<string | null>(null);
   const list = PLUGINS.filter((p) => filter === 'all' || (filter === 'installed' ? installed.includes(p.id) : p.category === filter));
   const cur = PLUGINS.find((p) => p.id === open);
-  const filters: [Filter, string][] = [['all', 'Tümü'], ['installed', `Kurulu (${installed.length})`], ...CATEGORIES.map((c) => [c.id, c.label] as [Filter, string])];
+  const filters: [Filter, string][] = [
+    ['all', t('market.all')], ['installed', t('market.installedCount', { count: installed.length })],
+    ...CATEGORIES.map((c) => [c, categoryLabel(c)] as [Filter, string]),
+  ];
 
   return (
     <div className="page wide market">
-      <h1>🧩 Market</h1>
-      <p className="muted">Thalamus’a yeni özellikler ekle. Eklentiler varsayılan olarak kurulu gelmez; istediğini kur, istemediğini kaldır.</p>
+      <h1>🧩 {t('market.title')}</h1>
+      <p className="muted">{t('market.intro')}</p>
       <div className="seg market-filter">
         {filters.map(([v, label]) => (
           <button key={v} className={filter === v ? 'on' : ''} onClick={() => setFilter(v)}>{label}</button>
         ))}
       </div>
-      {list.length === 0 && <p className="muted">Henüz kurulu eklenti yok.</p>}
+      {list.length === 0 && <p className="muted">{t('market.noneInstalled')}</p>}
       <div className="market-grid">
         {list.map((p) => {
           const on = installed.includes(p.id);
@@ -114,7 +118,7 @@ export default function MarketPage() {
                 </div>
                 <div className="market-summary">{p.summary}</div>
                 <div className="market-foot">
-                  <span className="muted small">{p.author} · {catLabel(p.category)}</span>
+                  <span className="muted small">{p.author} · {categoryLabel(p.category)}</span>
                   <span className="spacer" />
                   {on && <span className="market-badge">✓</span>}
                   <InstallButton p={p} on={on} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { detectLocale, getLocalePref, LOCALE_IDS, LOCALES, setLocalePref, t, type LocalePref } from '../i18n';
 import CalendarSettings from '../components/CalendarSettings';
 import { HomeSettings } from './Home';
 import NotifySettings from '../components/NotifySettings';
@@ -38,14 +39,14 @@ function Routines() {
           <input className="grow" defaultValue={r.label} onBlur={(e) => save(list.map((x) => (x.id === r.id ? { ...x, label: e.target.value } : x)))} />
           <button className="iconbtn" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
           <button className="iconbtn" disabled={i === list.length - 1} onClick={() => move(i, 1)}>↓</button>
-          <button className="iconbtn" title="Sil (geçmiş işaretler günlüklerde kalır)" onClick={() => save(list.filter((x) => x.id !== r.id))}>×</button>
+          <button className="iconbtn" title={t('settings.routines.deleteTitle')} onClick={() => save(list.filter((x) => x.id !== r.id))}>×</button>
         </div>
       ))}
       <div className="row">
         <input className="emoji" value={icon} onChange={(e) => setIcon(e.target.value)} />
-        <input className="grow" value={label} placeholder="Yeni rutin (ör. 30 dk İngilizce)" onChange={(e) => setLabel(e.target.value)}
+        <input className="grow" value={label} placeholder={t('settings.routines.placeholder')} onChange={(e) => setLabel(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && label.trim() && (save([...list, { id: uid(), label: label.trim(), icon }]), setLabel(''))} />
-        <button className="btn small" disabled={!label.trim()} onClick={() => { save([...list, { id: uid(), label: label.trim(), icon }]); setLabel(''); }}>Ekle</button>
+        <button className="btn small" disabled={!label.trim()} onClick={() => { save([...list, { id: uid(), label: label.trim(), icon }]); setLabel(''); }}>{t('common.add')}</button>
       </div>
     </div>
   );
@@ -54,11 +55,11 @@ function Routines() {
 function Feedback() {
   return (
     <section>
-      <h3>Geri bildirim</h3>
-      <p className="muted small">Bir hata mı buldun, bir özellik mi istiyorsun? E-postayla yazabilir ya da GitHub’da kayıt açabilirsin.</p>
+      <h3>{t('settings.feedback.title')}</h3>
+      <p className="muted small">{t('settings.feedback.hint')}</p>
       <div className="row">
-        <a className="btn" href="mailto:getthalamus@gmail.com?subject=Thalamus%20geri%20bildirim">✉ E-posta gönder</a>
-        <a className="btn" href="https://github.com/SafakSahinn/thalamus/issues" target="_blank" rel="noopener noreferrer">GitHub’da kayıt aç ↗</a>
+        <a className="btn" href={`mailto:getthalamus@gmail.com?subject=${encodeURIComponent(t('settings.feedback.mailSubject'))}`}>{t('settings.feedback.email')}</a>
+        <a className="btn" href="https://github.com/SafakSahinn/thalamus/issues" target="_blank" rel="noopener noreferrer">{t('settings.feedback.github')}</a>
       </div>
     </section>
   );
@@ -86,30 +87,30 @@ function DeleteAccount({ email }: { email: string }) {
   };
   return (
     <section>
-      <h3>Hesabı sil</h3>
+      <h3>{t('settings.deleteAccount.title')}</h3>
       {!open ? (
-        <button className="btn danger" onClick={() => setOpen(true)}>Hesabımı sil…</button>
+        <button className="btn danger" onClick={() => setOpen(true)}>{t('settings.deleteAccount.open')}</button>
       ) : (
         <div className="danger-box">
-          <p>Kullanıcı kaydın (e-posta, ad, giriş zamanları) silinir, uygulamanın Google iznini geri alırız ve bütün cihazlarda oturumun kapanır.</p>
+          <p>{t('settings.deleteAccount.intro')}</p>
           <label className="small">
             <input type="checkbox" checked={drive} onChange={(e) => setDrive(e.target.checked)} />
-            <span>Google Drive’ımdaki <b>Thalamus</b> klasörünü (bütün notlarım ve dosyalarım) de <b>kalıcı olarak</b> sil</span>
+            <span>{t.rich('settings.deleteAccount.drive', { folder: <b>Thalamus</b>, perm: <b>{t('settings.deleteAccount.permanently')}</b> })}</span>
           </label>
           {hasCal && (
             <label className="small">
               <input type="checkbox" checked={cal} onChange={(e) => setCal(e.target.checked)} />
-              <span>Google Takvim’imdeki <b>“Thalamus”</b> takvimini ve içindeki bütün etkinlikleri de sil</span>
+              <span>{t.rich('settings.deleteAccount.calendar', { cal: <b>“Thalamus”</b> })}</span>
             </label>
           )}
-          {hasCal && !cal && <p className="muted small">Takvimdeki etkinlikler kalır; notun içeriği açıklamalarında okunmaya devam eder.</p>}
-          {!drive && <p className="muted small">Notların Drive’ında kalır; istediğin zaman tekrar giriş yapıp kaldığın yerden devam edebilirsin.</p>}
-          <p className="small">Onaylamak için e-posta adresini yaz: <b>{email}</b></p>
+          {hasCal && !cal && <p className="muted small">{t('settings.deleteAccount.calKept')}</p>}
+          {!drive && <p className="muted small">{t('settings.deleteAccount.driveKept')}</p>}
+          <p className="small">{t.rich('settings.deleteAccount.confirm', { email: <b>{email}</b> })}</p>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={email} />
           <div className="row">
-            <button className="btn" onClick={() => { setOpen(false); setTyped(""); }} disabled={busy}>Vazgeç</button>
+            <button className="btn" onClick={() => { setOpen(false); setTyped(""); }} disabled={busy}>{t('common.cancel')}</button>
             <button className="btn danger" disabled={busy || typed.trim().toLowerCase() !== email.toLowerCase()} onClick={() => void run()}>
-              {busy ? 'Siliniyor…' : 'Kalıcı olarak sil'}
+              {busy ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.submit')}
             </button>
           </div>
           {err && <p className="err small">{err}</p>}
@@ -137,14 +138,15 @@ export default function SettingsPage() {
   const notes = useStore((s) => s.notes);
   const settings = useStore((s) => s.settings);
   const [theme, setTheme] = useState<Theme>(getTheme());
+  const [lang, setLang] = useState<LocalePref>(getLocalePref());
   const sticky = useInstalled('sticky');
   const [msg, setMsg] = useState('');
   const [zipBusy, setZipBusy] = useState<string | null>(null);
   const exportZip = async () => {
-    setZipBusy('Hazırlanıyor…');
+    setZipBusy(t('settings.zip.preparing'));
     try {
-      const r = await exportAllZip((d, t) => setZipBusy(`Hazırlanıyor… ${d}/${t}`));
-      setMsg(`${r.notes} not ve ${r.assets} ek indirildi${r.missing ? ` (${r.missing} ek alınamadı)` : ''}.`);
+      const r = await exportAllZip((done, total) => setZipBusy(t('settings.zip.progress', { done, total })));
+      setMsg(t(r.missing ? 'settings.zip.doneMissing' : 'settings.zip.done', { notes: r.notes, assets: r.assets, missing: r.missing }));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
     } finally {
@@ -154,7 +156,7 @@ export default function SettingsPage() {
 
   const exportJson = () => {
     const data = { app: 'thalamus', version: 1, exported_at: new Date().toISOString(), settings, notes: Object.values(notes) };
-    download(`thalamus-yedek-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data));
+    download(t('settings.backupFile', { date: new Date().toISOString().slice(0, 10) }), JSON.stringify(data));
   };
 
   const importJson = () => {
@@ -166,11 +168,11 @@ export default function SettingsPage() {
       if (!f) return;
       try {
         const data = JSON.parse(await f.text()) as { app?: string; notes?: Note[] };
-        if (!['thalamus', 'mind-atlas'].includes(data.app ?? '') || !Array.isArray(data.notes)) throw new Error('Bu dosya bir Thalamus yedeği değil.');
+        if (!['thalamus', 'mind-atlas'].includes(data.app ?? '') || !Array.isArray(data.notes)) throw new Error(t('settings.notBackup'));
         const cur = useStore.getState().notes;
         const fresh = data.notes.filter((n) => !cur[n.id] || cur[n.id].updated_at < n.updated_at);
         insertNotes(fresh);
-        setMsg(`${fresh.length} not geri yüklendi (${data.notes.length - fresh.length} tanesi zaten güncel).`);
+        setMsg(t('settings.restored', { count: fresh.length, skipped: data.notes.length - fresh.length }));
       } catch (e) {
         setMsg(e instanceof Error ? e.message : String(e));
       }
@@ -180,10 +182,10 @@ export default function SettingsPage() {
 
   return (
     <div className="page settings">
-      <h1>⚙ Ayarlar</h1>
+      <h1>{t('settings.title')}</h1>
 
       <section>
-        <h3>Hesap ve eşitleme</h3>
+        <h3>{t('settings.account.title')}</h3>
         {cloud ? (
           <>
             <div className="account">
@@ -195,31 +197,31 @@ export default function SettingsPage() {
             </div>
             <div className="row">
               <SyncBadge />
-              {sync.last && <span className="muted small">son eşitleme {relTime(sync.last)}</span>}
-              <button className="btn small" onClick={() => void syncNow()}>Şimdi eşitle</button>
+              {sync.last && <span className="muted small">{t('settings.account.lastSync', { time: relTime(sync.last) })}</span>}
+              <button className="btn small" onClick={() => void syncNow()}>{t('settings.account.syncNow')}</button>
             </div>
             {sync.error && <p className="err small">{sync.error}</p>}
-            <p className="muted small">Notlar önce bu cihaza kaydedilir, internet varken birkaç saniye içinde Google Drive’ındaki <b>Thalamus</b> klasörüne gider. Diğer cihazların uygulamayı açtığında ya da yarım dakika içinde güncellenir. Çevrimdışıyken de yazabilirsin.</p>
+            <p className="muted small">{t.rich('settings.account.info', { folder: <b>Thalamus</b> })}</p>
             <div className="row">
               <button className="btn signout" onClick={() => void signOut()}>
-                <span aria-hidden="true">⎋</span> Bu cihazda çıkış yap
+                <span aria-hidden="true">⎋</span> {t('settings.account.signOut')}
               </button>
-              <span className="muted small">Notların Drive’ında kalır; tekrar giriş yapınca geri gelir.</span>
+              <span className="muted small">{t('settings.account.signOutHint')}</span>
             </div>
           </>
         ) : (
-          <p className="muted">Bulut ayarlanmadı: notlar yalnızca bu tarayıcıda tutuluyor. Düzenli olarak yedek almayı unutma.</p>
+          <p className="muted">{t('settings.account.noCloud')}</p>
         )}
       </section>
 
       {cloud && account && (
         <section>
-          <h3>E-posta bildirimleri</h3>
+          <h3>{t('settings.emails.title')}</h3>
           <label className="small">
             <input type="checkbox" checked={announcements} onChange={(e) => { setAnnErr(''); setAnnouncements(e.target.checked).catch((x: unknown) => setAnnErr(String(x))); }} />
-            <span>Yenilikler hakkında ara sıra e-posta al</span>
+            <span>{t('settings.emails.label')}</span>
           </label>
-          <p className="muted small">{announcements ? 'Açık: yeni özellikler duyurulduğunda e-posta alırsın. Her e-postada abonelikten çıkma bağlantısı da olur.' : 'Kapalı: Thalamus sana duyuru e-postası göndermez.'}</p>
+          <p className="muted small">{announcements ? t('settings.emails.on') : t('settings.emails.off')}</p>
           {annErr && <p className="err small">{annErr}</p>}
         </section>
       )}
@@ -232,106 +234,112 @@ export default function SettingsPage() {
 
       {cloud && (
         <section>
-          <h3>Görsel ve PDF ekleri</h3>
+          <h3>{t('settings.attach.title')}</h3>
           <div className="seg">
             {(['drive', 'local'] as AttachMode[]).map((m) => (
               <button key={m} className={attach === m ? 'on' : ''} onClick={() => { localStorage.setItem('attachMode', m); setAttach(m); }}>
-                {m === 'drive' ? 'Drive’a yükle' : 'Sadece bu cihazda tut'}
+                {m === 'drive' ? t('settings.attach.drive') : t('settings.attach.local')}
               </button>
             ))}
           </div>
           <p className="muted small">
-            {attach === 'drive'
-              ? 'Ekler Drive’ına yüklenir ve bütün cihazlarında görünür.'
-              : 'Ekler yalnızca bu cihazda saklanır: Drive’ında yer kaplamaz ama diğer cihazlarında görünmez ve bu tarayıcının verileri silinirse kaybolur.'}
-            {' '}Bu ayar bu cihaza özeldir.
+            {attach === 'drive' ? t('settings.attach.driveHint') : t('settings.attach.localHint')}
+            {' '}{t('settings.attach.deviceOnly')}
           </p>
         </section>
       )}
 
       <section>
-        <h3>Kitap kapakları ve film afişleri</h3>
+        <h3>{t('settings.covers.title')}</h3>
         <div className="seg">
           {(['save', 'link'] as CoverMode[]).map((m) => (
             <button key={m} className={coverMode === m ? 'on' : ''} onClick={() => { localStorage.setItem('coverMode', m); setCoverMode(m); }}>
-              {m === 'save' ? 'Görseli kaydet' : 'Bağlantı olarak bırak'}
+              {m === 'save' ? t('settings.covers.save') : t('settings.covers.link')}
             </button>
           ))}
         </div>
-        <p className="muted small">
-          {coverMode === 'save'
-            ? 'Kapak bulucuda seçtiğin görsel indirilir ve eklerinle aynı yere (Drive’ına ya da bu cihaza) kaydedilir; kaynak site kaldırsa bile kapak kaybolmaz.'
-            : 'Seçtiğin görselin yalnızca bağlantısı saklanır: yer kaplamaz ama kaynak site görseli kaldırırsa kapak görünmez.'}
-        </p>
+        <p className="muted small">{coverMode === 'save' ? t('settings.covers.saveHint') : t('settings.covers.linkHint')}</p>
       </section>
 
       <section>
-        <h3>Günlük rutinler</h3>
-        <p className="muted small">Her gün Günlük sayfasında ve ana sayfada işaretleyeceğin alışkanlıklar.</p>
+        <h3>{t('settings.routines.title')}</h3>
+        <p className="muted small">{t('settings.routines.hint')}</p>
         <Routines />
       </section>
 
       <section>
-        <h3>Ana sayfa</h3>
-        <p className="muted small">Ana sayfada hangi bölümlerin görüneceğini ve sırasını seç. Boş bölümler (ör. yaklaşan bir şey yoksa) kendiliğinden gizlenir.</p>
+        <h3>{t('settings.home.title')}</h3>
+        <p className="muted small">{t('settings.home.hint')}</p>
         <HomeSettings />
       </section>
 
       {sticky && <section>
-        <h3>Yapışkan notlar</h3>
-        <p className="muted small">Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” ile oluşturulur; Alt Y bu cihazda gizler / gösterir.</p>
+        <h3>{t('settings.sticky.title')}</h3>
+        <p className="muted small">{t('settings.sticky.hint')}</p>
         <div className="seg">
-          {([['all', 'Tüm sayfalarda'], ['home', 'Yalnız ana sayfada']] as const).map(([v, label]) => (
+          {(['all', 'home'] as const).map((v) => (
             <button key={v} className={(settings.stickyScope ?? 'all') === v ? 'on' : ''}
-              onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{label}</button>
+              onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{t(`settings.sticky.${v}`)}</button>
           ))}
         </div>
       </section>}
 
       <section>
-        <h3>Görünüm</h3>
+        <h3>{t('settings.appearance.title')}</h3>
         <div className="seg">
-          {(['system', 'light', 'dark'] as Theme[]).map((t) => (
-            <button key={t} className={theme === t ? 'on' : ''} onClick={() => { applyTheme(t); setTheme(t); }}>
-              {t === 'system' ? 'Sistem' : t === 'light' ? 'Açık' : 'Koyu'}
+          {(['system', 'light', 'dark'] as Theme[]).map((th) => (
+            <button key={th} className={theme === th ? 'on' : ''} onClick={() => { applyTheme(th); setTheme(th); }}>
+              {t(`settings.appearance.${th}`)}
             </button>
           ))}
         </div>
       </section>
 
       <section>
-        <h3>Yedek</h3>
+        <h3>{t('settings.language.title')}</h3>
+        <div className="seg">
+          {(['system', ...LOCALE_IDS] as LocalePref[]).map((l) => (
+            <button key={l} className={lang === l ? 'on' : ''} onClick={() => { setLang(l); void setLocalePref(l); }}>
+              {l === 'system' ? t('settings.language.system', { lang: LOCALES[detectLocale()].name }) : LOCALES[l].name}
+            </button>
+          ))}
+        </div>
+        <p className="muted small">{t('settings.language.hint')}</p>
+      </section>
+
+      <section>
+        <h3>{t('settings.backup.title')}</h3>
         <p className="muted small">
-          <b>Markdown (.zip):</b> her koleksiyon bir klasör, her not bir .md dosyası, ekler “ekler” klasöründe. Obsidian ya da başka bir uygulamada doğrudan açılabilir.
-          <br /><b>Yedek (.json):</b> Thalamus’a geri yüklemek için tek dosya.
+          <b>{t('settings.backup.zipLabel')}</b> {t('settings.backup.zipInfo')}
+          <br /><b>{t('settings.backup.jsonLabel')}</b> {t('settings.backup.jsonInfo')}
         </p>
         <div className="row">
-          <button className="btn" onClick={() => void exportZip()} disabled={Boolean(zipBusy)}>{zipBusy ?? 'Markdown olarak indir (.zip)'}</button>
-          <button className="btn" onClick={exportJson}>Yedeği indir (.json)</button>
-          <button className="btn" onClick={importJson}>Yedekten geri yükle</button>
-          <a className="btn" href="#/import">İçe aktar (Notion, Obsidian, Markdown)</a>
+          <button className="btn" onClick={() => void exportZip()} disabled={Boolean(zipBusy)}>{zipBusy ?? t('settings.backup.zip')}</button>
+          <button className="btn" onClick={exportJson}>{t('settings.backup.json')}</button>
+          <button className="btn" onClick={importJson}>{t('settings.backup.restore')}</button>
+          <a className="btn" href="#/import">{t('settings.backup.import')}</a>
         </div>
         {msg && <p className="small">{msg}</p>}
       </section>
 
       <section>
-        <h3>Tanıtım turu</h3>
-        <p className="muted small">Uygulamanın düğmelerini adım adım birlikte deneyen kısa tur.</p>
-        <button className="btn" onClick={() => { location.hash = '#/'; startTour(); }}>▶ Turu başlat</button>
+        <h3>{t('settings.tour.title')}</h3>
+        <p className="muted small">{t('settings.tour.hint')}</p>
+        <button className="btn" onClick={() => { location.hash = '#/'; startTour(); }}>{t('settings.tour.start')}</button>
       </section>
 
       <Feedback />
 
       {cloud && account && <DeleteAccount email={account.email} />}
 
-      <p className="muted small"><a href="privacy.html">Gizlilik ve KVKK</a> · <a href="terms.html">Kullanım Koşulları</a></p>
+      <p className="muted small"><a href="privacy.html">{t('settings.privacy')}</a> · <a href="terms.html">{t('settings.terms')}</a></p>
 
       <section>
-        <h3>Uygulama olarak yükle</h3>
+        <h3>{t('settings.install.title')}</h3>
         <ul className="muted small">
-          <li><b>iPhone / iPad:</b> Safari’de aç → Paylaş → “Ana Ekrana Ekle”.</li>
-          <li><b>Android:</b> Chrome menüsü → “Uygulamayı yükle”.</li>
-          <li><b>Bilgisayar:</b> Chrome/Edge adres çubuğundaki yükle simgesi (⊕).</li>
+          <li><b>{t('settings.install.iosLabel')}</b> {t('settings.install.ios')}</li>
+          <li><b>{t('settings.install.androidLabel')}</b> {t('settings.install.android')}</li>
+          <li><b>{t('settings.install.desktopLabel')}</b> {t('settings.install.desktop')}</li>
         </ul>
       </section>
     </div>

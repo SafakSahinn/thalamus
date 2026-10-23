@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useState } from 'react';
+import { t, useLocale } from './i18n';
 import CommandPalette, { openPalette } from './components/CommandPalette';
 import { PromptHost } from './components/Prompt';
 import Sidebar from './components/Sidebar';
@@ -48,6 +49,8 @@ export default function App() {
   const route = parse(useHash());
   const [drawer, setDrawer] = useState(false);
   const sticky = useInstalled('sticky');
+  // Dil değişince arayüz ağacı baştan kurulur (bu bileşenin etkileri yeniden çalışmaz)
+  const locale = useLocale();
 
   useEffect(() => {
     if (!cloud) void initLocal();
@@ -64,14 +67,14 @@ export default function App() {
 
   // Herkese açık paylaşılan sayfa: giriş gerekmez
   if (route.name === 'shared') {
-    return <Suspense fallback={null}><SharedPage id={route.id} /></Suspense>;
+    return <Suspense key={locale} fallback={null}><SharedPage id={route.id} /></Suspense>;
   }
   // Yasal sayfalar girişsiz de açılır
   if (route.name === 'legal' && (!cloud || !account)) {
-    return <Suspense fallback={null}><LegalPage kind={route.kind} /></Suspense>;
+    return <Suspense key={locale} fallback={null}><LegalPage kind={route.kind} /></Suspense>;
   }
   if (cloud && account === undefined) return <div className="splash" />;
-  if (cloud && !account) return <Login />;
+  if (cloud && !account) return <Login key={locale} />;
 
   let page: React.ReactNode;
   switch (route.name) {
@@ -94,20 +97,21 @@ export default function App() {
   }
 
   return (
+    <Fragment key={locale}>
     <div className={`app ${drawer ? 'drawer-open' : ''}`}>
       <Sidebar route={route} onNav={() => setDrawer(false)} />
       <div className="scrim" onClick={() => setDrawer(false)} />
       <main onContextMenu={route.name === 'home' ? homeContextMenu : undefined}>
         <header className="topbar">
-          <button className="iconbtn menu" data-tour="menu" onClick={() => setDrawer(true)} aria-label="Menü">☰</button>
-          <button className="iconbtn" onClick={() => history.back()} aria-label="Geri" title="Geri">←</button>
-          <button className="iconbtn" onClick={() => history.forward()} aria-label="İleri" title="İleri">→</button>
+          <button className="iconbtn menu" data-tour="menu" onClick={() => setDrawer(true)} aria-label={t('app.menu')}>☰</button>
+          <button className="iconbtn" onClick={() => history.back()} aria-label={t('common.back')} title={t('common.back')}>←</button>
+          <button className="iconbtn" onClick={() => history.forward()} aria-label={t('common.forward')} title={t('common.forward')}>→</button>
           <span className="spacer" />
-          <button className="iconbtn" data-tour="search" onClick={openPalette} aria-label="Ara" title="Ara (Ctrl+K)">🔍</button>
-          <button className="btn small primary" data-tour="new-note" onClick={() => go(`/n/${createNote('note').id}`)} title="Yeni not">+ Not</button>
+          <button className="iconbtn" data-tour="search" onClick={openPalette} aria-label={t('common.search')} title={t('app.searchShortcut')}>🔍</button>
+          <button className="btn small primary" data-tour="new-note" onClick={() => go(`/n/${createNote('note').id}`)} title={t('app.newNote')}>{t('app.newNoteBtn')}</button>
         </header>
         <ErrorBoundary resetKey={location.hash}>
-          {ready ? <Suspense fallback={<div className="page muted">Yükleniyor…</div>}>{page}</Suspense> : <div className="page muted">Yükleniyor…</div>}
+          {ready ? <Suspense fallback={<div className="page muted">{t('common.loading')}</div>}>{page}</Suspense> : <div className="page muted">{t('common.loading')}</div>}
         </ErrorBoundary>
       </main>
       <CommandPalette />
@@ -121,5 +125,6 @@ export default function App() {
       <Shortcuts />
       <Peek />
     </div>
+    </Fragment>
   );
 }

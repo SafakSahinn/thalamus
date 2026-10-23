@@ -1,3 +1,4 @@
+import { getLocale, SOURCE_LOCALE, t, tList, type Locale } from '../i18n';
 import { stripPatterns } from './sticky';
 import { saveSettings, useStore } from './store';
 import type { Settings } from './types';
@@ -11,96 +12,50 @@ export type PluginCategory = 'home' | 'tool';
 
 export interface Plugin {
   id: PluginId;
-  name: string;
   icon: string;
   category: PluginCategory;
-  /** kartta görünen tek satırlık tanıtım */
-  summary: string;
-  /** detay panelindeki paragraflar */
-  description: string[];
-  /** öne çıkan özellikler (madde listesi) */
-  features: string[];
   author: string;
-  /** tanıtım görseli (public/ altında) */
-  image: string;
-  /** kurulunca nerede görüneceği / nasıl kullanılacağı */
-  usage: string;
-  /** “Verisiyle birlikte kaldır” onayında silinecek verinin adı */
-  dataLabel: string;
   /** çalışması için kurulu olması gereken eklentiler: kurarken onlar da kurulur, onlar kaldırılınca bu da kaldırılır */
   requires?: PluginId[];
+  // Aşağıdakiler etkin dilden okunur (i18n: plugins.<id>.*)
+  readonly name: string;
+  /** kartta görünen tek satırlık tanıtım */
+  readonly summary: string;
+  /** detay panelindeki paragraflar */
+  readonly description: string[];
+  /** öne çıkan özellikler (madde listesi) */
+  readonly features: string[];
+  /** kurulunca nerede görüneceği / nasıl kullanılacağı */
+  readonly usage: string;
+  /** “Verisiyle birlikte kaldır” onayında silinecek verinin adı */
+  readonly dataLabel: string;
 }
 
-export const CATEGORIES: { id: PluginCategory; label: string }[] = [
-  { id: 'home', label: 'Ana sayfa bileşeni' },
-  { id: 'tool', label: 'Araç' },
-];
+export const CATEGORIES: PluginCategory[] = ['home', 'tool'];
+export const categoryLabel = (c: PluginCategory) => t(`plugins.category.${c}`);
+
+function plugin(base: Pick<Plugin, 'id' | 'icon' | 'category' | 'author' | 'requires'>): Plugin {
+  const k = `plugins.${base.id}` as const;
+  return {
+    ...base,
+    get name() { return t(`${k}.name`); },
+    get summary() { return t(`${k}.summary`); },
+    get description() { return tList(`${k}.description`); },
+    get features() { return tList(`${k}.features`); },
+    get usage() { return t(`${k}.usage`); },
+    get dataLabel() { return t(`${k}.dataLabel`); },
+  };
+}
 
 export const PLUGINS: Plugin[] = [
-  {
-    id: 'sticky',
-    name: 'Yapışkan notlar',
-    icon: '🗒',
-    category: 'tool',
-    summary: 'Ekranın üstünde duran, Windows 7 tarzı renkli not kâğıtları.',
-    description: [
-      'Aklına gelen kısa şeyleri ekranın istediğin yerine yapıştır. Kâğıtlar sayfa değiştirsen de yerinde kalır, monitöre yapıştırılmış gibi.',
-      'Bir kâğıdı istediğin zaman normal nota dönüştürebilirsin: ilk satırı başlık olur, gerisi not içeriği.',
-    ],
-    features: [
-      'Sürükle, köşesinden boyutlandır, 6 renk',
-      'Tüm sayfalarda ya da yalnız ana sayfada görünme seçeneği',
-      'Alt Y ile bu cihazda gizle / göster',
-      '“Not olarak kaydet” ile kalıcı nota dönüştürme',
-      'Telefonda sağ altta renkli kareler, dokununca açılır',
-    ],
-    author: 'Thalamus',
-    image: 'plugins/sticky.webp',
-    usage: 'Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” de ya da Ctrl K → “Yeni yapışkan not”.',
-    dataLabel: 'tüm yapışkan notların ve ayarları',
-  },
-  {
-    id: 'stickyArt',
-    name: 'Desenli not kâğıtları',
-    icon: '🌸',
-    category: 'tool',
-    summary: 'Yapışkan notlara kurşun kalemle çizilmiş gibi desenli kâğıtlar: çiçek, şehir, deniz, araba, kimya…',
-    description: [
-      'Marketlerde satılan desenli not kâğıtları ya da desenli peçeteler gibi: kâğıdın üstü baştan sona, kuru boyayla çizilmiş küçük resimlerle kaplı.',
-      'Yazdıkların desenin üstünde okunur kalır. Eklentiyi kaldırırsan desenli kâğıtlar düz renge döner, notların silinmez.',
-    ],
-    features: [
-      '12 desen: çiçekler, lavanta, şehir, yapraklar, deniz, dağlar, gece, kiraz çiçeği, arabalar, Vahşi Batı, matematik, kimya',
-      'Renk menüsünden tek tıkla seçilir',
-      'Telefonda sağ alttaki karelerde desenin küçük bir parçası görünür',
-    ],
-    author: 'Thalamus',
-    image: 'plugins/stickyArt.webp',
-    usage: 'Bir yapışkan notun ⋯ düğmesine ya da başlığına sağ tıkla; renklerin altındaki desenlerden birini seç.',
-    dataLabel: 'kâğıtlardaki desen seçimleri (notlar kalır, düz renge döner)',
-    requires: ['sticky'],
-  },
-  {
-    id: 'otd',
-    name: 'Gazete: Tarihte bugün',
-    icon: '📰',
-    category: 'home',
-    summary: 'Ana sayfada eski bir gazete sayfası gibi dizilmiş “tarihte bugün” olayları.',
-    description: [
-      'Bugünün tarihinde geçmişte yaşanmış olaylar, doğumlar ve ölümler; Wikipedia’dan alınıp gazete düzeninde, sütunlar hâlinde dizilir.',
-      'Manşette günün öne çıkan olayı yer alır; sayfaları çevirerek geri kalanını okuyabilirsin.',
-    ],
-    features: [
-      'Türkçe ya da İngilizce Wikipedia kaynağı',
-      'Manşet, sütunlar ve sayfa çevirme',
-      'Her olayın Wikipedia maddesine bağlantı',
-    ],
-    author: 'Thalamus',
-    image: 'plugins/otd.webp',
-    usage: 'Ana sayfada en altta görünür; sırasını Ayarlar > Ana sayfa’dan değiştirebilirsin.',
-    dataLabel: 'dil tercihi ve ana sayfadaki yeri',
-  },
+  plugin({ id: 'sticky', icon: '🗒', category: 'tool', author: 'Thalamus' }),
+  plugin({ id: 'stickyArt', icon: '🌸', category: 'tool', author: 'Thalamus', requires: ['sticky'] }),
+  plugin({ id: 'otd', icon: '📰', category: 'home', author: 'Thalamus' }),
 ];
+
+/** Tanıtım görselleri dile göre: public/plugins/<id>.<dil>.webp; o dilde yoksa kaynak dildeki kullanılır */
+export const pluginImage = (id: PluginId, locale: Locale = getLocale()) => `plugins/${id}.${locale}.webp`;
+export const pluginImageFallback = (id: PluginId) => pluginImage(id, SOURCE_LOCALE);
 
 export const pluginOf = (id: string) => PLUGINS.find((p) => p.id === id);
 

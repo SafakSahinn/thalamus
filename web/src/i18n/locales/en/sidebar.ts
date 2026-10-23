@@ -1,0 +1,32 @@
+import type { Messages } from '../../types';
+
+export default {
+  sync: {
+    local: 'Only on this device',
+    idle: 'Synced',
+    syncing: 'Syncing…',
+    offline: 'Offline',
+    error: 'Sync error',
+    pending: { one: '{count} change pending', other: '{count} changes pending' },
+  },
+  pages: 'Pages',
+  pagesHint: 'Drag to reorder; drop onto the middle of a page to nest it underneath',
+  toggleKids: 'Expand/collapse subpages',
+  morePages: { one: '+ {count} more page', other: '+ {count} more pages' },
+  search: '🔍 Search / create',
+  home: '🏠 Home',
+  daily: '📅 Journal',
+  calendar: '📆 Calendar',
+  review: '🧠 Review',
+  study: '⏱ Study',
+  reading: '📈 Reading',
+  graph: '🕸 Connection map',
+  pinned: 'Pinned',
+  collections: 'Collections',
+  newCollection: '＋ New collection',
+  import: '⬇ Import',
+  trash: '🗑 Trash',
+  market: '🧩 Market',
+  settings: '⚙ Settings',
+  shortcuts: '⌨ Shortcuts',
+} satisfies Messages['sidebar'];
