@@ -382,7 +382,16 @@ body.focus-mode .sticky-layer { display: none; }
 .market-badge { font-size: 12px; color: var(--ok); font-weight: 600; }
 .modal.market-detail { max-width: 720px; position: relative; max-height: 86vh; overflow-y: auto; }
 .modal-back:has(.market-detail) { padding-top: 6vh; }
-.market-close { position: absolute; top: 8px; right: 8px; background: var(--bg); box-shadow: var(--shadow); }
+/* Görselin üstünde durduğu için temadan bağımsız buzlu cam: hover'da kaybolmaz, yalnız koyulaşır */
+.iconbtn.market-close {
+  position: absolute; top: 10px; right: 10px; z-index: 1; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(20, 20, 24, 0.5); color: #fff; font-size: 22px; line-height: 1;
+  backdrop-filter: blur(8px) saturate(1.4); -webkit-backdrop-filter: blur(8px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s, transform 0.15s;
+}
+.iconbtn.market-close:hover:not(:disabled) { background: rgba(20, 20, 24, 0.72); color: #fff; transform: scale(1.06); }
+.iconbtn.market-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .market-detail-body { padding: 16px 20px 20px; }
 .market-detail-body > .market-head { margin-bottom: 10px; }
 .market-features { margin: 8px 0 12px; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
