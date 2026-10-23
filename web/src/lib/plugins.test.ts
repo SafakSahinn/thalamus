@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasPluginData, installedList } from './plugins';
+import { hasPluginData, installedList, withoutPlugin } from './plugins';
 import { DEFAULT_SETTINGS, type Settings } from './types';
 
 const s = (extra: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...extra });
@@ -26,5 +26,18 @@ describe('hasPluginData', () => {
     expect(hasPluginData('sticky', s({ stickyScope: 'home' }))).toBe(true);
     expect(hasPluginData('otd', s({ otdLang: 'en' }))).toBe(true);
     expect(hasPluginData('otd', s({ homeLayout: [{ id: 'today', on: true }] }))).toBe(false);
+  });
+});
+
+describe('eklenti bağımlılıkları', () => {
+  it('bir eklenti kaldırılınca ona bağlı olanlar da kalkar', () => {
+    expect(withoutPlugin(['sticky', 'stickyArt', 'otd'], 'sticky')).toEqual(['otd']);
+    expect(withoutPlugin(['sticky', 'stickyArt'], 'stickyArt')).toEqual(['sticky']);
+  });
+
+  it('desenli kâğıt verisi yalnız desen seçilmiş kâğıt varsa sayılır', () => {
+    const plain = { id: 'a', text: '', color: 'yellow' as const, x: 0, y: 0, w: 200, h: 160 };
+    expect(hasPluginData('stickyArt', s({ stickies: [plain] }))).toBe(false);
+    expect(hasPluginData('stickyArt', s({ stickies: [{ ...plain, pattern: 'gece' }] }))).toBe(true);
   });
 });

@@ -290,6 +290,16 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 .c-white { --sk: #fbfbfa; --sk-head: #ebebe8; }
 .sticky-swatch { width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgb(0 0 0 / 18%); background: var(--sk); cursor: pointer; padding: 0; }
 .sticky-swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* desenli kâğıtlar (Desenli not kâğıtları eklentisi): peçete gibi tekrar eden kurşun kalem çizimleri */
+.c-cicek { --sk: #fdf8ec; --sk-head: #f4e9c4; --sk-art: url(/stickies/cicek.svg); }
+.c-lavanta { --sk: #f6f2fb; --sk-head: #e6dcf5; --sk-art: url(/stickies/lavanta.svg); }
+.c-sehir { --sk: #eef5fb; --sk-head: #d9e8f5; --sk-art: url(/stickies/sehir.svg); }
+.c-yaprak { --sk: #fdf5e8; --sk-head: #f6e2c2; --sk-art: url(/stickies/yaprak.svg); }
+.c-deniz { --sk: #eaf4fa; --sk-head: #d3e8f4; --sk-art: url(/stickies/deniz.svg); }
+.c-dag { --sk: #f1f7ee; --sk-head: #dcebd5; --sk-art: url(/stickies/dag.svg); }
+.c-gece { --sk: #e9ecf8; --sk-head: #d6dbf1; --sk-art: url(/stickies/gece.svg); }
+.c-kiraz { --sk: #fdf3f6; --sk-head: #f6dce4; --sk-art: url(/stickies/kiraz.svg); }
+.sticky-swatch.pat, .sticky-tab.pat { background: var(--sk-art) -4px -6px / 64px, var(--sk); }
 
 .sticky-layer { position: fixed; inset: 0; z-index: 32; pointer-events: none; }
 .sticky { position: absolute; pointer-events: auto; color: #2f2e2b; }
@@ -308,6 +318,16 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
   border-radius: 2px 2px 46% 46% / 2px 2px 9px 9px;
   box-shadow: 0 1px 2px rgb(0 0 0 / 16%);
 }
+.sticky.pat .sticky-paper {
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0%) calc(100% - 34px), rgb(0 0 0 / 9%) 100%),
+    var(--sk-art) 0 0 / 120px,
+    var(--sk);
+}
+.sticky.pat .sticky-head { background: color-mix(in srgb, var(--sk-head) 85%, transparent); }
+/* yazı desenin üstünde okunur kalsın: harflerin çevresinde kâğıt renginde hafif hale */
+.sticky.pat textarea { text-shadow: 0 0 2px var(--sk), 0 0 4px var(--sk), 0 0 6px var(--sk); }
+.sticky-tab.pat { text-shadow: 0 0 3px #fff, 0 0 5px #fff; }
 .sticky.dragging { user-select: none; }
 .sticky.dragging::before, .sticky.dragging::after { box-shadow: 0 22px 18px rgb(0 0 0 / 30%); }
 .sticky-head { display: flex; align-items: center; height: 24px; flex: none; background: var(--sk-head); cursor: move; touch-action: none; padding: 0 2px; }

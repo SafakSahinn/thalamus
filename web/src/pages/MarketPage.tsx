@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  CATEGORIES, installPlugin, PLUGINS, purgePlugin, uninstallPlugin, useInstalledList, usePluginData, type Plugin, type PluginCategory,
+  CATEGORIES, installPlugin, pluginOf, PLUGINS, purgePlugin, uninstallPlugin, useInstalledList, usePluginData, type Plugin, type PluginCategory,
 } from '../lib/plugins';
 
 // Eklenti marketi: yerleşik eklentilerin kataloğu, kur / kaldır ve detay paneli (bkz. lib/plugins.ts)
@@ -29,6 +29,10 @@ function InstallButton({ p, on }: { p: Plugin; on: boolean }) {
 
 function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => void }) {
   const data = usePluginData(p.id);
+  const installed = useInstalledList();
+  const names = (ids: string[]) => ids.map((id) => pluginOf(id)?.name).join(', ');
+  const needs = (p.requires ?? []).filter((id) => !installed.includes(id));
+  const dependents = installed.filter((id) => pluginOf(id)?.requires?.includes(p.id));
   const purge = () => {
     if (confirm(`${p.name}${on ? ' kaldırılacak ve' : ':'} ${p.dataLabel} kalıcı olarak silinecek. Bu geri alınamaz. Devam edilsin mi?`)) void purgePlugin(p.id);
   };
@@ -58,6 +62,8 @@ function Detail({ p, on, onClose }: { p: Plugin; on: boolean; onClose: () => voi
             {p.features.map((f) => <li key={f}>{f}</li>)}
           </ul>
           <p className="market-usage small"><b>Nasıl kullanılır:</b> {p.usage}</p>
+          {!on && needs.length > 0 && <p className="muted small">{names(needs)} eklentisini gerektirir; kurarken o da kurulur.</p>}
+          {on && dependents.length > 0 && <p className="muted small">Kaldırırsan ona bağlı {names(dependents)} eklentisi de kaldırılır.</p>}
           {on && (
             <div className="market-purge">
               <p className="muted small">“Kaldır” verilerini silmez, yalnız gizler; yeniden kurduğunda kaldığın yerden devam edersin.</p>

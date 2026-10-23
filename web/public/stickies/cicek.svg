@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="120" height="120" viewBox="0 0 120 120">
+<defs>
+<filter id="p" filterUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" stitchTiles="stitch" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.35 1.5" numOctaves="2" seed="9" stitchTiles="stitch" result="g"/>
+<feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -0.75" result="ga"/>
+<feComposite in="d" in2="ga" operator="in"/>
+</filter>
+<g id="petal"><ellipse cx="0" cy="-9" rx="4.6" ry="7.5"/></g>
+<g id="fmn">
+<circle cx="0" cy="-4" r="3.2"/><circle cx="3.8" cy="-1.24" r="3.2"/><circle cx="2.35" cy="3.24" r="3.2"/><circle cx="-2.35" cy="3.24" r="3.2"/><circle cx="-3.8" cy="-1.24" r="3.2"/>
+<circle cx="0" cy="0" r="1.6" fill="#f2c94c" stroke="#c99a1f"/>
+</g>
+</defs>
+<g filter="url(#p)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<!-- papatya -->
+<path d="M30,40 C28,50 32,58 30,66" fill="none" stroke="#6f9a55"/>
+<path d="M30,57 C36,53 40,51 43,48 C41,54 36,58 30,57Z" fill="#a8d08d" stroke="#6f9a55"/>
+<g fill="#f6aecb" stroke="#c4688e" transform="translate(30,30)">
+<use xlink:href="#petal"/><use xlink:href="#petal" transform="rotate(60)"/><use xlink:href="#petal" transform="rotate(120)"/>
+<use xlink:href="#petal" transform="rotate(180)"/><use xlink:href="#petal" transform="rotate(240)"/><use xlink:href="#petal" transform="rotate(300)"/>
+<circle r="4.8" fill="#f7d354" stroke="#c99a1f"/>
+</g>
+<!-- lale -->
+<path d="M91,85 C90,94 92,102 91,112" fill="none" stroke="#6f9a55"/>
+<path d="M91,102 C84,100 80,94 79,89 C86,91 90,96 91,102Z" fill="#a8d08d" stroke="#6f9a55"/>
+<path d="M84,80 C82,72 84,67 86,65 L89,70 L92,64 L95,70 L98,65 C100,67 101,73 98,80 C96,86 86,86 84,80Z" fill="#f08c7e" stroke="#c0574a"/>
+<!-- unutmabeni -->
+<g fill="#9cc4ee" stroke="#5d8fc4">
+<use xlink:href="#fmn" transform="translate(88,28)"/>
+<use xlink:href="#fmn" transform="translate(30,96) scale(0.85)"/>
+</g>
+<circle cx="64" cy="54" r="1.4" fill="#e7a3be" stroke="none"/>
+<circle cx="8" cy="72" r="1.4" fill="#9cc4ee" stroke="none"/>
+<circle cx="60" cy="110" r="1.4" fill="#f7d354" stroke="none"/>
+</g>
+</svg>

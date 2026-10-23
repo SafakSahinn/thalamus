@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useInstalled } from '../lib/plugins';
 import { go } from '../lib/router';
 import { createNote, useStore } from '../lib/store';
 import {
-  addSticky, COLORS, MIN_H, MIN_W, patchSticky, placeRect, raiseSticky, removeSticky, setStickiesHidden,
-  stickyToNote, useStickyUi, type Sticky, type StickyColor,
+  addSticky, COLORS, MIN_H, MIN_W, paperClass, paperPatch, patchSticky, PATTERNS, placeRect, raiseSticky, removeSticky,
+  setStickiesHidden, stickyToNote, useStickyUi, type Sticky,
 } from '../lib/sticky';
 import { openMenu, type MenuItem } from './ContextMenu';
 
@@ -28,6 +29,7 @@ export default function StickyNotes({ home }: { home: boolean }) {
   const scope = useStore((s) => s.settings.stickyScope ?? 'all');
   const hidden = useStickyUi((s) => s.hidden);
   const open = useStickyUi((s) => s.open);
+  const art = useInstalled('stickyArt');
   const { vw, vh, mobile } = useViewport();
 
   // Alt Y: bu cihazda kâğıtları gizle / göster
@@ -53,27 +55,27 @@ export default function StickyNotes({ home }: { home: boolean }) {
       <div className="sticky-layer">
         <div className="sticky-dock">
           {list.map((s) => (
-            <button key={s.id} className={`sticky-tab c-${s.color} ${s.id === open ? 'on' : ''}`} title={s.text.split('\n')[0] || 'Boş not'}
+            <button key={s.id} className={`sticky-tab ${paperClass(s, art)} ${s.id === open ? 'on' : ''}`} title={s.text.split('\n')[0] || 'Boş not'}
               onClick={() => useStickyUi.setState({ open: s.id === open ? null : s.id })}>
               {s.text.trim().charAt(0).toLocaleUpperCase('tr')}
             </button>
           ))}
         </div>
-        {cur && <Paper key={cur.id} s={cur} rect={{ left: 0, top: 0, w: 0, h: 0 }} vw={vw} vh={vh} z={1} mobile />}
+        {cur && <Paper key={cur.id} s={cur} rect={{ left: 0, top: 0, w: 0, h: 0 }} vw={vw} vh={vh} z={1} art={art} mobile />}
       </div>
     );
   }
 
   return (
     <div className="sticky-layer">
-      {stable.map((s) => <Paper key={s.id} s={s} rect={placeRect(s, vw, vh)} vw={vw} vh={vh} z={z(s.id)} />)}
+      {stable.map((s) => <Paper key={s.id} s={s} rect={placeRect(s, vw, vh)} vw={vw} vh={vh} z={z(s.id)} art={art} />)}
     </div>
   );
 }
 
 type Rect = { left: number; top: number; w: number; h: number };
 
-function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: number; vh: number; z: number; mobile?: boolean }) {
+function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw: number; vh: number; z: number; art: boolean; mobile?: boolean }) {
   const [text, setText] = useState(s.text);
   const [live, setLive] = useState<Rect | null>(null);
   const [sizing, setSizing] = useState(false);
@@ -155,12 +157,18 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
     go(`/n/${n.id}`);
   };
 
+  const patterned = art && !!s.pattern;
+  const addNext = () => addSticky(undefined, s.color, patterned ? s.pattern : undefined);
   const menu = (x: number, y: number) => {
-    const items: MenuItem[] = [
-      { key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ ...c, on: c.id === s.color })), pick: (c) => patchSticky(s.id, { color: c as StickyColor }) },
-      { key: 's1', sep: true },
-      { key: 'new', icon: '＋', label: 'Yeni yapışkan not', run: () => addSticky(undefined, s.color) },
-    ];
+    const pick = (c: string) => patchSticky(s.id, paperPatch(c));
+    const items: MenuItem[] = [{ key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ ...c, on: !patterned && c.id === s.color })), pick }];
+    // desenler iki sıra hâlinde (Desenli not kâğıtları eklentisi)
+    if (art) {
+      for (const [i, row] of [PATTERNS.slice(0, 4), PATTERNS.slice(4)].entries()) {
+        items.push({ key: `pat${i}`, className: 'sticky-swatch pat', swatches: row.map((p) => ({ id: p.id, label: p.label, on: s.pattern === p.id })), pick });
+      }
+    }
+    items.push({ key: 's1', sep: true }, { key: 'new', icon: '＋', label: 'Yeni yapışkan not', run: addNext });
     if (text.trim()) items.push({ key: 'note', icon: '📄', label: 'Not olarak kaydet', run: toNote });
     items.push({ key: 's2', sep: true }, { key: 'del', icon: '🗑', label: 'Sil', danger: true, run: remove });
     openMenu(x, y, items);
@@ -169,15 +177,15 @@ function Paper({ s, rect, vw, vh, z, mobile }: { s: Sticky; rect: Rect; vw: numb
   const r = live ?? rect;
   const style: React.CSSProperties = mobile ? { zIndex: z } : { left: r.left, top: r.top, width: r.w, height: r.h, zIndex: z };
   return (
-    <div className={`sticky c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
+    <div className={`sticky ${paperClass(s, art)} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
       onPointerDownCapture={() => raiseSticky(s.id)}>
       {/* kâğıt ayrı katmanda: kıvrık köşe gölgeleri (::before/::after) onun arkasında kalsın */}
       <div className="sticky-paper">
         <div className="sticky-head" onPointerDown={(e) => startDrag(e, 'move')}
           onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
-          <button title="Yeni yapışkan not" onClick={() => addSticky(undefined, s.color)}>＋</button>
+          <button title="Yeni yapışkan not" onClick={addNext}>＋</button>
           <span className="spacer" />
-          <button title="Renk ve diğer" onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
+          <button title={art ? 'Renk, desen ve diğer' : 'Renk ve diğer'} onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
           {mobile && <button title="Küçült" onClick={() => { flush(); useStickyUi.setState({ open: null }); }}>▾</button>}
           <button title="Sil" onClick={remove}>×</button>
         </div>

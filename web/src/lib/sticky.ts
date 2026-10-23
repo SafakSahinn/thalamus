@@ -17,6 +17,8 @@ export interface Sticky {
   y: number;
   w: number;
   h: number;
+  /** desenli kâğıt ("Desenli not kâğıtları" eklentisi); eklenti kurulu değilse yok sayılır ve `color` görünür */
+  pattern?: StickyPattern;
 }
 
 export const COLORS: { id: StickyColor; label: string }[] = [
@@ -27,6 +29,35 @@ export const COLORS: { id: StickyColor; label: string }[] = [
   { id: 'purple', label: 'Mor' },
   { id: 'white', label: 'Beyaz' },
 ];
+
+export type StickyPattern = 'cicek' | 'lavanta' | 'sehir' | 'yaprak' | 'deniz' | 'dag' | 'gece' | 'kiraz';
+
+/** Kurşun kalem desenleri (public/stickies/*.svg). `color`: eklenti kaldırılınca kâğıdın düşeceği düz renk. */
+export const PATTERNS: { id: StickyPattern; label: string; color: StickyColor }[] = [
+  { id: 'cicek', label: 'Çiçekler', color: 'yellow' },
+  { id: 'lavanta', label: 'Lavanta', color: 'purple' },
+  { id: 'sehir', label: 'Şehir', color: 'blue' },
+  { id: 'yaprak', label: 'Yapraklar', color: 'yellow' },
+  { id: 'deniz', label: 'Deniz', color: 'blue' },
+  { id: 'dag', label: 'Dağlar', color: 'green' },
+  { id: 'gece', label: 'Gece', color: 'purple' },
+  { id: 'kiraz', label: 'Kiraz çiçeği', color: 'pink' },
+];
+
+export const isPattern = (id: string): id is StickyPattern => PATTERNS.some((p) => p.id === id);
+
+/** Renk ya da desen seçimi: desen seçilince düz rengi de desenin baz rengine çekilir */
+export function paperPatch(id: string): Partial<Sticky> {
+  const p = PATTERNS.find((x) => x.id === id);
+  return p ? { pattern: p.id, color: p.color } : { color: id as StickyColor, pattern: undefined };
+}
+
+/** Kâğıdın sınıfı: desen yalnız eklenti kuruluyken */
+export const paperClass = (s: Pick<Sticky, 'color' | 'pattern'>, art: boolean) =>
+  art && s.pattern && isPattern(s.pattern) ? `c-${s.pattern} pat` : `c-${s.color}`;
+
+/** Eklenti verisiyle kaldırılınca: desen alanları silinir, kâğıtlar baz rengine döner */
+export const stripPatterns = (list: Sticky[]) => list.map(({ pattern: _p, ...s }) => s);
 
 export const MIN_W = 160;
 export const MIN_H = 110;
@@ -79,8 +110,9 @@ export function setStickiesHidden(hidden: boolean) {
 const listOf = () => useStore.getState().settings.stickies ?? [];
 const save = (stickies: Sticky[]) => void saveSettings({ ...useStore.getState().settings, stickies });
 
-export function addSticky(at?: { x: number; y: number }, color?: StickyColor) {
+export function addSticky(at?: { x: number; y: number }, color?: StickyColor, pattern?: StickyPattern) {
   const s = newSticky(listOf(), innerWidth, innerHeight, at, color);
+  if (pattern) s.pattern = pattern;
   save([...listOf(), s]);
   setStickiesHidden(false);
   useStickyUi.setState({ focus: s.id, open: s.id });

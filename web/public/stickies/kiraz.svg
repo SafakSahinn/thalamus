@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="120" height="120" viewBox="0 0 120 120">
+<defs>
+<filter id="p" filterUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="11" stitchTiles="stitch" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.35 1.5" numOctaves="2" seed="23" stitchTiles="stitch" result="g"/>
+<feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -0.75" result="ga"/>
+<feComposite in="d" in2="ga" operator="in"/>
+</filter>
+<g id="bl">
+<g fill="#f7bccb" stroke="#d27c96">
+<circle cx="0" cy="-4.5" r="4.4"/><circle cx="4.28" cy="-1.39" r="4.4"/><circle cx="2.64" cy="3.64" r="4.4"/><circle cx="-2.64" cy="3.64" r="4.4"/><circle cx="-4.28" cy="-1.39" r="4.4"/>
+</g>
+<circle cx="0" cy="0" r="1.8" fill="#e06d8a" stroke="none"/>
+</g>
+<g id="bud"><ellipse cx="0" cy="0" rx="2.8" ry="4" fill="#f4a3b8" stroke="#d27c96"/></g>
+<g id="branch">
+<path d="M-50,8 C-30,-2 -10,6 10,-6 C20,-12 30,-12 40,-18 M-6,2 C-6,-6 -2,-12 2,-16" fill="none" stroke="#9a7458" stroke-width="2"/>
+<use xlink:href="#bl" transform="translate(-34,2)"/>
+<use xlink:href="#bl" transform="translate(-12,4) rotate(30)"/>
+<use xlink:href="#bl" transform="translate(12,-8) rotate(-20)"/>
+<use xlink:href="#bud" transform="translate(2,-19) rotate(10)"/>
+<use xlink:href="#bud" transform="translate(41,-21) rotate(50)"/>
+<path d="M26,-12 C28,-18 33,-19 35,-17 C32,-14 29,-12 26,-12Z" fill="#b5d3a2" stroke="#7fa66d" stroke-width="1.2"/>
+</g>
+</defs>
+<g filter="url(#p)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<use xlink:href="#branch" transform="translate(56,42)"/>
+<use xlink:href="#branch" transform="translate(66,98) scale(0.85)"/>
+<g fill="#f7bccb" stroke="#d27c96">
+<ellipse cx="96" cy="62" rx="3" ry="2" transform="rotate(30 96 62)"/>
+<ellipse cx="18" cy="74" rx="3" ry="2" transform="rotate(-20 18 74)"/>
+<ellipse cx="104" cy="12" rx="2.6" ry="1.8" transform="rotate(60 104 12)"/>
+</g>
+</g>
+</svg>

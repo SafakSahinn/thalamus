@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="120" height="120" viewBox="0 0 120 120">
+<defs>
+<filter id="p" filterUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" stitchTiles="stitch" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.35 1.5" numOctaves="2" seed="15" stitchTiles="stitch" result="g"/>
+<feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -0.75" result="ga"/>
+<feComposite in="d" in2="ga" operator="in"/>
+</filter>
+<g id="leaf">
+<path d="M0,-15 C10,-8 10,8 0,15 C-10,8 -10,-8 0,-15Z"/>
+<path d="M0,-12 V21 M0,-4 L5,-8 M0,-4 L-5,-8 M0,4 L6,0 M0,4 L-6,0" fill="none"/>
+</g>
+<g id="acorn">
+<path d="M-6,0 C-6,9 6,9 6,0Z" fill="#d9b07a" stroke="#9a6f3d"/>
+<path d="M-7,1 C-7,-6 7,-6 7,1Z M0,-5 L1,-9" fill="#a8825a" stroke="#6f5032"/>
+</g>
+</defs>
+<g filter="url(#p)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<use xlink:href="#leaf" transform="translate(28,30) rotate(-35)" fill="#f2a65e" stroke="#bf6d2a"/>
+<use xlink:href="#leaf" transform="translate(90,26) rotate(50) scale(0.85)" fill="#e9796a" stroke="#b44a3d"/>
+<use xlink:href="#leaf" transform="translate(88,86) rotate(-120)" fill="#efcf5c" stroke="#b9952a"/>
+<use xlink:href="#leaf" transform="translate(30,90) rotate(140) scale(0.9)" fill="#b9cf7a" stroke="#7e9442"/>
+<use xlink:href="#acorn" transform="translate(60,60) rotate(12)"/>
+<circle cx="60" cy="18" r="1.4" fill="#e9796a" stroke="none"/>
+<circle cx="10" cy="62" r="1.4" fill="#f2a65e" stroke="none"/>
+<circle cx="112" cy="58" r="1.4" fill="#efcf5c" stroke="none"/>
+<circle cx="62" cy="108" r="1.4" fill="#b9cf7a" stroke="none"/>
+</g>
+</svg>

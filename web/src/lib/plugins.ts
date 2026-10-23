@@ -1,3 +1,4 @@
+import { stripPatterns } from './sticky';
 import { saveSettings, useStore } from './store';
 import type { Settings } from './types';
 
@@ -5,7 +6,7 @@ import type { Settings } from './types';
 // Katalog şimdilik yalnız bizim yayınladığımız yerleşik eklentilerden oluşur (kodla birlikte gelir).
 // Kurulu listesi Settings.installed'da tutulur ve Drive'a eşitlenir. Kaldırmak veriyi silmez, yalnız gizler.
 
-export type PluginId = 'sticky' | 'otd';
+export type PluginId = 'sticky' | 'stickyArt' | 'otd';
 export type PluginCategory = 'home' | 'tool';
 
 export interface Plugin {
@@ -26,6 +27,8 @@ export interface Plugin {
   usage: string;
   /** “Verisiyle birlikte kaldır” onayında silinecek verinin adı */
   dataLabel: string;
+  /** çalışması için kurulu olması gereken eklentiler: kurarken onlar da kurulur, onlar kaldırılınca bu da kaldırılır */
+  requires?: PluginId[];
 }
 
 export const CATEGORIES: { id: PluginCategory; label: string }[] = [
@@ -55,6 +58,27 @@ export const PLUGINS: Plugin[] = [
     image: 'plugins/sticky.webp',
     usage: 'Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” de ya da Ctrl K → “Yeni yapışkan not”.',
     dataLabel: 'tüm yapışkan notların ve ayarları',
+  },
+  {
+    id: 'stickyArt',
+    name: 'Desenli not kâğıtları',
+    icon: '🌸',
+    category: 'tool',
+    summary: 'Yapışkan notlara kurşun kalemle çizilmiş gibi desenli kâğıtlar: çiçek, şehir, deniz…',
+    description: [
+      'Marketlerde satılan desenli not kâğıtları ya da desenli peçeteler gibi: kâğıdın üstü baştan sona, kuru boyayla çizilmiş küçük resimlerle kaplı.',
+      'Yazdıkların desenin üstünde okunur kalır. Eklentiyi kaldırırsan desenli kâğıtlar düz renge döner, notların silinmez.',
+    ],
+    features: [
+      '8 desen: çiçekler, lavanta, şehir, yapraklar, deniz, dağlar, gece, kiraz çiçeği',
+      'Renk menüsünden tek tıkla seçilir',
+      'Telefonda sağ alttaki karelerde desenin küçük bir parçası görünür',
+    ],
+    author: 'Thalamus',
+    image: 'plugins/stickyArt.webp',
+    usage: 'Bir yapışkan notun ⋯ düğmesine ya da başlığına sağ tıkla; renklerin altındaki desenlerden birini seç.',
+    dataLabel: 'kâğıtlardaki desen seçimleri (notlar kalır, düz renge döner)',
+    requires: ['sticky'],
   },
   {
     id: 'otd',
@@ -102,7 +126,7 @@ export function useInstalledList() {
 
 export function installPlugin(id: PluginId) {
   const s = useStore.getState().settings;
-  const installed = [...new Set([...installedList(s), id])];
+  const installed = [...new Set([...installedList(s), ...(pluginOf(id)?.requires ?? []), id])];
   let homeLayout = s.homeLayout;
   // Ana sayfa bileşeni kurulunca görünür olsun (düzende yoksa sona eklenir)
   if (pluginOf(id)?.category === 'home') {
@@ -115,14 +139,22 @@ export function installPlugin(id: PluginId) {
 
 export function uninstallPlugin(id: PluginId) {
   const s = useStore.getState().settings;
-  return saveSettings({ ...s, installed: installedList(s).filter((x) => x !== id) });
+  return saveSettings({ ...s, installed: withoutPlugin(installedList(s), id) });
 }
+
+/** Bir eklentiyi ve ona bağlı olanları listeden çıkarır */
+export const withoutPlugin = (list: PluginId[], id: PluginId) =>
+  list.filter((x) => x !== id && !pluginOf(x)?.requires?.includes(id));
 
 // Eklentilerin ayarlarda bıraktığı veriler ("Verisiyle birlikte kaldır")
 const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Settings) => Settings }> = {
   sticky: {
     has: (s) => !!s.stickies?.length || s.stickyScope !== undefined,
     clear: ({ stickies: _a, stickyScope: _b, ...s }) => s,
+  },
+  stickyArt: {
+    has: (s) => !!s.stickies?.some((x) => x.pattern),
+    clear: (s) => (s.stickies ? { ...s, stickies: stripPatterns(s.stickies) } : s),
   },
   otd: {
     has: (s) => s.otdLang !== undefined || !!s.homeLayout?.some((x) => x.id === 'otd'),
@@ -140,5 +172,5 @@ export function usePluginData(id: PluginId) {
 export function purgePlugin(id: PluginId) {
   const s = useStore.getState().settings;
   if (id === 'sticky') try { localStorage.removeItem('stickyHidden'); } catch { /* yok say */ }
-  return saveSettings({ ...DATA[id].clear(s), installed: installedList(s).filter((x) => x !== id) });
+  return saveSettings({ ...DATA[id].clear(s), installed: withoutPlugin(installedList(s), id) });
 }

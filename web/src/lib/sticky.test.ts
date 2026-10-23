@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newSticky, placeRect, stickyToNote } from './sticky';
+import { newSticky, paperClass, paperPatch, placeRect, stickyToNote, stripPatterns } from './sticky';
 
 describe('yapışkan notlar', () => {
   it('küçülen ekranda kâğıt içeri kıstırılır, boyut ekrana sığar', () => {
@@ -30,5 +30,23 @@ describe('yapışkan notlar', () => {
       ] },
     });
     expect(stickyToNote('tek satır')).toEqual({ title: 'tek satır', content: null });
+  });
+});
+
+describe('desenli kâğıtlar', () => {
+  it('desen seçilince baz rengi de değişir, renk seçilince desen kalkar', () => {
+    expect(paperPatch('sehir')).toEqual({ pattern: 'sehir', color: 'blue' });
+    expect(paperPatch('pink')).toEqual({ color: 'pink', pattern: undefined });
+  });
+
+  it('desen yalnız eklenti kuruluyken görünür, bilinmeyen desen düz renge düşer', () => {
+    expect(paperClass({ color: 'green', pattern: 'dag' }, true)).toBe('c-dag pat');
+    expect(paperClass({ color: 'green', pattern: 'dag' }, false)).toBe('c-green');
+    expect(paperClass({ color: 'blue', pattern: 'eski' as never }, true)).toBe('c-blue');
+  });
+
+  it('verisiyle kaldırınca desen alanları silinir, gerisi kalır', () => {
+    const s = { id: 'a', text: 'x', color: 'pink' as const, x: 0, y: 0, w: 200, h: 160, pattern: 'kiraz' as const };
+    expect(stripPatterns([s])).toEqual([{ id: 'a', text: 'x', color: 'pink', x: 0, y: 0, w: 200, h: 160 }]);
   });
 });
