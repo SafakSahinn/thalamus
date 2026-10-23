@@ -3,6 +3,7 @@
 // - Formüller olduğu gibi ($…$, equation*), başlıklar \section…, listeler, tablolar, alıntılar, kod
 // - Görseller figures/ klasörüne konur (zip içinde)
 
+import { t } from '../i18n';
 import { bibFile, citeKey, citeOf } from './bibtex';
 import { displayTitle } from './format';
 import type { Note } from './types';
@@ -105,7 +106,7 @@ function block(n: PMNode, ctx: TexCtx): string {
       const alt = esc(String(n.attrs?.alt ?? ''));
       return path
         ? `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{${path}}\n${alt ? `  \\caption{${alt}}\n` : ''}\\end{figure}`
-        : `% görsel: ${String(n.attrs?.src ?? '').slice(0, 80)}`;
+        : t('fmt.latexImage', { src: String(n.attrs?.src ?? '').slice(0, 80) });
     }
     case 'table': {
       const rows = n.content ?? [];
@@ -127,7 +128,7 @@ function block(n: PMNode, ctx: TexCtx): string {
     case 'bibliography': return '%% KAYNAKÇA_YERİ';
     case 'bookmark': return `\\url{${String(n.attrs?.url ?? '')}}`;
     case 'toc': return '\\tableofcontents';
-    case 'mermaid': return '% (Mermaid diyagramı LaTeX’e aktarılmadı)';
+    case 'mermaid': return t('fmt.latexMermaid');
     default: return n.content ? blocks(n.content, ctx) : '';
   }
 }

@@ -1,6 +1,7 @@
 // Not içeriğini Google Takvim etkinlik açıklamasının anladığı sade HTML'e çevirir
 // (yalnızca <b> <i> <u> <s> <a> <br> <ul> <ol> <li>; görseller ve dosyalar yer tutucu olur).
 
+import { t } from '../i18n';
 import { propValue, showValue } from './compute';
 import { displayTitle, fmtDay } from './format';
 import { relationIds, typeOf, type Note, type PropDef } from './types';
@@ -61,9 +62,9 @@ function block(n: PMNode): string {
     case 'horizontalRule':
       return '———<br>';
     case 'image':
-      return '[görsel]<br>';
+      return `[${t('fmt.image')}]<br>`;
     case 'fileBlock':
-      return `[dosya${n.attrs?.name ? `: ${esc(String(n.attrs.name))}` : ''}]<br>`;
+      return `${n.attrs?.name ? t('fmt.fileOf', { name: esc(String(n.attrs.name)) }) : t('fmt.file')}<br>`;
     case 'mermaid':
       return '[diyagram]<br>';
     case 'table':

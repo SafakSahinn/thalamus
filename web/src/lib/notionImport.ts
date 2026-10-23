@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { generateJSON, type JSONContent } from '@tiptap/core';
 import JSZip from 'jszip';
 import { marked } from 'marked';
@@ -308,7 +309,7 @@ export async function mdToDoc(md: string, ctx: DocCtx): Promise<JSONContent | nu
     if (/^(https?:|data:|sb:)/i.test(src)) continue;
     const url = await ctx.resolveAsset(resolvePath(from, safeDecode(src)));
     if (url) img.setAttribute('src', url);
-    else img.replaceWith(doc.createTextNode(`[görsel: ${safeDecode(base(src))}]`));
+    else img.replaceWith(doc.createTextNode(t('fmt.imageOf', { name: safeDecode(base(src)) })));
   }
   // Görev listeleri
   for (const ul of [...doc.querySelectorAll('ul')]) {

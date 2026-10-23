@@ -9,6 +9,7 @@ import collPage from './collPage';
 import common from './common';
 import dialogs from './dialogs';
 import editor from './editor';
+import fmt from './fmt';
 import home from './home';
 import importer from './importer';
 import keys from './keys';
@@ -46,6 +47,7 @@ export default {
   common,
   dialogs,
   editor,
+  fmt,
   home,
   importer,
   keys,

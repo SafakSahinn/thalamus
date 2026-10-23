@@ -65,7 +65,7 @@ export function propValue(note: Note, def: PropDef, notes: Record<string, Note>,
       const r = def.rollup;
       if (!r) return '';
       const rel = typeOf(note.type).props.find((p) => p.key === r.relation);
-      if (!rel) return { error: 'Bağlantı alanı bulunamadı' };
+      if (!rel) return { error: t('fmt.relationMissing') };
       const targets = relationIds(propValue(note, rel, notes, depth + 1)).map((id) => notes[id]).filter((n) => n && !n.deleted_at);
       const values = targets.map((t) => {
         if (r.prop === '__title') return t.title;

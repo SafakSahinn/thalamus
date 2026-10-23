@@ -1,5 +1,6 @@
 // Notları Markdown'a çevirir (Obsidian uyumlu: [[bağlantılar]], YAML ön bilgisi, $formüller$).
 
+import { t } from '../i18n';
 import { propValue, showValue } from './compute';
 import { displayTitle } from './format';
 import { relationIds, typeOf, type Note } from './types';
@@ -57,7 +58,7 @@ function image(n: PMNode, ctx: MdCtx) {
   const src = String(n.attrs?.src ?? '');
   if (/^(gd|local):\/\//.test(src)) {
     const p = ctx.asset?.(src);
-    return p ? `![${fileName(src)}](${encodeURI(p)})` : `*[görsel: ${fileName(src)}]*`;
+    return p ? `![${fileName(src)}](${encodeURI(p)})` : `*${t('fmt.imageOf', { name: fileName(src) })}*`;
   }
   return `![${String(n.attrs?.alt ?? '')}](${src})`;
 }
@@ -92,7 +93,7 @@ function block(n: PMNode, ctx: MdCtx): string {
     case 'blockMath': return `$$\n${String(n.attrs?.latex ?? '')}\n$$`;
     case 'callout': return `> ${String(n.attrs?.emoji ?? '💡')} ${blocks(n.content, ctx).split('\n').join('\n> ')}`;
     case 'bibliography':
-      return '_(Kaynakça bloğu: Thalamus’ta görüntülenir)_';
+      return t('fmt.bibBlock');
     case 'syncedBlock': {
       const c = ctx.synced?.[String(n.attrs?.sid ?? '')]?.content as PMNode | undefined;
       return c ? blocks(c.content, ctx) : '';
@@ -107,10 +108,10 @@ function block(n: PMNode, ctx: MdCtx): string {
     case 'fileBlock': {
       const src = String(n.attrs?.src ?? '');
       const p = ctx.asset?.(src);
-      return p ? `[📎 ${String(n.attrs?.name ?? fileName(src))}](${encodeURI(p)})` : `*[dosya: ${String(n.attrs?.name ?? fileName(src))}]*`;
+      return p ? `[📎 ${String(n.attrs?.name ?? fileName(src))}](${encodeURI(p)})` : `*${t('fmt.fileOf', { name: String(n.attrs?.name ?? fileName(src)) })}*`;
     }
     case 'bookmark': return `[${String(n.attrs?.title || n.attrs?.url || '')}](${String(n.attrs?.url ?? '')})`;
-    case 'embed': return `[Gömülü sayfa](${String(n.attrs?.src ?? '')})`;
+    case 'embed': return `[${t('fmt.embed')}](${String(n.attrs?.src ?? '')})`;
     case 'youtube': return `[YouTube videosu](${String(n.attrs?.src ?? '')})`;
     case 'toc': return '';
     case 'table': {
@@ -168,4 +169,4 @@ export function noteToMarkdown(note: Note, ctx: MdCtx): string {
 }
 
 /** Dosya adı için güvenli başlık */
-export const safeName = (s: string) => s.replace(/[\\/:*?"<>|#^[\]]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Adsız';
+export const safeName = (s: string) => s.replace(/[\\/:*?"<>|#^[\]]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || t('common.untitled');
