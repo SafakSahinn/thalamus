@@ -17,6 +17,7 @@ import props from './props';
 import schema from './schema';
 import settings from './settings';
 import sidebar from './sidebar';
+import study from './study';
 import time from './time';
 import types from './types';
 import views from './views';
@@ -41,6 +42,7 @@ export default {
   schema,
   settings,
   sidebar,
+  study,
   time,
   types,
   views,

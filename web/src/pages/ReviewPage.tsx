@@ -1,17 +1,19 @@
+import { t } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle } from '../lib/format';
 import { dueCards, intervalText, NEW_KEY, newPerDay, review, srsOf, type Grade } from '../lib/srs';
 import { setProp, todayStr, useIndex, useStore } from '../lib/store';
-import { typeOf, type Note } from '../lib/types';
+import { optionLabel, typeOf, type Note } from '../lib/types';
 
 // Aralıklı tekrar ekranı (#/tekrar): bugün vadesi gelen kelime ve kavram kartları + günlük yeni kart sınırı.
 
-const GRADES: { g: Grade; label: string; key: string; cls: string }[] = [
-  { g: 0, label: 'Tekrar', key: '1', cls: 'again' },
-  { g: 3, label: 'Zor', key: '2', cls: 'hard' },
-  { g: 4, label: 'İyi', key: '3', cls: 'good' },
-  { g: 5, label: 'Kolay', key: '4', cls: 'easy' },
+const gradeBtn = (g: Grade, key: string, cls: 'again' | 'hard' | 'good' | 'easy') => ({ g, key, cls, get label() { return t(`study.review.grades.${cls}`); } });
+const GRADES: { g: Grade; readonly label: string; key: string; cls: string }[] = [
+  gradeBtn(0, '1', 'again'),
+  gradeBtn(3, '2', 'hard'),
+  gradeBtn(4, '3', 'good'),
+  gradeBtn(5, '4', 'easy'),
 ];
 
 function Back({ n }: { n: Note }) {
@@ -21,9 +23,9 @@ function Back({ n }: { n: Note }) {
   const text = n.type === 'word' ? n.props.meaning : n.props.definition;
   return (
     <div className="card-back">
-      <div className="review-meaning">{typeof text === 'string' && text ? text : <span className="muted">{n.type === 'word' ? 'anlamı girilmemiş' : 'tanımı girilmemiş'}</span>}</div>
+      <div className="review-meaning">{typeof text === 'string' && text ? text : <span className="muted">{n.type === 'word' ? t('study.review.noMeaning') : t('study.review.noDefinition')}</span>}</div>
       {typeof n.props.example === 'string' && n.props.example && <div className="review-example">“{n.props.example}”</div>}
-      {src.length > 0 && <div className="review-src"><span className="muted small">Geçtiği yerler:</span> {src.map((x) => <NoteChip key={x.id} note={x} />)}</div>}
+      {src.length > 0 && <div className="review-src"><span className="muted small">{t('study.review.seenIn')}</span> {src.map((x) => <NoteChip key={x.id} note={x} />)}</div>}
     </div>
   );
 }
@@ -68,11 +70,11 @@ export default function ReviewPage() {
   if (!card) {
     return (
       <div className="page review-page">
-        <h1>🧠 Tekrar</h1>
+        <h1>{t('study.review.title')}</h1>
         <div className="review-done">
           <div className="review-big">🎉</div>
-          <p>{done ? `Bugünlük bitti: ${done} kart tekrar edildi.` : 'Bugün tekrar edilecek kart yok.'}</p>
-          <p className="muted small">Yeni kelime ve kavramlar eklendikçe her gün en fazla {newPerDay()} yenisi desteye girer. Yarın tekrar bak.</p>
+          <p>{done ? t('study.review.doneToday', { count: done }) : t('study.review.none')}</p>
+          <p className="muted small">{t('study.review.newHint', { count: newPerDay() })}</p>
           {stats.due.length + stats.fresh.length > 0 && (
             <button className="btn" onClick={() => { setQueue([...stats.due, ...stats.fresh].map((n) => n.id)); setPos(0); }}>Kalan {stats.due.length + stats.fresh.length} kartla devam et</button>
           )}
@@ -82,14 +84,14 @@ export default function ReviewPage() {
   }
 
   const s = srsOf(card);
-  const t = typeOf(card.type);
+  const ty = typeOf(card.type);
   return (
     <div className="page review-page">
       <div className="review-top">
-        <h1>🧠 Tekrar</h1>
-        <span className="muted small">{Math.min(pos + 1, queue.length)} / {queue.length}{!s ? ' · yeni kart' : ''}</span>
+        <h1>{t('study.review.title')}</h1>
+        <span className="muted small">{Math.min(pos + 1, queue.length)} / {queue.length}{!s ? t('study.review.newCard') : ''}</span>
         <span className="spacer" />
-        <label className="muted small">Günde yeni kart{' '}
+        <label className="muted small">{t('study.review.perDay')}{' '}
           <select defaultValue={newPerDay()} onChange={(e) => { try { localStorage.setItem(NEW_KEY, e.target.value); } catch { /* yok say */ } }}>
             {[5, 10, 20, 30, 50].map((v) => <option key={v} value={v}>{v}</option>)}
           </select>
@@ -97,9 +99,9 @@ export default function ReviewPage() {
       </div>
       <div className="review-progress"><span style={{ width: `${(pos / Math.max(1, queue.length)) * 100}%` }} /></div>
       <div className="review-card">
-        <div className="muted small">{t.icon} {t.label}{typeof card.props.language === 'string' ? ` · ${card.props.language}` : ''}</div>
+        <div className="muted small">{ty.icon} {ty.label}{typeof card.props.language === 'string' ? ` · ${optionLabel(card.props.language)}` : ''}</div>
         <div className="review-word">{displayTitle(card)}</div>
-        {shown ? <Back n={card} /> : <button className="btn primary review-show" onClick={() => setShown(true)}>Göster <kbd>boşluk</kbd></button>}
+        {shown ? <Back n={card} /> : <button className="btn primary review-show" onClick={() => setShown(true)}>{t('study.review.show')} <kbd>{t('study.review.space')}</kbd></button>}
       </div>
       {shown && (
         <div className="review-grades">
@@ -112,7 +114,7 @@ export default function ReviewPage() {
           ))}
         </div>
       )}
-      <p className="muted small review-help">Bildiğini “İyi” ya da “Kolay” işaretlersen kart giderek daha seyrek gelir; “Tekrar” dersen yarın (ve bu oturumun sonunda) yeniden sorulur.</p>
+      <p className="muted small review-help">{t('study.review.help')}</p>
     </div>
   );
 }

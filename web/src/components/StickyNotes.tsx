@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { useInstalled } from '../lib/plugins';
 import { go } from '../lib/router';
@@ -55,7 +56,7 @@ export default function StickyNotes({ home }: { home: boolean }) {
       <div className="sticky-layer">
         <div className="sticky-dock">
           {list.map((s) => (
-            <button key={s.id} className={`sticky-tab ${paperClass(s, art)} ${s.id === open ? 'on' : ''}`} title={s.text.split('\n')[0] || 'Boş not'}
+            <button key={s.id} className={`sticky-tab ${paperClass(s, art)} ${s.id === open ? 'on' : ''}`} title={s.text.split('\n')[0] || t('study.sticky.empty')}
               onClick={() => useStickyUi.setState({ open: s.id === open ? null : s.id })}>
               {s.text.trim().charAt(0).toLocaleUpperCase('tr')}
             </button>
@@ -142,7 +143,7 @@ function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw:
   };
 
   const remove = () => {
-    if (text.trim() && !confirm('Bu yapışkan not silinsin mi?')) return;
+    if (text.trim() && !confirm(t('study.sticky.confirmDelete'))) return;
     if (pending.current) clearTimeout(pending.current.t);
     pending.current = null;
     removeSticky(s.id);
@@ -161,7 +162,7 @@ function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw:
   const addNext = () => addSticky(undefined, s.color, patterned ? s.pattern : undefined);
   const menu = (x: number, y: number) => {
     const pick = (c: string) => patchSticky(s.id, paperPatch(c));
-    const items: MenuItem[] = [{ key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ ...c, on: !patterned && c.id === s.color })), pick }];
+    const items: MenuItem[] = [{ key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ id: c.id, label: c.label, on: !patterned && c.id === s.color })), pick }];
     // desenler renk sırasıyla aynı genişlikte, 6'şarlı sıralar hâlinde (Desenli not kâğıtları eklentisi)
     if (art) {
       for (let i = 0; i < PATTERNS.length; i += COLORS.length) {
@@ -169,9 +170,9 @@ function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw:
         items.push({ key: `pat${i}`, className: 'sticky-swatch pat', swatches: row.map((p) => ({ id: p.id, label: p.label, on: s.pattern === p.id })), pick });
       }
     }
-    items.push({ key: 's1', sep: true }, { key: 'new', icon: '＋', label: 'Yeni yapışkan not', run: addNext });
-    if (text.trim()) items.push({ key: 'note', icon: '📄', label: 'Not olarak kaydet', run: toNote });
-    items.push({ key: 's2', sep: true }, { key: 'del', icon: '🗑', label: 'Sil', danger: true, run: remove });
+    items.push({ key: 's1', sep: true }, { key: 'new', icon: '＋', label: t('study.sticky.new'), run: addNext });
+    if (text.trim()) items.push({ key: 'note', icon: '📄', label: t('study.sticky.toNote'), run: toNote });
+    items.push({ key: 's2', sep: true }, { key: 'del', icon: '🗑', label: t('common.delete'), danger: true, run: remove });
     openMenu(x, y, items);
   };
 
@@ -184,17 +185,17 @@ function Paper({ s, rect, vw, vh, z, art, mobile }: { s: Sticky; rect: Rect; vw:
       <div className="sticky-paper">
         <div className="sticky-head" onPointerDown={(e) => startDrag(e, 'move')}
           onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
-          <button title="Yeni yapışkan not" onClick={addNext}>＋</button>
+          <button title={t('study.sticky.new')} onClick={addNext}>＋</button>
           <span className="spacer" />
-          <button title={art ? 'Renk, desen ve diğer' : 'Renk ve diğer'} onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
-          {mobile && <button title="Küçült" onClick={() => { flush(); useStickyUi.setState({ open: null }); }}>▾</button>}
-          <button title="Sil" onClick={remove}>×</button>
+          <button title={art ? t('study.sticky.menuArt') : t('study.sticky.menu')} onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.left, b.bottom + 2); }}>⋯</button>
+          {mobile && <button title={t('study.sticky.minimize')} onClick={() => { flush(); useStickyUi.setState({ open: null }); }}>▾</button>}
+          <button title={t('common.delete')} onClick={remove}>×</button>
         </div>
-        <textarea ref={area} value={text} spellCheck={false} aria-label="Yapışkan not"
+        <textarea ref={area} value={text} spellCheck={false} aria-label={t('study.sticky.aria')}
           onChange={(e) => onText(e.target.value)}
           onFocus={() => { editing.current = true; }}
           onBlur={() => { editing.current = false; flush(); }} />
-        {!mobile && <div className="sticky-grip" title="Boyutlandır" onPointerDown={(e) => startDrag(e, 'size')} />}
+        {!mobile && <div className="sticky-grip" title={t('study.sticky.resize')} onPointerDown={(e) => startDrag(e, 'size')} />}
       </div>
     </div>
   );

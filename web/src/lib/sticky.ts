@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { create } from 'zustand';
 import { saveSettings, uid, useStore } from './store';
 
@@ -21,31 +22,33 @@ export interface Sticky {
   pattern?: StickyPattern;
 }
 
-export const COLORS: { id: StickyColor; label: string }[] = [
-  { id: 'yellow', label: 'Sarı' },
-  { id: 'blue', label: 'Mavi' },
-  { id: 'green', label: 'Yeşil' },
-  { id: 'pink', label: 'Pembe' },
-  { id: 'purple', label: 'Mor' },
-  { id: 'white', label: 'Beyaz' },
+const color = (id: StickyColor) => ({ id, get label() { return t(`study.sticky.colors.${id}`); } });
+export const COLORS: { id: StickyColor; readonly label: string }[] = [
+  color('yellow'),
+  color('blue'),
+  color('green'),
+  color('pink'),
+  color('purple'),
+  color('white'),
 ];
 
 export type StickyPattern = 'cicek' | 'lavanta' | 'sehir' | 'yaprak' | 'deniz' | 'dag' | 'gece' | 'kiraz' | 'araba' | 'western' | 'matematik' | 'kimya';
 
 /** Kurşun kalem desenleri (public/stickies/*.svg). `color`: eklenti kaldırılınca kâğıdın düşeceği düz renk. */
-export const PATTERNS: { id: StickyPattern; label: string; color: StickyColor }[] = [
-  { id: 'cicek', label: 'Çiçekler', color: 'yellow' },
-  { id: 'lavanta', label: 'Lavanta', color: 'purple' },
-  { id: 'sehir', label: 'Şehir', color: 'blue' },
-  { id: 'yaprak', label: 'Yapraklar', color: 'yellow' },
-  { id: 'deniz', label: 'Deniz', color: 'blue' },
-  { id: 'dag', label: 'Dağlar', color: 'green' },
-  { id: 'gece', label: 'Gece', color: 'purple' },
-  { id: 'kiraz', label: 'Kiraz çiçeği', color: 'pink' },
-  { id: 'araba', label: 'Arabalar', color: 'white' },
-  { id: 'western', label: 'Vahşi Batı', color: 'yellow' },
-  { id: 'matematik', label: 'Matematik', color: 'white' },
-  { id: 'kimya', label: 'Kimya', color: 'green' },
+const pattern = (id: StickyPattern, color: StickyColor) => ({ id, color, get label() { return t(`study.sticky.patterns.${id}`); } });
+export const PATTERNS: { id: StickyPattern; readonly label: string; color: StickyColor }[] = [
+  pattern('cicek', 'yellow'),
+  pattern('lavanta', 'purple'),
+  pattern('sehir', 'blue'),
+  pattern('yaprak', 'yellow'),
+  pattern('deniz', 'blue'),
+  pattern('dag', 'green'),
+  pattern('gece', 'purple'),
+  pattern('kiraz', 'pink'),
+  pattern('araba', 'white'),
+  pattern('western', 'yellow'),
+  pattern('matematik', 'white'),
+  pattern('kimya', 'green'),
 ];
 
 export const isPattern = (id: string): id is StickyPattern => PATTERNS.some((p) => p.id === id);
