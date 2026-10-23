@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { create } from 'zustand';
+import { t, type Messages } from '../i18n';
 import { parse, useHash, type Route } from '../lib/router';
 
 // Adım adım tanıtım turu: gerçek düğmeleri sırayla vurgular, kullanıcı kendisi tıklar.
@@ -14,102 +15,29 @@ interface Step {
   sidebar?: boolean;
 }
 
+type TourKey = keyof Messages['tour'];
+/** Adım; metin her gösterimde etkin dilden kurulur */
+const tourStep = (target: string, key: TourKey, o: Pick<Step, 'until' | 'sidebar'> = {}): Step => ({ target, ...o, get text() { return t.rich(`tour.${key}`); } });
+
 const STEPS: Step[] = [
-  {
-    target: 'new-note',
-    text: <>Her şey bir notla başlar. Sağ üstteki <b>+ Not</b> düğmesine bas.</>,
-    until: (r) => r.name === 'note',
-  },
-  {
-    target: 'title',
-    text: <>Notuna bir başlık ver, ör. <i>“Thalamus’u deniyorum”</i>. Sonra <b>İleri</b>’ye bas.</>,
-  },
-  {
-    target: 'editor',
-    text: (
-      <>
-        Burası yazı alanı. Boş bir satırda <b>/</b> yaz: başlık, liste, tablo, formül, görsel, PDF gibi blokların listesi açılır.
-        <br /><b>[[</b> yazıp bir notun adını seçersen iki not birbirine bağlanır. <b>@</b> ile tarih eklersin. Biraz dene, sonra <b>İleri</b>.
-      </>
-    ),
-  },
-  {
-    target: 'props',
-    text: <>Notun alanları: türü (kitap, makale, ders…), konular ve bağlantılar. Türünü değiştirirsen o koleksiyonun alanları gelir.</>,
-  },
-  {
-    target: 'nav-daily',
-    sidebar: true,
-    text: <>Soldan <b>Günlük</b>’e tıkla.</>,
-    until: (r) => r.name === 'daily',
-  },
-  {
-    target: 'routines',
-    text: <>Her gün için bir günlük sayfası açılır. Üstteki <b>rutinlerini</b> (ör. okuma, spor) işaretlersin; altta ne kadar düzenli gittiğini gösteren bir ısı haritası birikir. Rutinleri <b>Ayarlar</b>’dan değiştirebilirsin.</>,
-  },
-  {
-    target: 'coll-book',
-    sidebar: true,
-    text: <>Kitaplar, makaleler, dersler, deneyler… her biri bir <b>koleksiyon</b>. Soldan <b>Kitaplar</b>’a tıkla.</>,
-    until: (r) => r.name === 'collection' && r.type === 'book',
-  },
-  {
-    target: 'views',
-    text: <>Bir koleksiyonu tablo, galeri, pano ya da takvim olarak görebilir; süzüp sıralayabilirsin. <b>+ Yeni</b> ile kayıt eklerken kitap kapağını da otomatik bulur.</>,
-  },
-  {
-    target: 'coll-word',
-    sidebar: true,
-    text: <>Şimdi soldan <b>Sözlük</b>’e tıkla.</>,
-    until: (r) => r.name === 'dictionary',
-  },
-  {
-    target: 'dictionary',
-    text: <>Okurken bir kelime eklediğinde (not içinde <b>Kelimeler</b> alanından) burada toplanır ve hangi kitap, makale ya da derslerde geçtiği görünür. Aynı kelime farklı kaynaklarda geçse de tek kayıttır; tekrar kartlarıyla çalışabilirsin.</>,
-  },
-  {
-    target: 'nav-calendar',
-    sidebar: true,
-    text: <>Şimdi <b>Takvim</b>’e tıkla.</>,
-    until: (r) => r.name === 'calendar',
-  },
-  {
-    target: 'calendar',
-    text: <>Bütün notlarındaki tarihler burada toplanır. Bir günün köşesindeki <b>＋</b> ile o güne etkinlik eklersin, öğeleri sürükleyerek tarihini değiştirirsin.</>,
-  },
-  {
-    target: 'nav-graph',
-    sidebar: true,
-    text: <><b>Bağlantı haritası</b>’na tıkla.</>,
-    until: (r) => r.name === 'graph',
-  },
-  {
-    target: 'graph',
-    text: <>Notların ve aralarındaki bağlantılar bir harita olarak görünür. Ne kadar bağlantı verirsen o kadar zenginleşir.</>,
-  },
-  {
-    target: 'search',
-    text: <>Her yerden <b>Ctrl K</b> (telefonda 🔍) ile arayabilir, yoksa aynı yerden yeni not oluşturabilirsin.</>,
-  },
-  {
-    target: 'nav-settings',
-    sidebar: true,
-    text: <>Son olarak <b>Ayarlar</b>’a tıkla.</>,
-    until: (r) => r.name === 'settings',
-  },
-  {
-    target: 'gcal',
-    text: <>Buradan <b>Google Takvim</b>’i bağlarsan tarihlerin telefonundaki takvimde de görünür, hatırlatma gelir. İstediğin zaman bağlayabilirsin.</>,
-  },
-  {
-    target: '',
-    text: (
-      <>
-        Hazırsın! Notların Google Drive’ındaki <b>Thalamus</b> klasöründe güvende.
-        <br />Sol menünün altında ayrıca <b>İçe aktar</b> (Notion, Obsidian, Markdown), <b>Çöp kutusu</b> ve <b>Kısayollar</b> (Ctrl /) var. Bu turu istediğin zaman <b>Ayarlar</b>’dan yeniden başlatabilirsin.
-      </>
-    ),
-  },
+  tourStep('new-note', 'newNote', { until: (r) => r.name === 'note' }),
+  tourStep('title', 'title'),
+  tourStep('editor', 'editor'),
+  tourStep('props', 'props'),
+  tourStep('nav-daily', 'navDaily', { sidebar: true, until: (r) => r.name === 'daily' }),
+  tourStep('routines', 'routines'),
+  tourStep('coll-book', 'collBook', { sidebar: true, until: (r) => r.name === 'collection' && r.type === 'book' }),
+  tourStep('views', 'views'),
+  tourStep('coll-word', 'collWord', { sidebar: true, until: (r) => r.name === 'dictionary' }),
+  tourStep('dictionary', 'dictionary'),
+  tourStep('nav-calendar', 'navCalendar', { sidebar: true, until: (r) => r.name === 'calendar' }),
+  tourStep('calendar', 'calendar'),
+  tourStep('nav-graph', 'navGraph', { sidebar: true, until: (r) => r.name === 'graph' }),
+  tourStep('graph', 'graph'),
+  tourStep('search', 'search'),
+  tourStep('nav-settings', 'navSettings', { sidebar: true, until: (r) => r.name === 'settings' }),
+  tourStep('gcal', 'gcal'),
+  tourStep('', 'done'),
 ];
 
 const useTour = create<{ step: number | null }>(() => ({ step: null }));
@@ -194,16 +122,16 @@ export default function Tour() {
       ) : (
         <div className="tour-dim" />
       )}
-      <div className="tour-card" role="dialog" aria-label="Tanıtım turu" style={{ top, left, width: W }}>
-        <div className="tour-text">{viaMenu ? <>Önce sol üstteki <b>☰</b> menüyü aç.</> : s.text}</div>
+      <div className="tour-card" role="dialog" aria-label={t('tour.aria')} style={{ top, left, width: W }}>
+        <div className="tour-text">{viaMenu ? t.rich('tour.openMenu') : s.text}</div>
         <div className="tour-foot">
           <span className="muted small">{step + 1} / {STEPS.length}</span>
           <span className="spacer" />
-          {step + 1 < STEPS.length && <button type="button" className="btn ghost small" onClick={stop}>Turu atla</button>}
+          {step + 1 < STEPS.length && <button type="button" className="btn ghost small" onClick={stop}>{t('tour.skipTour')}</button>}
           {!s.until && (
-            <button type="button" className="btn primary small" onClick={next}>{step + 1 < STEPS.length ? 'İleri' : 'Bitir'}</button>
+            <button type="button" className="btn primary small" onClick={next}>{step + 1 < STEPS.length ? t('tour.next') : t('tour.finish')}</button>
           )}
-          {s.until && <button type="button" className="btn small" onClick={next} title="Bu adımı atla">Adımı atla</button>}
+          {s.until && <button type="button" className="btn small" onClick={next} title={t('tour.skipStepTitle')}>{t('tour.skipStep')}</button>}
         </div>
       </div>
     </div>

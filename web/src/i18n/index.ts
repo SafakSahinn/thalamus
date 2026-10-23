@@ -162,18 +162,27 @@ export function t(key: MsgKey, params?: Params): string {
   return params ? s.replace(PLACEHOLDER, (all, name: string) => (name in params ? String(params[name]) : all)) : s;
 }
 
-/** Metnin içine öğe yerleştirmek için: t.rich('x', { kbd: <kbd>Ctrl K</kbd> }) */
-t.rich = function rich(key: MsgKey, params: Record<string, ReactNode>): ReactNode {
-  const s = raw(key, typeof params.count === 'number' ? params.count : undefined);
+// Zengin metin: {ad} yer tutucuları + mesajın içinde yazılabilen basit etiketler (<b>, <i>, <code>, <br>)
+const RICH = /<(b|i|code)>(.*?)<\/\1>|<br\s*\/?>|\{(\w+)\}/g;
+
+function richParts(s: string, params: Record<string, ReactNode>, keyBase = ''): ReactNode[] {
   const parts: ReactNode[] = [];
   let last = 0;
-  for (const m of s.matchAll(PLACEHOLDER)) {
+  for (const m of s.matchAll(RICH)) {
     parts.push(s.slice(last, m.index));
-    parts.push(m[1] in params ? createElement(Fragment, { key: parts.length }, params[m[1]]) : m[0]);
+    const key = `${keyBase}${parts.length}`;
+    if (m[1]) parts.push(createElement(m[1], { key }, ...richParts(m[2], params, `${key}.`)));
+    else if (m[3]) parts.push(m[3] in params ? createElement(Fragment, { key }, params[m[3]]) : m[0]);
+    else parts.push(createElement('br', { key }));
     last = m.index + m[0].length;
   }
   parts.push(s.slice(last));
   return parts;
+}
+
+/** Metnin içine öğe yerleştirmek için: t.rich('x', { kbd: <kbd>Ctrl K</kbd> }); mesajdaki <b>…</b> gibi etiketler öğeye dönüşür */
+t.rich = function rich(key: MsgKey, params: Record<string, ReactNode> = {}): ReactNode {
+  return richParts(raw(key, typeof params.count === 'number' ? params.count : undefined), params);
 };
 
 /** Bir mesaj grubunu yazıldığı sırayla liste olarak döndürür (madde listeleri, paragraflar) */
