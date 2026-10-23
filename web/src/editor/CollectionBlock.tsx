@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from '@tiptap/react';
 import { useMemo, useState } from 'react';
@@ -51,34 +52,34 @@ function CollectionView({ node, updateAttributes, editor }: ReactNodeViewProps) 
           <a className="idb-title" href={`#/c/${ty.id}`} onClick={(e) => { e.preventDefault(); go(`/c/${ty.id}`); }}>
             {ty.icon} {ty.plural} <span className="muted small">{rows.length}</span>
           </a>
-        ) : <b>Sayfa içinde koleksiyon</b>}
-        {ty && onlyLinked && <span className="chip-soft small">yalnızca bu sayfaya bağlı{linkVia ? ` (${linkVia})` : ''}</span>}
+        ) : <b>{t('collPage.block.title')}</b>}
+        {ty && onlyLinked && <span className="chip-soft small">{t('collPage.block.onlyLinked')}{linkVia ? ` (${linkVia})` : ''}</span>}
         <span className="spacer" />
-        {editor.isEditable && <button type="button" className="btn small ghost" onClick={() => setSettings(!settings)}>⚙ Ayarlar</button>}
+        {editor.isEditable && <button type="button" className="btn small ghost" onClick={() => setSettings(!settings)}>{t('collPage.block.settings')}</button>}
       </div>
       {settings && editor.isEditable && (
         <div className="idb-settings">
-          <label>Koleksiyon:
+          <label>{t('collPage.block.collection')}
             <select value={typeId ?? ''} onChange={(e) => updateAttributes({ typeId: e.target.value || null })}>
-              <option value="">seç…</option>
+              <option value="">{t('views.toolbar.pick')}</option>
               {TYPES.filter((x) => x.id !== 'daily').map((x) => <option key={x.id} value={x.id}>{x.icon} {x.plural}</option>)}
             </select>
           </label>
-          <label>Görünüm:
+          <label>{t('collPage.block.view')}
             <select value={kind} onChange={(e) => updateAttributes({ kind: e.target.value })}>
               {VIEW_KINDS.map((k) => <option key={k.id} value={k.id}>{k.icon} {k.label}</option>)}
             </select>
           </label>
-          <label><input type="checkbox" checked={onlyLinked} onChange={(e) => updateAttributes({ onlyLinked: e.target.checked })} /> Yalnızca bu sayfaya bağlı olanlar</label>
-          {typeId && <button type="button" className="btn small" onClick={() => setSettings(false)}>Tamam</button>}
+          <label><input type="checkbox" checked={onlyLinked} onChange={(e) => updateAttributes({ onlyLinked: e.target.checked })} /> {t('collPage.block.onlyLinkedLabel')}</label>
+          {typeId && <button type="button" className="btn small" onClick={() => setSettings(false)}>{t('common.ok')}</button>}
         </div>
       )}
       {ty && (rows.length || !onlyLinked ? (
         <div className="idb-body"><Render ty={ty} rows={rows} view={view} newProps={newProps} /></div>
       ) : (
         <div className="idb-empty muted small">
-          Bu sayfaya bağlı {ty.label.toLocaleLowerCase('tr')} yok.{' '}
-          <button type="button" className="linkbtn" onClick={() => void import('../lib/templates').then(({ createDefault }) => import('../components/Peek').then(({ openPeek }) => openPeek(createDefault(ty.id, newProps()).id)))}>＋ Ekle</button>
+          {t('collPage.block.noneLinked', { label: ty.label.toLocaleLowerCase(localeTag()) })}{' '}
+          <button type="button" className="linkbtn" onClick={() => void import('../lib/templates').then(({ createDefault }) => import('../components/Peek').then(({ openPeek }) => openPeek(createDefault(ty.id, newProps()).id)))}>{t('collPage.block.add')}</button>
         </div>
       ))}
     </NodeViewWrapper>

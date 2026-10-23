@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import NewButton from '../components/NewButton';
 import PaperImportButton from '../components/PaperImportButton';
@@ -58,14 +59,14 @@ function ViewTab({ v, active, onSelect, onRename, onDuplicate, onDelete, canDele
   const icon = VIEW_KINDS.find((k) => k.id === v.kind)?.icon;
   return (
     <div className={`view-tab ${active ? 'on' : ''}`} ref={ref}>
-      <button type="button" onClick={() => (active ? setMenu(!menu) : onSelect())} title={active ? 'Görünüm menüsü' : v.name}>
+      <button type="button" onClick={() => (active ? setMenu(!menu) : onSelect())} title={active ? t('collPage.viewMenu') : v.name}>
         {icon} {v.name}{active && <small> ▾</small>}
       </button>
       {menu && (
         <div className="tb-pop view-menu">
-          <button type="button" className="bm-row" onClick={() => { setMenu(false); onRename(); }}>✎ Yeniden adlandır</button>
-          <button type="button" className="bm-row" onClick={() => { setMenu(false); onDuplicate(); }}>⧉ Çoğalt</button>
-          {canDelete && <button type="button" className="bm-row danger" onClick={() => { setMenu(false); onDelete(); }}>🗑 Sil</button>}
+          <button type="button" className="bm-row" onClick={() => { setMenu(false); onRename(); }}>{t('collPage.rename')}</button>
+          <button type="button" className="bm-row" onClick={() => { setMenu(false); onDuplicate(); }}>{t('collPage.duplicate')}</button>
+          {canDelete && <button type="button" className="bm-row danger" onClick={() => { setMenu(false); onDelete(); }}>{t('collPage.delete')}</button>}
         </div>
       )}
     </div>
@@ -77,7 +78,7 @@ function AddView({ onAdd }: { onAdd: (k: ViewKind) => void }) {
   const ref = useOutside(open, () => setOpen(false));
   return (
     <div className="view-tab add" ref={ref}>
-      <button type="button" onClick={() => setOpen(!open)} title="Görünüm ekle">＋</button>
+      <button type="button" onClick={() => setOpen(!open)} title={t('collPage.addView')}>＋</button>
       {open && (
         <div className="tb-pop view-menu">
           {VIEW_KINDS.map((k) => (
@@ -156,7 +157,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
       <div className="coll-head">
         <h1>{ty.icon} {ty.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
-        <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
+        <button className="btn" onClick={() => setEditing(true)} title={t('collPage.editFields')}>{t('collPage.fields')}</button>
         {ty.id === 'paper' && <PaperImportButton extraProps={newProps} rows={rows} />}
         <NewButton ty={ty} extraProps={newProps} />
       </div>
@@ -169,11 +170,11 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
             canDelete={views.length > 1}
             onSelect={() => select(v.id)}
             onRename={async () => {
-              const name = await promptText('Görünümün adı', v.name);
+              const name = await promptText(t('collPage.viewName'), v.name);
               if (name?.trim()) save(views.map((x) => (x.id === v.id ? { ...x, name: name.trim() } : x)));
             }}
             onDuplicate={() => {
-              const copy = { ...structuredClone(v), id: newViewId(), name: `${v.name} (kopya)` };
+              const copy = { ...structuredClone(v), id: newViewId(), name: t('collPage.copyName', { name: v.name }) };
               save([...views, copy]);
               select(copy.id);
             }}
@@ -183,7 +184,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
         <AddView onAdd={addView} />
       </div>
       <div className="toolbar">
-        <input className="search" placeholder="Bu koleksiyonda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="search" placeholder={t('collPage.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <FilterMenu ty={ty} view={view} update={update} />
         <SortMenu ty={ty} view={view} update={update} />
         <ViewOptions ty={ty} view={view} update={update} />
@@ -191,8 +192,8 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
 
       {total === 0 ? (
         <div className="empty">
-          <p>Henüz {ty.label.toLocaleLowerCase('tr')} yok.</p>
-          <button className="btn" onClick={newNote}>İlkini ekle</button>
+          <p>{t('collPage.noneYet', { label: ty.label.toLocaleLowerCase(localeTag()) })}</p>
+          <button className="btn" onClick={newNote}>{t('collPage.addFirst')}</button>
         </div>
       ) : (
         <Render ty={ty} rows={rows} view={view} newProps={newProps} />

@@ -3,6 +3,7 @@ import app from './app';
 import calendar from './calendar';
 import capture from './capture';
 import coll from './coll';
+import collPage from './collPage';
 import common from './common';
 import dialogs from './dialogs';
 import market from './market';
@@ -26,6 +27,7 @@ export default {
   calendar,
   capture,
   coll,
+  collPage,
   common,
   dialogs,
   market,

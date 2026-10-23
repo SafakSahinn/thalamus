@@ -1,7 +1,8 @@
+import { t } from '../i18n';
 import type { Action, Rule, Trigger } from '../lib/automations';
 import { saveSettings, uid, useStore } from '../lib/store';
 import { updateProp } from '../lib/schema';
-import { typeOf, type PropDef } from '../lib/types';
+import { optionLabel, typeOf, type PropDef } from '../lib/types';
 
 // Koleksiyon ayarları → Otomasyonlar: "ne zaman … olunca … yap" kuralları
 
@@ -13,46 +14,46 @@ function ValueSelect({ def, value, onChange, trigger }: { def?: PropDef; value: 
   if (def.kind === 'select' || def.kind === 'multiselect') {
     return (
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {trigger ? <option value="">herhangi bir değer</option> : <option value="clear">— boşalt</option>}
-        {def.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+        {trigger ? <option value="">{t('collPage.auto.anyValue')}</option> : <option value="clear">{t('collPage.auto.clear')}</option>}
+        {def.options?.map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
       </select>
     );
   }
   if (def.kind === 'checkbox') {
     return (
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {trigger && <option value="">herhangi bir değişiklik</option>}
-        <option value="true">işaretli</option>
-        <option value={trigger ? 'false' : 'clear'}>işaretsiz</option>
+        {trigger && <option value="">{t('collPage.auto.anyChange')}</option>}
+        <option value="true">{t('collPage.auto.checked')}</option>
+        <option value={trigger ? 'false' : 'clear'}>{t('collPage.auto.unchecked')}</option>
       </select>
     );
   }
   if (trigger) {
-    return <span className="muted small">değişince</span>;
+    return <span className="muted small">{t('collPage.auto.onChange')}</span>;
   }
   if (def.kind === 'date') {
     return (
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="today">bugünün tarihi</option>
-        <option value="clear">— boşalt</option>
+        <option value="today">{t('collPage.auto.today')}</option>
+        <option value="clear">{t('collPage.auto.clear')}</option>
       </select>
     );
   }
-  return <input value={value === 'clear' ? '' : value} placeholder="değer (boş = boşalt)" onChange={(e) => onChange(e.target.value || 'clear')} />;
+  return <input value={value === 'clear' ? '' : value} placeholder={t('collPage.auto.valuePlaceholder')} onChange={(e) => onChange(e.target.value || 'clear')} />;
 }
 
 const defaultValue = (d?: PropDef) => (d?.kind === 'date' ? 'today' : d?.kind === 'checkbox' ? 'true' : d?.options?.[0] ?? 'clear');
 
 /** Düğme alanının eylemleri: "▶ Tamamlandı" → Durum = Bitti, Bitiş = bugün */
 export function ButtonActionsEditor({ typeId, def }: { typeId: string; def: PropDef }) {
-  const t = typeOf(typeId);
-  const writable = t.props.filter((p) => SETTABLE.has(p.kind) && !p.back);
-  const fdef = (k: string) => t.props.find((p) => p.key === k);
+  const ty = typeOf(typeId);
+  const writable = ty.props.filter((p) => SETTABLE.has(p.kind) && !p.back);
+  const fdef = (k: string) => ty.props.find((p) => p.key === k);
   const actions = def.actions ?? [];
   const save = (next: { key: string; value: string }[]) => void updateProp(typeId, def.key, { actions: next });
   return (
     <div className="automations">
-      <p className="muted small">Bu düğmeye basınca o kayıtta şunlar yapılır (düğmenin yazısı alanın adıdır):</p>
+      <p className="muted small">{t('collPage.auto.buttonIntro')}</p>
       {actions.map((a, i) => (
         <div key={i} className="rule-line">
           <select value={a.key} onChange={(e) => save(actions.map((x, j) => (j === i ? { key: e.target.value, value: defaultValue(fdef(e.target.value)) } : x)))}>
@@ -60,10 +61,10 @@ export function ButtonActionsEditor({ typeId, def }: { typeId: string; def: Prop
           </select>
           <span className="muted small">=</span>
           <ValueSelect def={fdef(a.key)} value={a.value} onChange={(v) => save(actions.map((x, j) => (j === i ? { ...x, value: v } : x)))} />
-          <button type="button" className="iconbtn" title="Kaldır" onClick={() => save(actions.filter((_, j) => j !== i))}>×</button>
+          <button type="button" className="iconbtn" title={t('common.remove')} onClick={() => save(actions.filter((_, j) => j !== i))}>×</button>
         </div>
       ))}
-      <button type="button" className="btn small" disabled={!writable.length} onClick={() => save([...actions, { key: writable[0].key, value: defaultValue(writable[0]) }])}>＋ eylem ekle</button>
+      <button type="button" className="btn small" disabled={!writable.length} onClick={() => save([...actions, { key: writable[0].key, value: defaultValue(writable[0]) }])}>{t('collPage.auto.addAction')}</button>
     </div>
   );
 }
@@ -71,10 +72,10 @@ export function ButtonActionsEditor({ typeId, def }: { typeId: string; def: Prop
 export default function AutomationsEditor({ typeId }: { typeId: string }) {
   const settings = useStore((s) => s.settings);
   const rules = settings.automations?.[typeId] ?? [];
-  const t = typeOf(typeId);
-  const writable = t.props.filter((p) => SETTABLE.has(p.kind) && !p.back);
-  const watchable = t.props.filter((p) => WATCHABLE.has(p.kind));
-  const def = (k: string) => t.props.find((p) => p.key === k);
+  const ty = typeOf(typeId);
+  const writable = ty.props.filter((p) => SETTABLE.has(p.kind) && !p.back);
+  const watchable = ty.props.filter((p) => WATCHABLE.has(p.kind));
+  const def = (k: string) => ty.props.find((p) => p.key === k);
   const save = (next: Rule[]) => void saveSettings({ ...useStore.getState().settings, automations: { ...(useStore.getState().settings.automations ?? {}), [typeId]: next } });
   const patch = (id: string, p: Partial<Rule>) => save(rules.map((r) => (r.id === id ? { ...r, ...p } : r)));
   const setAction = (r: Rule, i: number, a: Partial<Action>) => patch(r.id, { then: r.then.map((x, j) => (j === i ? { ...x, ...a } : x)) });
@@ -86,15 +87,15 @@ export default function AutomationsEditor({ typeId }: { typeId: string }) {
 
   return (
     <div className="automations">
-      {rules.length === 0 && <p className="muted small">Henüz kural yok. Örnek: “Durum <b>Bitti</b> olunca Bitiş tarihini <b>bugün</b> yap”.</p>}
+      {rules.length === 0 && <p className="muted small">{t.rich('collPage.auto.noRules', { done: <b>{t('collPage.auto.exDone')}</b>, today: <b>{t('collPage.auto.exToday')}</b> })}</p>}
       {rules.map((r) => {
         const w = r.when;
         const wdef = w.kind === 'changed' ? def(w.key) : undefined;
         return (
           <div key={r.id} className={`rule ${r.on ? '' : 'off'}`}>
             <div className="rule-line">
-              <label className="rule-on" title="Açık/kapalı"><input type="checkbox" checked={r.on} onChange={(e) => patch(r.id, { on: e.target.checked })} /></label>
-              <b>Ne zaman</b>
+              <label className="rule-on" title={t('collPage.auto.onOff')}><input type="checkbox" checked={r.on} onChange={(e) => patch(r.id, { on: e.target.checked })} /></label>
+              <b>{t('collPage.auto.when')}</b>
               <select
                 value={w.kind === 'created' ? '__created' : w.key}
                 onChange={(e) => {
@@ -102,35 +103,35 @@ export default function AutomationsEditor({ typeId }: { typeId: string }) {
                   patch(r.id, { when });
                 }}
               >
-                <option value="__created">yeni kayıt eklenince</option>
+                <option value="__created">{t('collPage.auto.created')}</option>
                 {watchable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
               </select>
               {w.kind === 'changed' && (
                 <>
-                  {(wdef?.kind === 'select' || wdef?.kind === 'multiselect' || wdef?.kind === 'checkbox') && <span className="muted small">şu olunca</span>}
+                  {(wdef?.kind === 'select' || wdef?.kind === 'multiselect' || wdef?.kind === 'checkbox') && <span className="muted small">{t('collPage.auto.becomes')}</span>}
                   <ValueSelect trigger def={wdef} value={w.to ?? ''} onChange={(v) => patch(r.id, { when: { ...w, to: v || undefined } })} />
                 </>
               )}
               <span className="spacer" />
-              <button type="button" className="iconbtn" title="Kuralı sil" onClick={() => save(rules.filter((x) => x.id !== r.id))}>🗑</button>
+              <button type="button" className="iconbtn" title={t('collPage.auto.deleteRule')} onClick={() => save(rules.filter((x) => x.id !== r.id))}>🗑</button>
             </div>
             {r.then.map((a, i) => (
               <div key={i} className="rule-line act">
-                <b>{i === 0 ? 'Şunu yap' : 've'}</b>
+                <b>{i === 0 ? t('collPage.auto.do') : t('collPage.auto.and')}</b>
                 <select value={a.key} onChange={(e) => setAction(r, i, { key: e.target.value, value: defaultValue(def(e.target.value)) })}>
                   {writable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
                 </select>
                 <span className="muted small">=</span>
                 <ValueSelect def={def(a.key)} value={a.value} onChange={(v) => setAction(r, i, { value: v })} />
-                {r.then.length > 1 && <button type="button" className="iconbtn" title="Eylemi kaldır" onClick={() => patch(r.id, { then: r.then.filter((_, j) => j !== i) })}>×</button>}
+                {r.then.length > 1 && <button type="button" className="iconbtn" title={t('collPage.auto.removeAction')} onClick={() => patch(r.id, { then: r.then.filter((_, j) => j !== i) })}>×</button>}
               </div>
             ))}
-            <button type="button" className="linkbtn small" onClick={() => patch(r.id, { then: [...r.then, { key: writable[0].key, value: defaultValue(writable[0]) }] })}>＋ eylem ekle</button>
+            <button type="button" className="linkbtn small" onClick={() => patch(r.id, { then: [...r.then, { key: writable[0].key, value: defaultValue(writable[0]) }] })}>{t('collPage.auto.addAction')}</button>
           </div>
         );
       })}
-      <button type="button" className="btn small" disabled={!writable.length} onClick={add}>＋ Kural ekle</button>
-      <p className="muted small">Kurallar bu koleksiyonda senin yaptığın değişikliklerde çalışır (Drive’dan eşitlenen değişikliklerde tekrar çalışmaz).</p>
+      <button type="button" className="btn small" disabled={!writable.length} onClick={add}>{t('collPage.auto.addRule')}</button>
+      <p className="muted small">{t('collPage.auto.hint')}</p>
     </div>
   );
 }
