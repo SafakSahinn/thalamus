@@ -13,6 +13,7 @@ import options from './options';
 import pages from './pages';
 import palette from './palette';
 import panels from './panels';
+import papers from './papers';
 import plugins from './plugins';
 import props from './props';
 import reading from './reading';
@@ -40,6 +41,7 @@ export default {
   pages,
   palette,
   panels,
+  papers,
   plugins,
   props,
   reading,

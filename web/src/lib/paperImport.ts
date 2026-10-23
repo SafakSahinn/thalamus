@@ -1,5 +1,6 @@
 // Makale bilgisinden (scholar.ts) Thalamus notu: yazarlar Kişiler koleksiyonuna bağlanır, özet notun içine yazılır.
 
+import { lower, t } from '../i18n';
 import { plainText } from './links';
 import { readPdf, type PdfSection } from './pdfMeta';
 import { fetchMeta, findDoiByTitle, KIND_LABEL, parseIdent, personName, type CiteMeta } from './scholar';
@@ -7,7 +8,7 @@ import { createNote, refreshEditor, updateNote, useStore } from './store';
 import { templatesFor } from './templates';
 import type { Note, TypeId } from './types';
 
-const keyName = (s: string) => s.trim().toLocaleLowerCase('tr').replace(/\s+/g, ' ');
+const keyName = (s: string) => lower(s.trim()).replace(/\s+/g, ' ');
 
 /** Yazarlar için kişi notları: aynı adlı kişi varsa o kullanılır */
 function personIds(meta: CiteMeta): string[] {
@@ -44,7 +45,7 @@ function propsFrom(meta: CiteMeta, authors: string[]): Record<string, unknown> {
 }
 
 const abstractDoc = (meta: CiteMeta) => (meta.abstract
-  ? { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Özet' }] }, { type: 'paragraph', content: [{ type: 'text', text: meta.abstract }] }] }
+  ? { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: t('papers.paper.abstract') }] }, { type: 'paragraph', content: [{ type: 'text', text: meta.abstract }] }] }
   : null);
 
 /** Atıf bilgisinden makale notu (aynı DOI/arXiv ya da aynı başlıkta varsa onu döndürür) */
@@ -57,7 +58,7 @@ export function createPaperFromMeta(meta: CiteMeta, extra: Record<string, unknow
 /** DOI ya da arXiv kimliğinden yeni makale notu (zaten varsa onu döndürür) */
 export async function importPaper(input: string, extra: Record<string, unknown> = {}): Promise<{ note: Note; existed: boolean }> {
   const ident = parseIdent(input);
-  if (!ident) throw new Error('Bunda bir DOI ya da arXiv numarası bulamadım. Örnek: 10.1109/TAC.1979.1101943 ya da arxiv.org/abs/1706.03762');
+  if (!ident) throw new Error(t('papers.paper.noIdent'));
   const meta = await fetchMeta(ident);
   const old = findPaper(meta);
   if (old) return { note: old, existed: true };
@@ -78,7 +79,7 @@ function mergeEmpty(props: Record<string, unknown>, fresh: Record<string, unknow
 /** Var olan makale notunu DOI/arXiv bilgisiyle tamamla (boş alanları doldurur, yazdıklarına dokunmaz) */
 export async function fillPaper(noteId: string, input: string): Promise<void> {
   const ident = parseIdent(input);
-  if (!ident) throw new Error('DOI ya da arXiv numarası bulunamadı.');
+  if (!ident) throw new Error(t('papers.paper.noIdentShort'));
   const meta = await fetchMeta(ident);
   const n = useStore.getState().notes[noteId];
   if (!n) return;
@@ -93,7 +94,7 @@ export function isBlankContent(doc: unknown, type: TypeId = 'paper'): boolean {
   if (!doc) return true;
   const text = plainText(doc).replace(/\s+/g, '');
   if (!text) return true;
-  return templatesFor(type, useStore.getState().notes).some((t) => plainText(t.content).replace(/\s+/g, '') === text);
+  return templatesFor(type, useStore.getState().notes).some((tp) => plainText(tp.content).replace(/\s+/g, '') === text);
 }
 
 const textNode = (text: string, bold = false) => ({ type: 'text', text, ...(bold ? { marks: [{ type: 'bold' }] } : {}) });
@@ -102,9 +103,9 @@ const textNode = (text: string, bold = false) => ({ type: 'text', text, ...(bold
 export function pdfDoc(abstract: string | undefined, keywords: string[], sections: PdfSection[]) {
   const content: unknown[] = [];
   if (abstract) {
-    content.push({ type: 'heading', attrs: { level: 2 }, content: [textNode('Özet')] }, { type: 'paragraph', content: [textNode(abstract)] });
+    content.push({ type: 'heading', attrs: { level: 2 }, content: [textNode(t('papers.paper.abstract'))] }, { type: 'paragraph', content: [textNode(abstract)] });
   }
-  if (keywords.length) content.push({ type: 'paragraph', content: [textNode('Anahtar kelimeler: ', true), textNode(keywords.join(', '))] });
+  if (keywords.length) content.push({ type: 'paragraph', content: [textNode(t('papers.paper.keywords'), true), textNode(keywords.join(', '))] });
   for (const s of sections) {
     content.push({ type: 'heading', attrs: { level: s.level === 1 ? 2 : 3 }, content: [textNode(s.text)] }, { type: 'paragraph' });
   }
@@ -138,7 +139,7 @@ export async function fillFromPdf(noteId: string, data: ArrayBuffer | Uint8Array
   }
 
   const n = useStore.getState().notes[noteId];
-  if (!n) throw new Error('Not bulunamadı.');
+  if (!n) throw new Error(t('papers.paper.noteNotFound'));
   // PDF'teki özet yayıncının metnidir; Crossref'te çoğu IEEE makalesinin özeti yok
   const abstract = info.abstract ?? meta?.abstract?.replace(/^Abstract\s*[—–:.-]?\s*/i, '');
   if (meta && abstract && !meta.abstract) meta = { ...meta, abstract };
@@ -166,8 +167,8 @@ export async function fillFromPdf(noteId: string, data: ArrayBuffer | Uint8Array
 
 /** Sonucu kullanıcıya anlatan kısa cümle */
 export function pdfFillMessage(r: PdfFillResult): string {
-  const from = r.source === 'doi' ? 'PDF’teki DOI ile' : r.source === 'title' ? 'başlıkla Crossref’te bulunarak' : 'yalnızca PDF metninden (yayın kaydı bulunamadı, kontrol et)';
-  const got = [r.abstract && 'özet', r.sections && `${r.sections} bölüm başlığı`].filter(Boolean).join(' ve ');
-  const content = r.content ? (got ? `${got} notun içine yazıldı` : 'içerik bulunamadı') : 'notta yazdıkların olduğu için içeriğe dokunulmadı (⋯ → “PDF’ten bilgileri al” ile sona ekleyebilirsin)';
-  return `Bilgiler ${from} dolduruldu; ${content}.`;
+  const from = t(r.source === 'doi' ? 'papers.paper.fromDoi' : r.source === 'title' ? 'papers.paper.fromTitle' : 'papers.paper.fromText');
+  const got = [r.abstract && t('papers.paper.gotAbstract'), r.sections && t('papers.paper.gotSections', { count: r.sections })].filter(Boolean).join(t('papers.paper.and'));
+  const content = r.content ? (got ? t('papers.paper.written', { got }) : t('papers.paper.noContent')) : t('papers.paper.untouched');
+  return t('papers.paper.filled', { from, content });
 }

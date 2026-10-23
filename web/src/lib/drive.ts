@@ -2,6 +2,7 @@
 // Yerleşim: Drive'ım / Thalamus / notes / <not kimliği>.json   ·   Thalamus / files / <ekler>
 // Her not dosyasının appProperties'inde noteId ve updatedAt durur; böylece içerik indirmeden karşılaştırılır.
 
+import { t } from '../i18n';
 import { accessToken, expireToken } from './google';
 
 export type Kind = 'root' | 'notes' | 'files' | 'note' | 'settings' | 'snapshot';
@@ -64,11 +65,11 @@ async function req(url: string, init: RequestInit = {}, retry = true): Promise<R
     await new Promise((res) => setTimeout(res, 1500));
     return req(url, init, false);
   }
-  if (r.status === 404) throw new NotFoundError('Drive dosyası bulunamadı');
+  if (r.status === 404) throw new NotFoundError(t('papers.drive.notFound'));
   if (!r.ok) {
     const body = await r.json().catch(() => ({}));
     const reason = body?.error?.errors?.[0]?.reason ?? body?.error?.status;
-    if (reason === 'storageQuotaExceeded') throw new DriveFullError('Google Drive alanın dolu.');
+    if (reason === 'storageQuotaExceeded') throw new DriveFullError(t('papers.drive.full'));
     throw new Error(`Drive: ${body?.error?.message ?? r.status}`);
   }
   return r;

@@ -1,6 +1,7 @@
 // BibTeX dışa/içe aktarma ve kaynakça biçimleri (IEEE, APA).
 // Atıf bilgisi makale notunun gizli alanında (props.__cite, bkz. scholar.ts); yoksa görünen alanlardan kurulur.
 
+import { t } from '../i18n';
 import { displayTitle } from './format';
 import type { CiteMeta, Person } from './scholar';
 import { relationIds, type Note } from './types';
@@ -172,5 +173,5 @@ export function formatCite(c: CiteMeta, style: CiteStyle): string {
   const names = c.authors.map((a) => `${a.family}${a.given ? `, ${initials(a.given)}` : ''}`);
   const au = names.length > 20 ? `${names.slice(0, 19).join(', ')}, … ${names[names.length - 1]}` : names.length > 1 ? `${names.slice(0, -1).join(', ')}, & ${names[names.length - 1]}` : names[0] ?? '';
   const venue = [c.venue, c.volume && `${c.volume}${c.issue ? `(${c.issue})` : ''}`, pages].filter(Boolean).join(', ');
-  return `${au ? `${au} ` : ''}(${c.year ?? 't.y.'}). ${c.title}.${venue ? ` ${venue}.` : ''}${c.doi ? ` https://doi.org/${c.doi}` : c.url ? ` ${c.url}` : ''}`;
+  return `${au ? `${au} ` : ''}(${c.year ?? t('papers.cite.noDate')}). ${c.title}.${venue ? ` ${venue}.` : ''}${c.doi ? ` https://doi.org/${c.doi}` : c.url ? ` ${c.url}` : ''}`;
 }
