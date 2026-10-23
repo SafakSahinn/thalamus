@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { create } from 'zustand';
 import { clearAll, db, delMeta, getMeta, loadAll, putNotes, setMeta } from './db';
 import { drive as realDrive, isNotFound, type DFile, type DriveApi, type Folders } from './drive';
@@ -614,7 +615,7 @@ async function maybeSnapshot(f: Folders, force = false) {
 
 function onSyncError(e: unknown) {
   if ((e as Error | undefined)?.name === 'AuthRevokedError') {
-    set({ account: null, sync: { ...get().sync, status: 'error', error: 'Google oturumun sona erdi, yeniden giriş yap.' } });
+    set({ account: null, sync: { ...get().sync, status: 'error', error: t('auth.expired') } });
     return;
   }
   if (isNotFound(e)) {
@@ -751,7 +752,7 @@ export async function writeShareFile(existing: unknown, noteId: string, title: s
     }
   }
   const f = await getFolders();
-  const id = await api.createJson(f.root, `Paylaşılan - ${title.slice(0, 80) || 'not'}.json`, data, props);
+  const id = await api.createJson(f.root, t('auth.sharedFile', { title: title.slice(0, 80) || t('auth.sharedFallback') }), data, props);
   await api.setPublic?.(id, true);
   return id;
 }
@@ -804,7 +805,7 @@ export function resolveFileUrl(src: string): Promise<string> {
       const key = `${scheme}:${id}`;
       let blob = await d.get('blobs', key);
       if (!blob) {
-        if (scheme === 'local') throw new Error('Bu dosya yalnızca yüklendiği cihazda duruyor.');
+        if (scheme === 'local') throw new Error(t('auth.localOnly'));
         blob = await api.readBlob(id);
         await d.put('blobs', blob, key);
       }

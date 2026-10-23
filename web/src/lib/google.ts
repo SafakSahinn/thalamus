@@ -3,6 +3,7 @@
 // şifreli haliyle ("session") tutulur: bu cihazda ve kullanıcının Drive'ındaki Thalamus/session.json'da.
 // Yeni cihazda izin ekranı yerine bu dosya okunur; sunucuda hiçbir şey saklanmaz.
 
+import { t, tOr } from '../i18n';
 import { getMeta, setMeta } from './db';
 
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
@@ -84,7 +85,7 @@ function loadGis(): Promise<void> {
     s.onload = () => resolve();
     s.onerror = () => {
       loading = null;
-      reject(new Error('Google bağlantısı yüklenemedi. İnternet bağlantını kontrol et.'));
+      reject(new Error(t('auth.loadFailed')));
     };
     document.head.appendChild(s);
   });
@@ -145,7 +146,7 @@ interface ExchangeResp {
 
 const DAPI = 'https://www.googleapis.com/drive/v3';
 const DUP = 'https://www.googleapis.com/upload/drive/v3';
-const SESSION_NOTE = 'Thalamus oturum anahtarı (şifreli). Silersen yeni cihazlarda Google izni yeniden sorulur.';
+
 
 async function dfetch(token: string, url: string, init: RequestInit = {}) {
   const r = await fetch(url, { ...init, headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` } });
@@ -183,7 +184,7 @@ async function writeSessionFile(token: string, session: string): Promise<void> {
     root = ((await r.json()) as { id: string }).id;
   }
   const boundary = `thalamus${Math.random().toString(36).slice(2)}`;
-  const meta = { name: 'session.json', parents: [root], mimeType: 'application/json', description: SESSION_NOTE, appProperties: { thalamus: 'session' } };
+  const meta = { name: 'session.json', parents: [root], mimeType: 'application/json', description: t('auth.sessionNote'), appProperties: { thalamus: 'session' } };
   const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${data}\r\n--${boundary}--`;
   await dfetch(token, `${DUP}/files?uploadType=multipart&fields=id`, { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
 }
@@ -194,16 +195,10 @@ export async function removeSessionFile(token: string): Promise<void> {
   if (id) await dfetch(token, `${DAPI}/files/${id}`, { method: 'DELETE' }).catch(() => undefined);
 }
 
-const ERRORS: Record<string, string> = {
-  popup_closed: 'Google penceresi kapatıldı.',
-  drive_scope_missing: 'Notlarını saklayabilmek için Google Drive iznini de onaylaman gerekiyor.',
-  calendar_scope_missing: 'Takvim eşitlemesi için Google Takvim iznini onaylaman gerekiyor.',
-  need_consent: 'Bu cihazda devam etmek için Google iznini bir kez onaylaman gerekiyor.',
-  access_denied: 'Google izni verilmedi.',
-};
+/** Google'ın hata kodlarını (popup_closed…) okunur metne çevirir; bilinmeyenler olduğu gibi kalır */
 export const authErrorText = (e: unknown) => {
   const m = e instanceof Error ? e.message : String(e);
-  return ERRORS[m] ?? m;
+  return tOr(`auth.errors.${m}`, m);
 };
 
 /**
@@ -243,7 +238,7 @@ export async function grantCalendar(): Promise<void> {
   await loadGis();
   const a = await loadAuth();
   const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('consent', a?.profile.email, CALENDAR_SCOPE) });
-  if (!r.session) throw new Error('Google kalıcı izin vermedi, lütfen tekrar dene.');
+  if (!r.session) throw new Error(t('auth.noOffline'));
   await writeSessionFile(r.access_token, r.session);
   const cur = a ?? ({ profile: r.profile } as AuthState);
   await setMeta('auth', { ...cur, session: r.session, refresh_token: undefined, access_token: r.access_token, expires_at: Date.now() + r.expires_in * 1000, calendar: true });
@@ -254,7 +249,7 @@ export async function grantFullCalendar(): Promise<void> {
   await loadGis();
   const a = await loadAuth();
   const r = await callFn<ExchangeResp>({ action: 'exchange', code: await requestCode('consent', a?.profile.email, [CALENDAR_SCOPE, ...FULL_CALENDAR_SCOPES].join(' ')) });
-  if (!r.session) throw new Error('Google kalıcı izin vermedi, lütfen tekrar dene.');
+  if (!r.session) throw new Error(t('auth.noOffline'));
   await writeSessionFile(r.access_token, r.session);
   const cur = a ?? ({ profile: r.profile } as AuthState);
   await setMeta('auth', { ...cur, session: r.session, refresh_token: undefined, access_token: r.access_token, expires_at: Date.now() + r.expires_in * 1000, calendar: true, fullCalendar: true });
@@ -269,7 +264,7 @@ export class AuthRevokedError extends Error {
 /** Geçerli erişim token'ı; süresi dolmak üzereyse yeniler. */
 export async function accessToken(): Promise<string> {
   const a = await loadAuth();
-  if (!a) throw new AuthRevokedError('Oturum yok');
+  if (!a) throw new AuthRevokedError(t('auth.noSession'));
   if (a.expires_at - 60_000 > Date.now()) return a.access_token;
   refreshing ??= (async () => {
     try {
@@ -286,7 +281,7 @@ export async function accessToken(): Promise<string> {
       await setMeta('auth', next);
       return r.access_token;
     } catch (e) {
-      if ((e as { code?: string }).code === 'revoked') throw new AuthRevokedError('Google izni geri alınmış');
+      if ((e as { code?: string }).code === 'revoked') throw new AuthRevokedError(t('auth.revoked'));
       throw e;
     } finally {
       refreshing = null;
