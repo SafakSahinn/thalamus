@@ -8,6 +8,7 @@ import collPage from './collPage';
 import common from './common';
 import dialogs from './dialogs';
 import editor from './editor';
+import home from './home';
 import importer from './importer';
 import market from './market';
 import misc from './misc';
@@ -40,6 +41,7 @@ export default {
   common,
   dialogs,
   editor,
+  home,
   importer,
   market,
   misc,

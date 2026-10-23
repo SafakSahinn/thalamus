@@ -1,3 +1,4 @@
+import { t, type Messages } from '../i18n';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { openMenu } from '../components/ContextMenu';
 import { NoteChip } from '../components/PropertyPanel';
@@ -11,7 +12,7 @@ import { saveSettings, todayStr, useIndex, useStore } from '../lib/store';
 import { createDefault } from '../lib/templates';
 import { fmtMin, studyStats, useTimer } from '../lib/timer';
 import { upcoming, whenText } from '../lib/upcoming';
-import { TYPES, typeOf, type Note, type TypeId } from '../lib/types';
+import { optionLabel, typeOf, TYPES, type Note, type TypeId } from '../lib/types';
 import { RoutineChecks } from './DailyPage';
 import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
@@ -27,9 +28,10 @@ const OnThisDay = () => <Suspense fallback={null}><OnThisDayLazy /></Suspense>;
 const QUICK: TypeId[] = ['note', 'book', 'paper', 'lab', 'conference', 'talk', 'movie', 'word', 'concept'];
 const ACTIVE = new Set(['Okunuyor', 'İzleniyor', 'Devam ediyor']);
 
+type WidgetId = keyof Messages['home']['widgets'];
 interface Widget {
-  id: string;
-  label: string;
+  id: WidgetId;
+  readonly label: string;
   /** tam genişlik (ızgarada iki sütunu kaplar) */
   wide?: boolean;
   /** varsayılan olarak kapalı (Ayarlar'dan açılır) */
@@ -39,27 +41,31 @@ interface Widget {
   C: () => React.ReactNode;
 }
 
+const widget = (id: WidgetId, C: () => React.ReactNode, o: Pick<Widget, 'wide' | 'off' | 'plugin'> = {}): Widget => ({
+  id, C, ...o, get label() { return t(`home.widgets.${id}`); },
+});
+
 const WIDGETS: Widget[] = [
-  { id: 'today', label: 'Bugün (rutinler)', wide: true, C: Today },
-  { id: 'quick', label: 'Hızlı ekle', wide: true, C: Quick },
-  { id: 'upcoming', label: 'Yaklaşanlar', wide: true, C: Soon },
-  { id: 'review', label: 'Tekrar kartları', C: Review },
-  { id: 'study', label: 'Çalışma süresi', C: Study },
-  { id: 'active', label: 'Devam edenler', C: Active },
-  { id: 'recent', label: 'Son düzenlenenler', C: Recent },
-  { id: 'word', label: 'Günün kelimesi', C: Word },
-  { id: 'hubs', label: 'En bağlantılı notlar', C: Hubs },
-  { id: 'agenda', label: 'Bugünün takvimi', off: true, C: Agenda },
-  { id: 'reading', label: 'Okuma hedefi', off: true, C: Reading },
-  { id: 'colls', label: 'Koleksiyonlar', off: true, C: Colls },
-  { id: 'otd', label: 'Gazete: Tarihte bugün', wide: true, plugin: 'otd', C: OnThisDay },
+  widget('today', Today, { wide: true }),
+  widget('quick', Quick, { wide: true }),
+  widget('upcoming', Soon, { wide: true }),
+  widget('review', Review),
+  widget('study', Study),
+  widget('active', Active),
+  widget('recent', Recent),
+  widget('word', Word),
+  widget('hubs', Hubs),
+  widget('agenda', Agenda, { off: true }),
+  widget('reading', Reading, { off: true }),
+  widget('colls', Colls, { off: true }),
+  widget('otd', OnThisDay, { wide: true, plugin: 'otd' }),
 ];
 
 type Layout = { id: string; on: boolean }[];
 
 /** Kayıtlı düzen + sonradan eklenen bileşenler (sona, varsayılan görünürlükle); kurulu olmayan eklentilerin bileşenleri çıkarılır */
 export function homeLayout(saved?: Layout, installed: string[] = []): Layout {
-  const known = new Set(WIDGETS.filter((w) => !w.plugin || installed.includes(w.plugin)).map((w) => w.id));
+  const known = new Set<string>(WIDGETS.filter((w) => !w.plugin || installed.includes(w.plugin)).map((w) => w.id));
   const list = (saved ?? []).filter((x) => known.has(x.id));
   for (const w of WIDGETS) if (known.has(w.id) && !list.some((x) => x.id === w.id)) list.push({ id: w.id, on: !w.off });
   return list;
@@ -67,13 +73,13 @@ export function homeLayout(saved?: Layout, installed: string[] = []): Layout {
 
 /** Ana sayfada (içerik alanının herhangi bir yerinde) sağ tık menüsü (yazı alanları, bağlantılar ve seçili metin tarayıcının kendi menüsünde kalır) */
 export function homeContextMenu(e: React.MouseEvent) {
-  const t = e.target as HTMLElement;
-  if (t.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
+  const el = e.target as HTMLElement;
+  if (el.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
   if (!isInstalled('sticky')) return;
   e.preventDefault();
   const at = { x: e.clientX, y: e.clientY };
   openMenu(e.clientX, e.clientY, [
-    { key: 'sticky', icon: '🗒', label: 'Yapışkan not ekle', run: () => addSticky(at) },
+    { key: 'sticky', icon: '🗒', label: t('home.addSticky'), run: () => addSticky(at) },
   ]);
 }
 
@@ -111,11 +117,11 @@ export function HomeSettings() {
         <div key={x.id} className={`home-set-row ${x.on ? '' : 'off'}`}>
           <label><input type="checkbox" checked={x.on} onChange={() => save(layout.map((y) => (y.id === x.id ? { ...y, on: !y.on } : y)))} /> {WIDGETS.find((w) => w.id === x.id)!.label}</label>
           <span className="spacer" />
-          <button className="iconbtn" disabled={i === 0} title="Yukarı" onClick={() => move(i, -1)}>↑</button>
-          <button className="iconbtn" disabled={i === layout.length - 1} title="Aşağı" onClick={() => move(i, 1)}>↓</button>
+          <button className="iconbtn" disabled={i === 0} title={t('home.up')} onClick={() => move(i, -1)}>↑</button>
+          <button className="iconbtn" disabled={i === layout.length - 1} title={t('home.down')} onClick={() => move(i, 1)}>↓</button>
         </div>
       ))}
-      {saved && <button className="btn small" onClick={() => save(undefined)}>Varsayılana dön</button>}
+      {saved && <button className="btn small" onClick={() => save(undefined)}>{t('home.reset')}</button>}
     </div>
   );
 }
@@ -126,9 +132,9 @@ function Today() {
   return (
     <div className="home-today">
       <div className="row">
-        <h2>Bugün</h2>
+        <h2>{t('home.today')}</h2>
         <span className="spacer" />
-        <a className="btn small" href={`#/daily/${todayStr()}`}>Günlüğü aç →</a>
+        <a className="btn small" href={`#/daily/${todayStr()}`}>{t('home.openDaily')}</a>
       </div>
       <RoutineChecks date={todayStr()} compact />
     </div>
@@ -156,7 +162,7 @@ function Agenda() {
   if (!mine.length && !ext.length) return null;
   return (
     <>
-      <h3>Bugünün takvimi</h3>
+      <h3>{t('home.widgets.agenda')}</h3>
       <div className="list">
         {mine.map((u) => (
           <a key={u.note.id + u.def.key} className="rowlink" href={`#/n/${u.note.id}`}>
@@ -167,12 +173,12 @@ function Agenda() {
         {ext.map((e) => (
           <a key={e.calId + e.id} className="rowlink" href="#/takvim">
             <span>📅</span>
-            <span className="grow">{e.summary || '(başlıksız)'}</span>
-            <span className="muted small">{e.time ? `${e.time}${e.endTime ? `–${e.endTime}` : ''}` : 'tüm gün'}</span>
+            <span className="grow">{e.summary || t('dialogs.extEvent.untitled')}</span>
+            <span className="muted small">{e.time ? `${e.time}${e.endTime ? `–${e.endTime}` : ''}` : t('home.allDay')}</span>
           </a>
         ))}
       </div>
-      <a href="#/takvim" className="small">Takvimi aç →</a>
+      <a href="#/takvim" className="small">{t('home.openCalendar')}</a>
     </>
   );
 }
@@ -184,15 +190,15 @@ function Review() {
   if (!any) return null;
   return (
     <>
-      <h3>Tekrar kartları</h3>
+      <h3>{t('home.widgets.review')}</h3>
       {due.length + fresh.length ? (
         <div className="widget-kpi">
           <b>{due.length + fresh.length}</b>
-          <span className="muted small">kart bekliyor{fresh.length ? ` (${fresh.length} yeni)` : ''}</span>
+          <span className="muted small">{fresh.length ? t('home.cardsWaitingNew', { count: fresh.length }) : t('home.cardsWaiting')}</span>
           <span className="spacer" />
-          <a className="btn small primary" href="#/tekrar">🧠 Başla</a>
+          <a className="btn small primary" href="#/tekrar">{t('home.start')}</a>
         </div>
-      ) : <p className="muted small">Bugünlük tekrar yok 🎉</p>}
+      ) : <p className="muted small">{t('home.noReview')}</p>}
     </>
   );
 }
@@ -204,14 +210,14 @@ function Study() {
   const today = s.days.at(-1)?.min ?? 0;
   return (
     <>
-      <h3>Çalışma süresi</h3>
+      <h3>{t('home.widgets.study')}</h3>
       <div className="widget-kpi">
-        <b>{fmtMin(today)}</b><span className="muted small">bugün</span>
-        <b>{fmtMin(s.total)}</b><span className="muted small">bu hafta</span>
+        <b>{fmtMin(today)}</b><span className="muted small">{t('home.todayLabel')}</span>
+        <b>{fmtMin(s.total)}</b><span className="muted small">{t('home.thisWeek')}</span>
         <span className="spacer" />
-        <a className="small" href="#/calisma">Ayrıntılar →</a>
+        <a className="small" href="#/calisma">{t('home.details')}</a>
       </div>
-      {running && notes[running.noteId] && <p className="small">⏱ Şu an: <a href={`#/n/${running.noteId}`}>{displayTitle(notes[running.noteId])}</a></p>}
+      {running && notes[running.noteId] && <p className="small">{t('home.now')} <a href={`#/n/${running.noteId}`}>{displayTitle(notes[running.noteId])}</a></p>}
       {s.groups.length > 0 && <div className="chips">{s.groups.slice(0, 4).map((g) => <NoteChip key={g.note.id} note={g.note} />)}</div>}
     </>
   );
@@ -220,11 +226,11 @@ function Study() {
 function Quick() {
   return (
     <>
-      <h3>Hızlı ekle</h3>
+      <h3>{t('home.widgets.quick')}</h3>
       <div className="quick">
-        {QUICK.map((t) => (
-          <button key={t} className="quickbtn" style={{ '--c': typeOf(t).color } as React.CSSProperties} onClick={() => go(`/n/${createDefault(t).id}`)}>
-            <span>{typeOf(t).icon}</span>{typeOf(t).label}
+        {QUICK.map((ty) => (
+          <button key={ty} className="quickbtn" style={{ '--c': typeOf(ty).color } as React.CSSProperties} onClick={() => go(`/n/${createDefault(ty).id}`)}>
+            <span>{typeOf(ty).icon}</span>{typeOf(ty).label}
           </button>
         ))}
       </div>
@@ -238,7 +244,7 @@ function Soon() {
   if (!soon.length) return null;
   return (
     <>
-      <h3>Yaklaşanlar</h3>
+      <h3>{t('home.widgets.upcoming')}</h3>
       {(
         <div className="list upcoming">
           {soon.map((u) => (
@@ -260,9 +266,9 @@ function Active() {
   if (!active.length) return null;
   return (
     <>
-      <h3>Devam edenler</h3>
+      <h3>{t('home.widgets.active')}</h3>
       <div className="list">
-        {active.map((n) => <Row key={n.id} n={n} meta={String(n.props.status)} />)}
+        {active.map((n) => <Row key={n.id} n={n} meta={optionLabel(String(n.props.status))} />)}
       </div>
     </>
   );
@@ -276,9 +282,9 @@ function Recent() {
   );
   return (
     <>
-      <h3>Son düzenlenenler</h3>
+      <h3>{t('home.widgets.recent')}</h3>
       <div className="list">
-        {recent.length ? recent.map((n) => <Row key={n.id} n={n} meta={relTime(n.updated_at)} />) : <p className="muted">Henüz not yok. Yukarıdan bir şey ekleyerek başla.</p>}
+        {recent.length ? recent.map((n) => <Row key={n.id} n={n} meta={relTime(n.updated_at)} />) : <p className="muted">{t('home.noNotes')}</p>}
       </div>
     </>
   );
@@ -295,10 +301,10 @@ function Word() {
   if (!word) return null;
   return (
     <div className="wotd">
-      <h3>Günün kelimesi</h3>
+      <h3>{t('home.widgets.word')}</h3>
       <a href={`#/n/${word.id}`} className="wotd-word">{word.title}</a>
       <div className="wotd-meaning">{String(word.props.meaning)}</div>
-      <a href="#/dictionary" className="small">Sözlüğe git →</a>
+      <a href="#/dictionary" className="small">{t('home.toDict')}</a>
     </div>
   );
 }
@@ -314,9 +320,9 @@ function Hubs() {
   if (!hubs.length) return null;
   return (
     <>
-      <h3>En bağlantılı notlar</h3>
+      <h3>{t('home.widgets.hubs')}</h3>
       <div className="chips">{hubs.map(({ n }) => <NoteChip key={n.id} note={n} />)}</div>
-      <a href="#/graph" className="small">Haritayı aç →</a>
+      <a href="#/graph" className="small">{t('home.openMap')}</a>
     </>
   );
 }
@@ -330,11 +336,11 @@ function Colls() {
   }, [alive]);
   return (
     <>
-      <h3>Koleksiyonlar</h3>
+      <h3>{t('home.widgets.colls')}</h3>
       <div className="colls">
-        {TYPES.map((t) => (
-          <a key={t.id} href={t.id === 'word' ? '#/dictionary' : t.id === 'daily' ? '#/daily' : `#/c/${t.id}`} className="coll">
-            <span>{t.icon}</span> {t.plural} <span className="muted">{counts.get(t.id) ?? 0}</span>
+        {TYPES.map((ty) => (
+          <a key={ty.id} href={ty.id === 'word' ? '#/dictionary' : ty.id === 'daily' ? '#/daily' : `#/c/${ty.id}`} className="coll">
+            <span>{ty.icon}</span> {ty.plural} <span className="muted">{counts.get(ty.id) ?? 0}</span>
           </a>
         ))}
       </div>
@@ -360,17 +366,17 @@ function Reading() {
   const now = useMemo(() => Object.values(notes).filter((n) => !n.deleted_at && n.type === 'book' && n.props.status === 'Okunuyor'), [notes]);
   return (
     <>
-      <h3>Okuma hedefi</h3>
+      <h3>{t('home.widgets.reading')}</h3>
       {g?.books || g?.papers ? (
         <>
-          <GoalBar label="📚 Kitap" done={s.books.length} goal={g.books} year={year} />
-          <GoalBar label="📄 Makale" done={s.papers.length} goal={g.papers} year={year} />
+          <GoalBar label={t('reading.stats.books')} done={s.books.length} goal={g.books} year={year} />
+          <GoalBar label={t('reading.stats.papers')} done={s.papers.length} goal={g.papers} year={year} />
         </>
       ) : (
-        <p className="muted small">Bu yıl {s.books.length} kitap, {s.papers.length} makale. <button className="linkbtn" onClick={() => void editGoal(year)}>🎯 Hedef koy</button></p>
+        <p className="muted small">{t('home.yearSummary', { books: s.books.length, papers: s.papers.length })} <button className="linkbtn" onClick={() => void editGoal(year)}>{t('home.setGoal')}</button></p>
       )}
       {now.length > 0 && <div className="chips">{now.slice(0, 4).map((n) => <NoteChip key={n.id} note={n} />)}</div>}
-      <a href="#/okuma" className="small">İstatistikler →</a>
+      <a href="#/okuma" className="small">{t('home.stats')}</a>
     </>
   );
 }
