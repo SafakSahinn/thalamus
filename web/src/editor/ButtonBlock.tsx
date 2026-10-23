@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { mergeAttributes, Node, type JSONContent } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from '@tiptap/react';
 import { lazy, Suspense, useState } from 'react';
@@ -14,17 +15,17 @@ const NoteEditor = lazy(() => import('./Editor'));
 
 type Action = 'insert' | 'note';
 
-/** Şablondaki {bugün} yer tutucularını doldur */
+/** Şablondaki {bugün} / {today} (her dilde) yer tutucularını doldur */
 function fill(node: JSONContent, today: string): JSONContent {
   const out: JSONContent = { ...node };
-  if (typeof out.text === 'string') out.text = out.text.replace(/\{bugün\}/gi, today);
+  if (typeof out.text === 'string') out.text = out.text.replace(/\{(bugün|today)\}/gi, today);
   if (out.content) out.content = out.content.map((c) => fill(c, today));
   return out;
 }
 
 function ButtonView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const { label, action, template, typeId } = node.attrs as { label: string; action: Action; template: JSONContent | null; typeId: string };
-  const [edit, setEdit] = useState(!template && action === 'insert' && label === 'Yeni düğme');
+  const [edit, setEdit] = useState(!template && action === 'insert' && (!label || label === 'Yeni düğme'));
   const editable = editor.isEditable;
   const [edKey] = useState(() => Math.random().toString(36).slice(2));
 
@@ -47,39 +48,39 @@ function ButtonView({ node, updateAttributes, editor, getPos }: ReactNodeViewPro
     <NodeViewWrapper className="button-block" data-drag-handle="">
       <div className="button-row" contentEditable={false}>
         <button type="button" className="btn button-run" onClick={run}>
-          {action === 'note' ? `${typeOf(typeId || 'note').icon} ` : '▶ '}{label || 'Düğme'}
+          {action === 'note' ? `${typeOf(typeId || 'note').icon} ` : '▶ '}{label || t('blocks.button.fallback')}
         </button>
-        {editable && <button type="button" className="iconbtn" title="Düğmeyi ayarla" onClick={() => setEdit(!edit)}>{edit ? '▾' : '⚙'}</button>}
+        {editable && <button type="button" className="iconbtn" title={t('blocks.button.configure')} onClick={() => setEdit(!edit)}>{edit ? '▾' : '⚙'}</button>}
       </div>
       {edit && editable && (
         <div className="button-edit" contentEditable={false}>
-          <label className="small">Düğme yazısı <input value={label} onChange={(e) => updateAttributes({ label: e.target.value })} /></label>
+          <label className="small">{t('blocks.button.labelField')} <input value={label} onChange={(e) => updateAttributes({ label: e.target.value })} /></label>
           <div className="seg">
-            <button type="button" className={action === 'insert' ? 'on' : ''} onClick={() => updateAttributes({ action: 'insert' })}>İçerik ekle</button>
-            <button type="button" className={action === 'note' ? 'on' : ''} onClick={() => updateAttributes({ action: 'note' })}>Yeni kayıt aç</button>
+            <button type="button" className={action === 'insert' ? 'on' : ''} onClick={() => updateAttributes({ action: 'insert' })}>{t('blocks.button.insert')}</button>
+            <button type="button" className={action === 'note' ? 'on' : ''} onClick={() => updateAttributes({ action: 'note' })}>{t('blocks.button.note')}</button>
           </div>
           {action === 'insert' ? (
             <>
-              <p className="muted small">Düğmeye her basışta aşağıdaki içerik düğmenin altına eklenir. <code>{'{bugün}'}</code> yazan yer o günün tarihi olur.</p>
+              <p className="muted small">{t.rich('blocks.button.insertHint', { token: <code>{t('blocks.button.todayToken')}</code> })}</p>
               <div className="button-template">
                 <Suspense fallback={null}>
                   <NoteEditor
                     docKey={`button-${edKey}`}
                     content={template}
-                    placeholder="Eklenecek içerik… ör. ## Toplantı {bugün}"
+                    placeholder={t('blocks.button.placeholder', { token: t('blocks.button.todayToken') })}
                     onChange={(doc) => updateAttributes({ template: doc })}
                   />
                 </Suspense>
               </div>
             </>
           ) : (
-            <label className="small">Koleksiyon{' '}
+            <label className="small">{t('blocks.button.collection')}{' '}
               <select value={typeId || 'note'} onChange={(e) => updateAttributes({ typeId: e.target.value })}>
-                {TYPES.filter((t) => t.id !== 'daily').map((t) => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                {TYPES.filter((ty) => ty.id !== 'daily').map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.label}</option>)}
               </select>
             </label>
           )}
-          <button type="button" className="btn small primary" onClick={() => setEdit(false)}>Tamam</button>
+          <button type="button" className="btn small primary" onClick={() => setEdit(false)}>{t('common.ok')}</button>
         </div>
       )}
     </NodeViewWrapper>
@@ -92,7 +93,7 @@ export const ButtonBlock = Node.create({
   atom: true,
   draggable: true,
   addAttributes: () => ({
-    label: { default: 'Yeni düğme' },
+    label: { default: '' },
     action: { default: 'insert' },
     typeId: { default: 'note' },
     template: {

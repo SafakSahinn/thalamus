@@ -1,3 +1,4 @@
+import { lower, t } from '../i18n';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import Suggestion from '@tiptap/suggestion';
@@ -26,14 +27,14 @@ function wikiItems(query: string): Entry[] {
     },
   }));
   const title = query.trim();
-  if (title && !found.some((n) => n.title.toLocaleLowerCase('tr') === title.toLocaleLowerCase('tr'))) {
-    for (const t of CREATE_TYPES) {
+  if (title && !found.some((n) => lower(n.title) === lower(title))) {
+    for (const ty of CREATE_TYPES) {
       out.push({
-        key: `new-${t}`,
+        key: `new-${ty}`,
         icon: '＋',
-        label: `Yeni ${TYPE_MAP[t].label.toLocaleLowerCase('tr')}: “${title}”`,
+        label: t('blocks.wiki.newOf', { label: lower(TYPE_MAP[ty].label), title }),
         action: (editor, range) => {
-          const n = createNote(t, title);
+          const n = createNote(ty, title);
           editor.chain().focus().insertContentAt(range, [
             { type: 'wikiLink', attrs: { id: n.id, label: title } },
             { type: 'text', text: ' ' },
@@ -88,7 +89,7 @@ export const WikiLink = Node.create({
         const gone = !n || Boolean(n.deleted_at);
         dom.textContent = n && !gone ? displayTitle(n) : (node.attrs.label as string) || '?';
         dom.classList.toggle('missing', gone);
-        dom.title = gone ? 'Bu not silinmiş veya henüz eşitlenmemiş' : typeOf(n.type).label;
+        dom.title = gone ? t('blocks.wiki.gone') : typeOf(n.type).label;
       };
       paint();
       let last = useStore.getState().notes[id];
@@ -114,7 +115,7 @@ export const WikiLink = Node.create({
         char: '[[',
         allowSpaces: true,
         allowedPrefixes: null,
-        ...suggestConfig(wikiItems, 'Yazmaya devam et…'),
+        ...suggestConfig(wikiItems, t('blocks.wiki.keepTyping')),
       }),
     ];
   },

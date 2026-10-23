@@ -1,0 +1,35 @@
+// Editör blokları: bağlantılar, düğme bloğu; sözlük sayfası
+export default {
+  wiki: {
+    newOf: 'Yeni {label}: “{title}”',
+    gone: 'Bu not silinmiş veya henüz eşitlenmemiş',
+    keepTyping: 'Yazmaya devam et…',
+  },
+  button: {
+    todayToken: '{bugün}',
+    fallback: 'Düğme',
+    configure: 'Düğmeyi ayarla',
+    labelField: 'Düğme yazısı',
+    insert: 'İçerik ekle',
+    note: 'Yeni kayıt aç',
+    insertHint: 'Düğmeye her basışta aşağıdaki içerik düğmenin altına eklenir. {token} yazan yer o günün tarihi olur.',
+    placeholder: 'Eklenecek içerik… ör. ## Toplantı {token}',
+    collection: 'Koleksiyon',
+  },
+  dict: {
+    title: '🔤 Sözlük',
+    review: '🧠 Tekrar et',
+    intro: 'Kitaplarda, makalelerde ve filmlerde eklediğin bütün kelimeler burada toplanır. Aynı kelime birden çok kaynakta geçiyorsa hepsi yanında görünür ve haritada birbirine bağlanır.',
+    word: 'Kelime',
+    meaning: 'Anlamı',
+    exists: '“{title}” sözlükte zaten var: {link}',
+    open: 'aç',
+    search: 'Kelime veya anlam ara…',
+    allLangs: 'Tüm diller',
+    all: 'Hepsi',
+    toLearn: 'Öğrenilecek',
+    learned: 'Öğrenildi',
+    learnedTitle: 'Öğrendim',
+    meaningPlaceholder: 'anlamı…',
+  },
+};

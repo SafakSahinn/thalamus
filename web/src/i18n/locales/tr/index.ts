@@ -1,5 +1,6 @@
 // Kaynak dil: anahtar kümesinin doğruluk kaynağı
 import app from './app';
+import blocks from './blocks';
 import calendar from './calendar';
 import capture from './capture';
 import coll from './coll';
@@ -25,6 +26,7 @@ import writing from './writing';
 
 export default {
   app,
+  blocks,
   calendar,
   capture,
   coll,
