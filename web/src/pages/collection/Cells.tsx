@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Chip, ComputedValue, NoteChip, PropButton, PropValue, Stars } from '../../components/PropertyPanel';
 import { propValue } from '../../lib/compute';
@@ -19,7 +20,7 @@ export function Cell({ note, def }: { note: Note; def: PropDef }) {
     case 'uid': return <span className="uid">{uidText(def, v)}</span>;
     case 'files': {
       const f = fileRefs(v);
-      return f.length ? <span className="muted">📎 {f.length === 1 ? f[0].name : `${f.length} dosya`}</span> : null;
+      return f.length ? <span className="muted">📎 {f.length === 1 ? f[0].name : t('coll.files', { count: f.length })}</span> : null;
     }
     case 'multiselect': return <>{(v as string[]).map((x) => <Chip key={x} text={x} />)}</>;
     case 'rating': return <Stars value={Number(v)} />;

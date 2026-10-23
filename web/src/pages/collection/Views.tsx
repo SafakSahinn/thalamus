@@ -1,9 +1,10 @@
+import { localeTag, t, weekdays } from '../../i18n';
 import { useMemo, useState } from 'react';
 import { displayTitle, noteIcon, parseDay, relTime } from '../../lib/format';
 import { go } from '../../lib/router';
 import { deleteNote, duplicateNote, setProp, todayStr, updateNote, useStore } from '../../lib/store';
 import { createDefault } from '../../lib/templates';
-import { relationIds, type Note, type PropDef, type SavedView, type TypeDef } from '../../lib/types';
+import { optionLabel, relationIds, type Note, type PropDef, type SavedView, type TypeDef } from '../../lib/types';
 import { groupNotes, type Group } from '../../lib/views';
 import { openPeek, peekClick } from '../../components/Peek';
 import { Cell, Cover, EditCell } from './Cells';
@@ -40,12 +41,12 @@ function TitleCell({ n, depth = 0, kids = 0, nest }: { n: Note; depth?: number; 
       <input
         key={n.id}
         defaultValue={n.title}
-        placeholder="Adsız"
+        placeholder={t('common.untitled')}
         onBlur={(e) => e.target.value !== n.title && updateNote(n.id, { title: e.target.value })}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
-      {nest && <button type="button" className="open-btn" onClick={() => nest.addChild(n.id)} title="Alt öğe ekle">＋</button>}
-      <button type="button" className="open-btn" onClick={() => open(n.id)} title="Yan panelde aç (Ctrl ile tam sayfa)">Aç</button>
+      {nest && <button type="button" className="open-btn" onClick={() => nest.addChild(n.id)} title={t('coll.addChild')}>＋</button>}
+      <button type="button" className="open-btn" onClick={() => open(n.id)} title={t('coll.openTitle')}>{t('coll.open')}</button>
     </div>
   );
 }
@@ -64,7 +65,7 @@ function TableRows({ rows, cols, sel, toggle, nest }: { rows: Note[]; cols: Prop
     const kids = children.get(n.id) ?? [];
     const out: React.ReactNode[] = [
       <tr key={n.id} className={`${sel.has(n.id) ? 'row-sel' : ''} ${depth ? 'sub-row' : ''}`}>
-        <td className="sel-cell"><input type="checkbox" className="check" checked={sel.has(n.id)} onChange={(e) => toggle(n.id, e)} aria-label="Seç" /></td>
+        <td className="sel-cell"><input type="checkbox" className="check" checked={sel.has(n.id)} onChange={(e) => toggle(n.id, e)} aria-label={t('coll.select')} /></td>
         <td className="tname">{n.type === 'daily' ? <a href={`#/n/${n.id}`}>{displayTitle(n)}</a> : <TitleCell n={n} depth={depth} kids={kids.length} nest={nest} />}</td>
         {cols.map((c) => <td key={c.key}><EditCell note={n} def={c} /></td>)}
         <td className="muted small nowrap">{relTime(n.updated_at)}</td>
@@ -96,7 +97,7 @@ function BulkBar({ ty, ids, clear }: { ty: TypeDef; ids: string[]; clear: () => 
   };
   return (
     <div className="bulk-bar">
-      <b>{ids.length} seçili</b>
+      <b>{t('coll.bulk.selected', { count: ids.length })}</b>
       {editable.length > 0 && (
         <>
           <select value={key} onChange={(e) => setKey(e.target.value)}>
@@ -104,31 +105,31 @@ function BulkBar({ ty, ids, clear }: { ty: TypeDef; ids: string[]; clear: () => 
           </select>
           {def && (def.kind === 'select' || def.kind === 'multiselect') && (
             <select value="" onChange={(e) => e.target.value && apply(e.target.value === '__none' ? undefined : e.target.value)}>
-              <option value="">{def.kind === 'multiselect' ? 'ekle…' : 'değer seç…'}</option>
-              {def.kind === 'select' && <option value="__none">— boşalt</option>}
-              {def.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+              <option value="">{def.kind === 'multiselect' ? t('coll.bulk.add') : t('coll.bulk.pickValue')}</option>
+              {def.kind === 'select' && <option value="__none">{t('coll.bulk.clear')}</option>}
+              {def.options?.map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
             </select>
           )}
           {def?.kind === 'checkbox' && (
             <>
-              <button type="button" className="btn small" onClick={() => apply(true)}>✓ İşaretle</button>
-              <button type="button" className="btn small" onClick={() => apply(undefined)}>İşareti kaldır</button>
+              <button type="button" className="btn small" onClick={() => apply(true)}>{t('coll.bulk.check')}</button>
+              <button type="button" className="btn small" onClick={() => apply(undefined)}>{t('coll.bulk.uncheck')}</button>
             </>
           )}
           {def?.kind === 'date' && <input type="date" onChange={(e) => apply(e.target.value || undefined)} />}
           {def?.kind === 'rating' && (
             <select value="" onChange={(e) => e.target.value && apply(Number(e.target.value) || undefined)}>
-              <option value="">puan…</option>
+              <option value="">{t('coll.bulk.rating')}</option>
               {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{'★'.repeat(r)}</option>)}
-              <option value="0">— boşalt</option>
+              <option value="0">{t('coll.bulk.clear')}</option>
             </select>
           )}
         </>
       )}
       <span className="spacer" />
-      <button type="button" className="btn small" onClick={() => { ids.forEach((id) => duplicateNote(id)); clear(); }}>⧉ Çoğalt</button>
-      <button type="button" className="btn small danger" onClick={() => { ids.forEach((id) => deleteNote(id)); clear(); }}>🗑 Çöpe taşı</button>
-      <button type="button" className="iconbtn" title="Seçimi temizle" onClick={clear}>×</button>
+      <button type="button" className="btn small" onClick={() => { ids.forEach((id) => duplicateNote(id)); clear(); }}>{t('coll.bulk.duplicate')}</button>
+      <button type="button" className="btn small danger" onClick={() => { ids.forEach((id) => deleteNote(id)); clear(); }}>{t('coll.bulk.trash')}</button>
+      <button type="button" className="iconbtn" title={t('coll.bulk.deselect')} onClick={clear}>×</button>
     </div>
   );
 }
@@ -181,10 +182,10 @@ export function TableView({ ty, rows, view, newProps }: ViewProps) {
         <table className="dbtable editable">
           <thead>
             <tr>
-              <th className="sel-cell"><input type="checkbox" className="check" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(rows.map((r) => r.id)))} aria-label="Tümünü seç" /></th>
-              <th>Ad</th>
+              <th className="sel-cell"><input type="checkbox" className="check" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(rows.map((r) => r.id)))} aria-label={t('coll.selectAll')} /></th>
+              <th>{t('coll.name')}</th>
               {cols.map((c) => <th key={c.key}>{c.label}</th>)}
-              <th>Düzenlendi</th>
+              <th>{t('coll.edited')}</th>
             </tr>
           </thead>
           {groups.map((g) => (
@@ -193,7 +194,7 @@ export function TableView({ ty, rows, view, newProps }: ViewProps) {
                 <tr className="group-row"><td colSpan={cols.length + 3}><b>{g.label}</b> <span className="muted small">{g.notes.length}</span></td></tr>
               )}
               <TableRows rows={g.notes} cols={cols} sel={sel} toggle={toggle} nest={nest} />
-              <tr className="add-row"><td colSpan={cols.length + 3}><button type="button" className="linkbtn muted small" onClick={() => add(g)}>＋ Yeni</button></td></tr>
+              <tr className="add-row"><td colSpan={cols.length + 3}><button type="button" className="linkbtn muted small" onClick={() => add(g)}>{t('coll.new')}</button></td></tr>
             </tbody>
           ))}
         </table>
@@ -248,7 +249,7 @@ export function BoardView({ ty, rows, view, newProps }: ViewProps) {
   const [over, setOver] = useState<string | null>(null);
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const gdef = ty.props.find((p) => p.key === view.groupBy && (p.kind === 'select' || p.kind === 'checkbox'));
-  if (!gdef) return <p className="muted">Pano için bir “Seçim” alanı gerekli. Görünüm ayarlarından gruplama alanını seç ya da ⚙ Alanlar’dan bir seçim alanı ekle.</p>;
+  if (!gdef) return <p className="muted">{t('coll.board.needSelect')}</p>;
   // Alt gruplama: sütunlar bir alana, satırlar (şeritler) başka bir alana göre
   const sdef = ty.props.find((p) => p.key === view.subGroupBy && p.key !== gdef.key && (p.kind === 'select' || p.kind === 'checkbox'));
   const columns = groupNotes(rows, gdef, notes);
@@ -307,12 +308,12 @@ export function BoardView({ ty, rows, view, newProps }: ViewProps) {
                           <div className="board-title">{!ty.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
                           {cols.map((c) => (n.props[c.key] !== undefined ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
                           {/* Dokunmatik ekranlarda sürükleme yerine */}
-                          <select className="board-move" value={g.key} onClick={(e) => e.preventDefault()} onChange={(e) => { const to = columns.find((x) => x.key === e.target.value); if (to) move(n.id, to, lane); }} aria-label="Taşı">
+                          <select className="board-move" value={g.key} onClick={(e) => e.preventDefault()} onChange={(e) => { const to = columns.find((x) => x.key === e.target.value); if (to) move(n.id, to, lane); }} aria-label={t('coll.board.move')}>
                             {columns.map((x) => <option key={x.key} value={x.key}>→ {x.label}</option>)}
                           </select>
                         </a>
                       ))}
-                      <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(ty.id, { ...newProps(), [gdef.key]: valueOf(gdef, g), ...(sdef ? { [sdef.key]: valueOf(sdef, lane) } : {}) }).id)}>＋ Yeni</button>
+                      <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(ty.id, { ...newProps(), [gdef.key]: valueOf(gdef, g), ...(sdef ? { [sdef.key]: valueOf(sdef, lane) } : {}) }).id)}>{t('coll.new')}</button>
                     </div>
                   );
                 })}
@@ -327,8 +328,7 @@ export function BoardView({ ty, rows, view, newProps }: ViewProps) {
 
 // ---------- takvim ----------
 
-const WEEK = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-const MONTH = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' });
+
 const p2 = (n: number) => String(n).padStart(2, '0');
 const ymd = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
@@ -351,7 +351,7 @@ export function CalendarView({ ty, rows, view, newProps }: ViewProps) {
       return d;
     });
   }, [cursor]);
-  if (!ddef) return <p className="muted">Takvim için bir “Tarih” alanı gerekli. Görünüm ayarlarından tarih alanını seç ya da ⚙ Alanlar’dan ekle.</p>;
+  if (!ddef) return <p className="muted">{t('coll.cal.needDate')}</p>;
   const byDay = new Map<string, Note[]>();
   for (const n of rows) {
     const raw = ddef.kind === 'date' ? n.props[ddef.key] : ddef.kind === 'created' ? n.created_at : n.updated_at;
@@ -367,13 +367,13 @@ export function CalendarView({ ty, rows, view, newProps }: ViewProps) {
     <div className="calendar">
       <div className="cal-head">
         <button type="button" className="iconbtn" onClick={() => move(-1)}>‹</button>
-        <b className="cal-month">{MONTH.format(cursor)}</b>
+        <b className="cal-month">{cursor.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })}</b>
         <button type="button" className="iconbtn" onClick={() => move(1)}>›</button>
-        <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>Bugün</button>
-        <span className="muted small">{ddef.label} alanına göre</span>
+        <button type="button" className="btn small" onClick={() => { const d = new Date(); setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}>{t('coll.cal.today')}</button>
+        <span className="muted small">{t('coll.cal.byField', { field: ddef.label })}</span>
       </div>
       <div className="cal-grid">
-        {WEEK.map((w) => <div key={w} className="cal-wd">{w}</div>)}
+        {weekdays('short').map((w) => <div key={w} className="cal-wd">{w}</div>)}
         {days.map((d) => {
           const k = ymd(d);
           const items = byDay.get(k) ?? [];
@@ -393,7 +393,7 @@ export function CalendarView({ ty, rows, view, newProps }: ViewProps) {
             >
               <div className="cal-num">
                 <span className="cal-n">{parseDay(k).getDate()}</span>
-                {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(ty.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
+                {editable && <button type="button" className="cal-add" title={t('coll.cal.addToDay')} onClick={() => open(createDefault(ty.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
               </div>
               {items.slice(0, 4).map((n) => (
                 <a key={n.id} href={`#/n/${n.id}`} onClick={peekClick(n.id)} className="cal-item" draggable={editable}
@@ -401,7 +401,7 @@ export function CalendarView({ ty, rows, view, newProps }: ViewProps) {
                   {noteIcon(n)} {displayTitle(n)}
                 </a>
               ))}
-              {items.length > 4 && <div className="muted small">+{items.length - 4} daha</div>}
+              {items.length > 4 && <div className="muted small">{t('coll.cal.more', { count: items.length - 4 })}</div>}
             </div>
           );
         })}
@@ -416,7 +416,7 @@ const SCALES = { gün: 36, hafta: 14, ay: 4 } as const;
 type Scale = keyof typeof SCALES;
 const dayNum = (s: string) => Math.round(new Date(`${s}T12:00:00`).getTime() / 864e5);
 const fromNum = (n: number) => ymd(new Date(n * 864e5));
-const MONTH_SHORT = new Intl.DateTimeFormat('tr-TR', { month: 'short', year: '2-digit' });
+const monthShort = (d: Date) => d.toLocaleDateString(localeTag(), { month: 'short', year: '2-digit', timeZone: 'UTC' });
 
 const TL_SCALE_H = 26;
 const TL_ROW_H = 34;
@@ -447,7 +447,7 @@ function DependencyArrows({ dated, depKey, min, px, width }: { dated: { n: Note;
       </defs>
       {arrows.map((a) => (
         <path key={a.key} d={a.d} className={a.bad ? 'bad' : ''} markerEnd={`url(#${a.bad ? 'tl-arrow-bad' : 'tl-arrow'})`}>
-          {a.bad && <title>Çakışma: beklediği iş bitmeden başlıyor</title>}
+          {a.bad && <title>{t('coll.tl.conflict')}</title>}
         </path>
       ))}
     </svg>
@@ -459,7 +459,7 @@ export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
   const [drag, setDrag] = useState<{ id: string; mode: 'move' | 'end'; x0: number; s0: number; e0: number; dx: number } | null>(null);
   const sdef = ty.props.find((p) => p.key === view.dateKey && p.kind === 'date');
   const edef = ty.props.find((p) => p.key === view.endKey && p.kind === 'date');
-  if (!sdef) return <p className="muted">Zaman çizelgesi için bir “Tarih” alanı gerekli. Görünüm ayarlarından başlangıç alanını seç.</p>;
+  if (!sdef) return <p className="muted">{t('coll.tl.needDate')}</p>;
   const px = SCALES[scale];
   const today = dayNum(todayStr());
   const items = rows.map((n) => {
@@ -476,7 +476,7 @@ export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
   const marks: { x: number; label: string }[] = [];
   for (let d = min; d <= max; d++) {
     const date = new Date(d * 864e5);
-    if (date.getUTCDate() === 1) marks.push({ x: (d - min) * px, label: MONTH_SHORT.format(date) });
+    if (date.getUTCDate() === 1) marks.push({ x: (d - min) * px, label: monthShort(date) });
   }
   const shift = (x: { s: number; e: number }, id: string) => {
     if (!drag || drag.id !== id) return x;
@@ -506,10 +506,10 @@ export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
       <div className="tl-head">
         <div className="seg">
           {(Object.keys(SCALES) as Scale[]).map((k) => (
-            <button key={k} className={scale === k ? 'on' : ''} onClick={() => { setScale(k); localStorage.setItem('tlScale', k); }}>{k[0].toLocaleUpperCase('tr') + k.slice(1)}</button>
+            <button key={k} className={scale === k ? 'on' : ''} onClick={() => { setScale(k); localStorage.setItem('tlScale', k); }}>{t(`coll.tl.scales.${k}`)}</button>
           ))}
         </div>
-        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}{ty.blockedBy ? ' · oklar bağımlılıkları gösterir (kırmızı: çakışma)' : ''}</span>
+        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · {t('coll.tl.drag')}{edef ? t('coll.tl.dragEnd') : ''}{ty.blockedBy ? t('coll.tl.deps') : ''}</span>
       </div>
       <div className="tl-scroll" ref={(el) => {
         if (el && !el.dataset.done) {
@@ -520,7 +520,7 @@ export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
         <div className="tl-grid" style={{ width: width + 220 }}>
           <div className="tl-scale" style={{ marginLeft: 220, width }}>
             {marks.map((m) => <span key={m.x} className="tl-month" style={{ left: m.x }}>{m.label}</span>)}
-            <span className="tl-today" style={{ left: (today - min) * px }} title="Bugün" />
+            <span className="tl-today" style={{ left: (today - min) * px }} title={t('coll.tl.today')} />
           </div>
           {ty.blockedBy && <DependencyArrows dated={dated.map((x) => ({ ...x, ...shift(x, x.n.id) }))} depKey={ty.blockedBy} min={min} px={px} width={width} />}
           {dated.map((x) => {
@@ -556,11 +556,11 @@ export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
       </div>
       {undated.length > 0 && (
         <div className="tl-undated">
-          <span className="muted small">Tarihsiz ({undated.length}):</span>
+          <span className="muted small">{t('coll.tl.undated', { count: undated.length })}</span>
           {undated.map((x) => <button key={x.n.id} type="button" className="chip-soft small" onClick={() => open(x.n.id)}>{noteIcon(x.n)} {displayTitle(x.n)}</button>)}
         </div>
       )}
-      <button type="button" className="linkbtn muted small" onClick={() => open(createDefault(ty.id, { ...newProps(), [sdef.key]: todayStr() }).id)}>＋ Yeni</button>
+      <button type="button" className="linkbtn muted small" onClick={() => open(createDefault(ty.id, { ...newProps(), [sdef.key]: todayStr() }).id)}>{t('coll.new')}</button>
     </div>
   );
 }

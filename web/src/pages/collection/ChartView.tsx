@@ -1,3 +1,4 @@
+import { localeTag, t } from '../../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { openPeek } from '../../components/Peek';
 import { propValue } from '../../lib/compute';
@@ -41,7 +42,7 @@ interface Bucket {
 }
 
 const p2 = (n: number) => String(n).padStart(2, '0');
-const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+const monthShort = (m: number) => new Date(2024, m - 1, 1).toLocaleDateString(localeTag(), { month: 'short' });
 
 /** Tarihi aralığın anahtarına çevir (hafta: pazartesi günü) */
 function bucketKey(d: Date, b: 'week' | 'month' | 'year'): string {
@@ -53,7 +54,7 @@ function bucketKey(d: Date, b: 'week' | 'month' | 'year'): string {
 function bucketLabel(k: string, b: 'week' | 'month' | 'year'): string {
   if (b === 'year') return k;
   const [y, m, d] = k.split('-').map(Number);
-  return b === 'month' ? `${MONTHS[m - 1]} ${String(y).slice(2)}` : `${d} ${MONTHS[m - 1]}`;
+  return b === 'month' ? `${monthShort(m)} ${String(y).slice(2)}` : `${d} ${monthShort(m)}`;
 }
 function nextKey(k: string, b: 'week' | 'month' | 'year'): string {
   if (b === 'year') return String(Number(k) + 1);
@@ -129,9 +130,9 @@ export function ChartView({ ty, rows, view }: ViewProps) {
 
   const xdef = ty.props.find((p) => p.key === cfg.x);
   const ydef = ty.props.find((p) => p.key === cfg.y);
-  if (!xdef) return <p className="muted">Grafik için gruplanacak bir alan gerekli (seçim, durum, tarih…). Görünüm ayarlarından seç.</p>;
+  if (!xdef) return <p className="muted">{t('coll.chart.needField')}</p>;
 
-  const title = cfg.fn === 'count' || !ydef ? 'Kayıt sayısı' : `${ydef.label} (${cfg.fn === 'sum' ? 'toplam' : 'ortalama'})`;
+  const title = cfg.fn === 'count' || !ydef ? t('coll.chart.count') : t(cfg.fn === 'sum' ? 'coll.chart.sum' : 'coll.chart.avg', { label: ydef.label });
   const max = Math.max(0, ...buckets.map((b) => b.value));
   const ticks = niceTicks(max, 4, cfg.fn === 'count');
   const top = ticks[ticks.length - 1] || 1;
@@ -162,13 +163,13 @@ export function ChartView({ ty, rows, view }: ViewProps) {
     <div className="chart-view">
       <div className="chart-head">
         <b>{title}</b>
-        <span className="muted small">· “{xdef.label}” alanına göre{['date', 'created', 'updated'].includes(xdef.kind) ? ` (${cfg.bucket === 'week' ? 'haftalık' : cfg.bucket === 'year' ? 'yıllık' : 'aylık'})` : ''}</span>
+        <span className="muted small">{t('coll.chart.byField', { field: xdef.label })}{['date', 'created', 'updated'].includes(xdef.kind) ? ` (${cfg.bucket === 'week' ? t('coll.chart.weekly') : cfg.bucket === 'year' ? t('coll.chart.yearly') : t('coll.chart.monthly')})` : ''}</span>
         <span className="spacer" />
-        <button type="button" className="btn small" onClick={() => setAsTable(!asTable)}>{asTable ? 'Grafik' : 'Tablo olarak göster'}</button>
+        <button type="button" className="btn small" onClick={() => setAsTable(!asTable)}>{asTable ? t('coll.chart.chart') : t('coll.chart.asTable')}</button>
       </div>
 
       {!buckets.length ? (
-        <p className="muted">Bu görünümde gösterilecek kayıt yok.</p>
+        <p className="muted">{t('coll.chart.empty')}</p>
       ) : asTable ? (
         <table className="dbtable chart-table">
           <thead><tr><th>{xdef.label}</th><th className="num">{title}</th></tr></thead>
@@ -176,7 +177,7 @@ export function ChartView({ ty, rows, view }: ViewProps) {
         </table>
       ) : (
         <div className="chart-box" ref={box} onMouseLeave={() => setHover(null)}>
-          <svg width={w} height={h} role="img" aria-label={`${title}, ${xdef.label} alanına göre`}>
+          <svg width={w} height={h} role="img" aria-label={t('coll.chart.aria', { title, field: xdef.label })}>
             {/* ızgara ve değer ekseni */}
             {ticks.map((v) => {
               const p = horizontal ? padL + scale(v) : padT + plotH - scale(v);
@@ -238,7 +239,7 @@ export function ChartView({ ty, rows, view }: ViewProps) {
           {tip && hover !== null && (
             <div className="chart-tip" style={{ ...tipPos(hover), ...(horizontal ? { transform: "none" } : {}) }}>
               <b>{tip.label}</b>
-              <span>{fmtVal(tip.value)} {cfg.fn === 'count' || !ydef ? 'kayıt' : ''}</span>
+              <span>{fmtVal(tip.value)} {cfg.fn === 'count' || !ydef ? t('coll.chart.records') : ''}</span>
             </div>
           )}
         </div>
@@ -246,13 +247,13 @@ export function ChartView({ ty, rows, view }: ViewProps) {
 
       {sel && (
         <div className="chart-picked">
-          <div className="muted small">{sel.label} · {sel.notes.length} kayıt</div>
+          <div className="muted small">{t('coll.chart.picked', { label: sel.label, count: sel.notes.length })}</div>
           {sel.notes.map((n) => (
             <button key={n.id} type="button" className="chip-soft" onClick={() => openPeek(n.id)}>{noteIcon(n)} {displayTitle(n)}</button>
           ))}
         </div>
       )}
-      {!sel && buckets.length > 0 && !asTable && <p className="muted small">Bir çubuğa tıklarsan o gruptaki kayıtlar aşağıda listelenir.</p>}
+      {!sel && buckets.length > 0 && !asTable && <p className="muted small">{t('coll.chart.clickHint')}</p>}
     </div>
   );
 }

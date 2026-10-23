@@ -1,10 +1,12 @@
 // Görünüm mantığı: filtre, sıralama, gruplama (arayüzden bağımsız, test edilebilir).
 
+import { t } from '../i18n';
 import { propValue, showValue } from './compute';
 import { displayTitle } from './format';
 import { toDate, toNum } from './formula';
 import { norm } from './links';
-import { relationIds, typeOf, type Note, type PropDef, type SavedView, type TypeDef, type ViewFilter, type ViewKind } from './types';
+import type { Messages } from '../i18n';
+import { optionLabel, relationIds, typeOf, type Note, type PropDef, type SavedView, type TypeDef, type ViewFilter, type ViewKind } from './types';
 
 export interface OpDef {
   id: string;
@@ -13,18 +15,16 @@ export interface OpDef {
   noValue?: boolean;
 }
 
-const EMPTY_OPS: OpDef[] = [
-  { id: 'empty', label: 'boş', noValue: true },
-  { id: 'not_empty', label: 'boş değil', noValue: true },
-];
+type OpKey = keyof Messages['views']['ops'];
+/** Koşul; ad etkin dilden (labelKey verilmezse kimliğin kendisi anahtardır) */
+const op = (id: string, noValue = false, labelKey: OpKey = id as OpKey): OpDef => ({ id, label: t(`views.ops.${labelKey}`), ...(noValue ? { noValue } : {}) });
+const sym = (id: string, label: string): OpDef => ({ id, label });
 
 export function opsFor(def: PropDef | 'title'): OpDef[] {
   const kind = def === 'title' ? 'text' : def.kind;
+  const EMPTY_OPS = [op('empty', true), op('not_empty', true)];
   if (def !== 'title' && def.statusGroups) {
-    return [
-      { id: 'is', label: 'şu olan' }, { id: 'is_not', label: 'şu olmayan' },
-      { id: 'not_done', label: 'bitmemiş', noValue: true }, { id: 'done', label: 'bitmiş', noValue: true }, ...EMPTY_OPS,
-    ];
+    return [op('is'), op('is_not'), op('not_done', true), op('done', true), ...EMPTY_OPS];
   }
   switch (kind) {
     case 'files':
@@ -33,29 +33,22 @@ export function opsFor(def: PropDef | 'title'): OpDef[] {
     case 'rating':
     case 'uid':
       return [
-        { id: 'eq', label: '=' }, { id: 'neq', label: '≠' }, { id: 'gt', label: '>' }, { id: 'lt', label: '<' },
-        { id: 'gte', label: '≥' }, { id: 'lte', label: '≤' }, ...EMPTY_OPS,
+        sym('eq', '='), sym('neq', '≠'), sym('gt', '>'), sym('lt', '<'), sym('gte', '≥'), sym('lte', '≤'), ...EMPTY_OPS,
       ];
     case 'select':
-      return [{ id: 'is', label: 'şu olan' }, { id: 'is_not', label: 'şu olmayan' }, ...EMPTY_OPS];
+      return [op('is'), op('is_not'), ...EMPTY_OPS];
     case 'multiselect':
-      return [{ id: 'has', label: 'içeren' }, { id: 'not_has', label: 'içermeyen' }, ...EMPTY_OPS];
+      return [op('has'), op('not_has'), ...EMPTY_OPS];
     case 'date':
     case 'created':
     case 'updated':
-      return [
-        { id: 'on', label: 'şu gün' }, { id: 'before', label: 'öncesi' }, { id: 'after', label: 'sonrası' },
-        { id: 'past_week', label: 'son 7 gün', noValue: true }, { id: 'next_week', label: 'gelecek 7 gün', noValue: true },
-        { id: 'this_month', label: 'bu ay', noValue: true }, ...EMPTY_OPS,
-      ];
+      return [op('on'), op('before'), op('after'), op('past_week', true), op('next_week', true), op('this_month', true), ...EMPTY_OPS];
     case 'checkbox':
-      return [{ id: 'checked', label: 'işaretli', noValue: true }, { id: 'unchecked', label: 'işaretsiz', noValue: true }];
+      return [op('checked', true), op('unchecked', true)];
     case 'relation':
-      return [{ id: 'has', label: 'şunu içeren' }, ...EMPTY_OPS];
+      return [op('has', false, 'relHas'), ...EMPTY_OPS];
     default:
-      return [
-        { id: 'contains', label: 'içeren' }, { id: 'not_contains', label: 'içermeyen' }, { id: 'is', label: 'tam olarak' }, ...EMPTY_OPS,
-      ];
+      return [op('contains'), op('not_contains'), op('is', false, 'exact'), ...EMPTY_OPS];
   }
 }
 
@@ -191,41 +184,42 @@ export function groupNotes(rows: Note[], def: PropDef, notes: Record<string, Not
     } else push(typeof v === 'string' ? v : v == null ? '' : String(v), n);
   }
   const label = (k: string) => {
-    if (k === '') return 'Boş';
-    if (def.kind === 'checkbox') return k === 'true' ? '✓ İşaretli' : 'İşaretsiz';
+    if (k === '') return t('views.group.empty');
+    if (def.kind === 'checkbox') return k === 'true' ? t('views.group.checked') : t('views.group.unchecked');
     if (def.kind === 'relation') return notes[k] ? displayTitle(notes[k]) : '?';
-    return k;
+    return optionLabel(k);
   };
   const out = [...map].filter(([k]) => k !== '').map(([k, list]) => ({ key: k, label: label(k), notes: list }));
   const blank = map.get('');
-  if (blank?.length || def.kind === 'select') out.push({ key: '', label: 'Boş', notes: blank ?? [] });
+  if (blank?.length || def.kind === 'select') out.push({ key: '', label: t('views.group.empty'), notes: blank ?? [] });
   return out;
 }
 
 const vid = () => Math.random().toString(36).slice(2, 10);
 
 /** Koleksiyon için varsayılan görünümler (kayıtlı görünüm yoksa) */
-export function defaultViews(t: TypeDef): SavedView[] {
+export function defaultViews(ty: TypeDef): SavedView[] {
   const views: SavedView[] = [];
-  const firstSelect = t.props.find((p) => p.kind === 'select');
-  const firstDate = t.props.find((p) => p.kind === 'date');
-  const base = { filters: [], sort: t.sort ? [{ key: t.sort, dir: 'desc' as const }] : [] };
-  if (t.cover) views.push({ id: vid(), name: 'Galeri', kind: 'cards', ...base });
-  views.push({ id: vid(), name: 'Tablo', kind: 'table', ...base });
-  if (firstSelect) views.push({ id: vid(), name: 'Pano', kind: 'board', groupBy: firstSelect.key, ...base });
-  if (firstDate) views.push({ id: vid(), name: 'Takvim', kind: 'calendar', dateKey: firstDate.key, ...base });
+  const firstSelect = ty.props.find((p) => p.kind === 'select');
+  const firstDate = ty.props.find((p) => p.kind === 'date');
+  const base = { filters: [], sort: ty.sort ? [{ key: ty.sort, dir: 'desc' as const }] : [] };
+  if (ty.cover) views.push({ id: vid(), name: t('views.defaultNames.cards'), kind: 'cards', ...base });
+  views.push({ id: vid(), name: t('views.defaultNames.table'), kind: 'table', ...base });
+  if (firstSelect) views.push({ id: vid(), name: t('views.defaultNames.board'), kind: 'board', groupBy: firstSelect.key, ...base });
+  if (firstDate) views.push({ id: vid(), name: t('views.defaultNames.calendar'), kind: 'calendar', dateKey: firstDate.key, ...base });
   return views;
 }
 
-export const VIEW_KINDS: { id: ViewKind; label: string; icon: string }[] = [
-  { id: 'table', label: 'Tablo', icon: '☰' },
-  { id: 'cards', label: 'Galeri', icon: '▦' },
-  { id: 'board', label: 'Pano (kanban)', icon: '▥' },
-  { id: 'calendar', label: 'Takvim', icon: '📅' },
-  { id: 'list', label: 'Liste', icon: '≡' },
-  { id: 'timeline', label: 'Zaman çizelgesi', icon: '▤' },
-  { id: 'chart', label: 'Grafik', icon: '📊' },
-  { id: 'form', label: 'Form', icon: '📝' },
+const viewKind = (id: ViewKind, icon: string) => ({ id, icon, get label() { return t(`views.kinds.${id}`); } });
+export const VIEW_KINDS: { id: ViewKind; readonly label: string; icon: string }[] = [
+  viewKind('table', '☰'),
+  viewKind('cards', '▦'),
+  viewKind('board', '▥'),
+  viewKind('calendar', '📅'),
+  viewKind('list', '≡'),
+  viewKind('timeline', '▤'),
+  viewKind('chart', '📊'),
+  viewKind('form', '📝'),
 ];
 
 export const newViewId = vid;

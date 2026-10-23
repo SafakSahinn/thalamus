@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import { chartableX, chartableY, chartConfig } from './ChartView';
 import { useEffect, useRef, useState } from 'react';
 import { displayTitle } from '../../lib/format';
@@ -5,6 +6,7 @@ import { searchNotes } from '../../lib/search';
 import { useIndex } from '../../lib/store';
 import type { PropDef, SavedView, TypeDef, ViewFilter } from '../../lib/types';
 import { opsFor } from '../../lib/views';
+import { optionLabel } from '../../lib/types';
 
 function Popover({ label, count, children }: { label: string; count?: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -26,10 +28,10 @@ function Popover({ label, count, children }: { label: string; count?: number; ch
 }
 
 const SORTABLE = (ty: TypeDef) => [
-  { key: 'title', label: 'Ad' },
+  { key: 'title', label: t('views.toolbar.name') },
   ...ty.props.filter((p) => !['relation', 'longtext'].includes(p.kind)).map((p) => ({ key: p.key, label: p.label })),
-  { key: '__updated', label: 'Son düzenlenme' },
-  { key: '__created', label: 'Oluşturulma' },
+  { key: '__updated', label: t('views.toolbar.updated') },
+  { key: '__created', label: t('views.toolbar.created') },
 ];
 
 function RelationValue({ def, value, onChange }: { def: PropDef; value: unknown; onChange: (v: string) => void }) {
@@ -37,7 +39,7 @@ function RelationValue({ def, value, onChange }: { def: PropDef; value: unknown;
   const options = searchNotes(alive, '', { types: def.target, limit: 200 });
   return (
     <select value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
-      <option value="">seç…</option>
+      <option value="">{t('views.toolbar.pick')}</option>
       {options.map((n) => <option key={n.id} value={n.id}>{displayTitle(n)}</option>)}
     </select>
   );
@@ -50,8 +52,8 @@ function ValueInput({ def, f, set }: { def: PropDef | 'title'; f: ViewFilter; se
     if (def.kind === 'select' || def.kind === 'multiselect') {
       return (
         <select value={String(f.value ?? '')} onChange={(e) => set({ value: e.target.value })}>
-          <option value="">seç…</option>
-          {def.options?.map((o) => <option key={o}>{o}</option>)}
+          <option value="">{t('views.toolbar.pick')}</option>
+          {def.options?.map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
         </select>
       );
     }
@@ -59,7 +61,7 @@ function ValueInput({ def, f, set }: { def: PropDef | 'title'; f: ViewFilter; se
     if (['date', 'created', 'updated'].includes(def.kind)) return <input type="date" value={String(f.value ?? '')} onChange={(e) => set({ value: e.target.value })} />;
     if (['number', 'rating'].includes(def.kind)) return <input type="number" value={String(f.value ?? '')} onChange={(e) => set({ value: e.target.value === '' ? undefined : Number(e.target.value) })} />;
   }
-  return <input value={String(f.value ?? '')} placeholder="değer" onChange={(e) => set({ value: e.target.value })} />;
+  return <input value={String(f.value ?? '')} placeholder={t('views.toolbar.value')} onChange={(e) => set({ value: e.target.value })} />;
 }
 
 export function FilterMenu({ ty, view, update }: { ty: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
@@ -67,26 +69,26 @@ export function FilterMenu({ ty, view, update }: { ty: TypeDef; view: SavedView;
   const defOf = (key: string) => (key === 'title' ? 'title' : ty.props.find((p) => p.key === key)) as PropDef | 'title' | undefined;
   const setAt = (i: number, p: Partial<ViewFilter>) => update({ filters: view.filters.map((f, j) => (j === i ? { ...f, ...p } : f)) });
   return (
-    <Popover label="Filtre" count={view.filters.length}>
-      {view.filters.length === 0 && <p className="muted small">Henüz filtre yok.</p>}
+    <Popover label={t('views.toolbar.filter')} count={view.filters.length}>
+      {view.filters.length === 0 && <p className="muted small">{t('views.toolbar.noFilter')}</p>}
       {view.filters.map((f, i) => {
         const def = defOf(f.key);
         if (!def) return null;
         return (
           <div key={i} className="filter-row">
-            {i === 0 && <span className="muted small filter-join">Koşul</span>}
+            {i === 0 && <span className="muted small filter-join">{t('views.toolbar.where')}</span>}
             {i === 1 && (
-              <select className="filter-join" value={view.filterMode ?? 'and'} onChange={(e) => update({ filterMode: e.target.value as 'and' | 'or' })} title="Koşullar nasıl birleşsin">
-                <option value="and">ve</option>
-                <option value="or">veya</option>
+              <select className="filter-join" value={view.filterMode ?? 'and'} onChange={(e) => update({ filterMode: e.target.value as 'and' | 'or' })} title={t('views.toolbar.joinTitle')}>
+                <option value="and">{t('views.toolbar.and')}</option>
+                <option value="or">{t('views.toolbar.or')}</option>
               </select>
             )}
-            {i > 1 && <span className="muted small filter-join">{view.filterMode === 'or' ? 'veya' : 've'}</span>}
+            {i > 1 && <span className="muted small filter-join">{view.filterMode === 'or' ? t('views.toolbar.or') : t('views.toolbar.and')}</span>}
             <select value={f.key} onChange={(e) => {
               const d = defOf(e.target.value)!;
               setAt(i, { key: e.target.value, op: opsFor(d)[0].id, value: undefined });
             }}>
-              {fields.map((p) => (p === 'title' ? <option key="title" value="title">Ad</option> : <option key={p.key} value={p.key}>{p.label}</option>))}
+              {fields.map((p) => (p === 'title' ? <option key="title" value="title">{t('views.toolbar.name')}</option> : <option key={p.key} value={p.key}>{p.label}</option>))}
             </select>
             <select value={f.op} onChange={(e) => setAt(i, { op: e.target.value })}>
               {opsFor(def).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
@@ -100,7 +102,7 @@ export function FilterMenu({ ty, view, update }: { ty: TypeDef; view: SavedView;
         const first = ty.props.find((p) => p.kind === 'select') ?? 'title';
         const key = first === 'title' ? 'title' : first.key;
         update({ filters: [...view.filters, { key, op: opsFor(first)[0].id }] });
-      }}>＋ Filtre ekle</button>
+      }}>{t('views.toolbar.addFilter')}</button>
     </Popover>
   );
 }
@@ -109,21 +111,21 @@ export function SortMenu({ ty, view, update }: { ty: TypeDef; view: SavedView; u
   const fields = SORTABLE(ty);
   const setAt = (i: number, p: Partial<SavedView['sort'][number]>) => update({ sort: view.sort.map((s, j) => (j === i ? { ...s, ...p } : s)) });
   return (
-    <Popover label="Sırala" count={view.sort.length}>
-      {view.sort.length === 0 && <p className="muted small">Varsayılan: son düzenlenen üstte.</p>}
+    <Popover label={t('views.toolbar.sort')} count={view.sort.length}>
+      {view.sort.length === 0 && <p className="muted small">{t('views.toolbar.defaultSort')}</p>}
       {view.sort.map((s, i) => (
         <div key={i} className="filter-row">
           <select value={s.key} onChange={(e) => setAt(i, { key: e.target.value })}>
             {fields.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
           </select>
           <select value={s.dir} onChange={(e) => setAt(i, { dir: e.target.value as 'asc' | 'desc' })}>
-            <option value="asc">Artan (A→Z, eski→yeni)</option>
-            <option value="desc">Azalan (Z→A, yeni→eski)</option>
+            <option value="asc">{t('views.toolbar.asc')}</option>
+            <option value="desc">{t('views.toolbar.desc')}</option>
           </select>
           <button type="button" className="iconbtn" onClick={() => update({ sort: view.sort.filter((_, j) => j !== i) })}>×</button>
         </div>
       ))}
-      <button type="button" className="linkbtn small" onClick={() => update({ sort: [...view.sort, { key: 'title', dir: 'asc' }] })}>＋ Sıralama ekle</button>
+      <button type="button" className="linkbtn small" onClick={() => update({ sort: [...view.sort, { key: 'title', dir: 'asc' }] })}>{t('views.toolbar.addSort')}</button>
     </Popover>
   );
 }
@@ -140,18 +142,18 @@ export function ViewOptions({ ty, view, update }: { ty: TypeDef; view: SavedView
     update({ hidden: [...h] });
   };
   return (
-    <Popover label="Görünüm ayarları">
+    <Popover label={t('views.toolbar.options')}>
       {view.kind === 'board' && (
         <>
-          <label className="opt-line">Sütunlar şu alana göre:
+          <label className="opt-line">{t('views.toolbar.columnsBy')}
             <select value={view.groupBy ?? ''} onChange={(e) => update({ groupBy: e.target.value })}>
-              <option value="">seç…</option>
+              <option value="">{t('views.toolbar.pick')}</option>
               {boardable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </label>
-          <label className="opt-line">Satırlar (alt gruplama):
+          <label className="opt-line">{t('views.toolbar.rows')}
             <select value={view.subGroupBy ?? ''} onChange={(e) => update({ subGroupBy: e.target.value || undefined })}>
-              <option value="">yok</option>
+              <option value="">{t('views.toolbar.none')}</option>
               {boardable.filter((p) => p.key !== view.groupBy).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </label>
@@ -159,15 +161,15 @@ export function ViewOptions({ ty, view, update }: { ty: TypeDef; view: SavedView
       )}
       {view.kind === 'timeline' && (
         <>
-          <label className="opt-line">Başlangıç:
+          <label className="opt-line">{t('views.toolbar.start')}
             <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>
-              <option value="">seç…</option>
+              <option value="">{t('views.toolbar.pick')}</option>
               {dates.filter((p) => p.kind === 'date').map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </label>
-          <label className="opt-line">Bitiş:
+          <label className="opt-line">{t('views.toolbar.end')}
             <select value={view.endKey ?? ''} onChange={(e) => update({ endKey: e.target.value || undefined })}>
-              <option value="">yok (tek gün)</option>
+              <option value="">{t('views.toolbar.singleDay')}</option>
               {dates.filter((p) => p.kind === 'date' && p.key !== view.dateKey).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </label>
@@ -175,24 +177,24 @@ export function ViewOptions({ ty, view, update }: { ty: TypeDef; view: SavedView
       )}
       {view.kind === 'chart' && <ChartOptions ty={ty} view={view} update={update} />}
       {view.kind === 'calendar' && (
-        <label className="opt-line">Tarih alanı:
+        <label className="opt-line">{t('views.toolbar.dateField')}
           <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>
-            <option value="">seç…</option>
+            <option value="">{t('views.toolbar.pick')}</option>
             {dates.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
           </select>
         </label>
       )}
       {view.kind === 'table' && (
-        <label className="opt-line">Grupla:
+        <label className="opt-line">{t('views.toolbar.groupBy')}
           <select value={view.groupBy ?? ''} onChange={(e) => update({ groupBy: e.target.value || undefined })}>
-            <option value="">Gruplama yok</option>
+            <option value="">{t('views.toolbar.noGroup')}</option>
             {groupable.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
           </select>
         </label>
       )}
       {view.kind !== 'calendar' && view.kind !== 'chart' && (
         <>
-          <div className="bm-h">{view.kind === 'form' ? 'Formda sorulacak alanlar' : 'Gösterilen alanlar'}</div>
+          <div className="bm-h">{view.kind === 'form' ? t('views.toolbar.formFields') : t('views.toolbar.shownFields')}</div>
           <div className="col-toggles">
             {ty.props.map((p) => (
               <label key={p.key}><input type="checkbox" checked={!hidden.has(p.key)} onChange={() => toggle(p.key)} /> {p.label}</label>
@@ -212,36 +214,36 @@ function ChartOptions({ ty, view, update }: { ty: TypeDef; view: SavedView; upda
   const ys = chartableY(ty);
   return (
     <>
-      <label className="opt-line">Grafik:
+      <label className="opt-line">{t('views.toolbar.chart')}
         <select value={c.type} onChange={(e) => set({ type: e.target.value as 'bar' | 'hbar' | 'line' })}>
-          <option value="bar">Sütun</option>
-          <option value="hbar">Yatay çubuk</option>
-          <option value="line">Çizgi</option>
+          <option value="bar">{t('views.toolbar.bar')}</option>
+          <option value="hbar">{t('views.toolbar.hbar')}</option>
+          <option value="line">{t('views.toolbar.line')}</option>
         </select>
       </label>
-      <label className="opt-line">Gruplama:
+      <label className="opt-line">{t('views.toolbar.grouping')}
         <select value={c.x ?? ''} onChange={(e) => set({ x: e.target.value })}>
           {chartableX(ty).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
         </select>
       </label>
       {xdef && ['date', 'created', 'updated'].includes(xdef.kind) && (
-        <label className="opt-line">Aralık:
+        <label className="opt-line">{t('views.toolbar.interval')}
           <select value={c.bucket} onChange={(e) => set({ bucket: e.target.value as 'week' | 'month' | 'year' })}>
-            <option value="week">Haftalık</option>
-            <option value="month">Aylık</option>
-            <option value="year">Yıllık</option>
+            <option value="week">{t('views.toolbar.week')}</option>
+            <option value="month">{t('views.toolbar.month')}</option>
+            <option value="year">{t('views.toolbar.year')}</option>
           </select>
         </label>
       )}
-      <label className="opt-line">Ölçü:
+      <label className="opt-line">{t('views.toolbar.measure')}
         <select value={c.fn === 'count' ? 'count' : `${c.fn}:${c.y ?? ''}`} onChange={(e) => {
           const [fn, y] = e.target.value.split(':');
           set({ fn: fn as 'count' | 'sum' | 'avg', y: y || undefined });
         }}>
-          <option value="count">Kayıt sayısı</option>
+          <option value="count">{t('views.toolbar.count')}</option>
           {ys.flatMap((p) => [
-            <option key={`sum${p.key}`} value={`sum:${p.key}`}>{p.label} · toplam</option>,
-            <option key={`avg${p.key}`} value={`avg:${p.key}`}>{p.label} · ortalama</option>,
+            <option key={`sum${p.key}`} value={`sum:${p.key}`}>{t('views.toolbar.sum', { label: p.label })}</option>,
+            <option key={`avg${p.key}`} value={`avg:${p.key}`}>{t('views.toolbar.avg', { label: p.label })}</option>,
           ])}
         </select>
       </label>

@@ -1,8 +1,9 @@
+import { localeTag, t } from '../../i18n';
 import { useMemo, useState } from 'react';
 import { openPeek } from '../../components/Peek';
 import { displayTitle } from '../../lib/format';
 import { createNote, useIndex } from '../../lib/store';
-import { typeOf, type PropDef } from '../../lib/types';
+import { optionLabel, typeOf, type PropDef } from '../../lib/types';
 import type { ViewProps } from './Views';
 
 // Form görünümü (Notion Formları): koleksiyona form doldurarak kayıt ekle. Hangi alanların sorulacağı
@@ -20,11 +21,11 @@ function RelationPick({ def, value, onChange }: { def: PropDef; value: string[];
       {value.map((id) => (
         <span key={id} className="relchip">
           <span className="notechip">{byId.get(id) ? displayTitle(byId.get(id)!) : '?'}</span>
-          <button type="button" className="x" onClick={() => onChange(value.filter((x) => x !== id))} aria-label="Kaldır">×</button>
+          <button type="button" className="x" onClick={() => onChange(value.filter((x) => x !== id))} aria-label={t('common.remove')}>×</button>
         </span>
       ))}
       <select value="" onChange={(e) => e.target.value && onChange(def.single ? [e.target.value] : [...value, e.target.value])} aria-label={def.label}>
-        <option value="">+ {typeOf(target).label} seç…</option>
+        <option value="">{t('coll.form.pickOf', { label: typeOf(target).label })}</option>
         {options.filter((n) => !value.includes(n.id)).map((n) => <option key={n.id} value={n.id}>{displayTitle(n)}</option>)}
       </select>
     </div>
@@ -47,7 +48,7 @@ export function FormView({ ty, view, newProps }: ViewProps) {
       props[k] = v;
     }
     const n = createNote(ty.id, title.trim(), props);
-    setDone({ id: n.id, title: title.trim() || 'Adsız' });
+    setDone({ id: n.id, title: title.trim() || t('common.untitled') });
     setTitle('');
     setVals({});
   };
@@ -65,7 +66,7 @@ export function FormView({ ty, view, newProps }: ViewProps) {
         return (
           <select value={(v as string) ?? ''} onChange={(e) => set(d.key, e.target.value)}>
             <option value="">—</option>
-            {d.options?.map((o) => <option key={o}>{o}</option>)}
+            {d.options?.map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
           </select>
         );
       case 'multiselect': {
@@ -74,7 +75,7 @@ export function FormView({ ty, view, newProps }: ViewProps) {
           <div className="form-opts">
             {d.options?.map((o) => (
               <label key={o} className="form-opt">
-                <input type="checkbox" checked={arr.includes(o)} onChange={(e) => set(d.key, e.target.checked ? [...arr, o] : arr.filter((x) => x !== o))} /> {o}
+                <input type="checkbox" checked={arr.includes(o)} onChange={(e) => set(d.key, e.target.checked ? [...arr, o] : arr.filter((x) => x !== o))} /> {optionLabel(o)}
               </label>
             ))}
           </div>
@@ -101,18 +102,18 @@ export function FormView({ ty, view, newProps }: ViewProps) {
         <div className="form-head">
           <span className="form-icon">{ty.icon}</span>
           <div>
-            <h2>Yeni {ty.label.toLocaleLowerCase('tr')}</h2>
-            <p className="muted small">Formu doldurup gönderince {ty.plural} koleksiyonuna yeni bir kayıt eklenir. Sorulan alanları “Görünüm ayarları”ndan seçebilirsin.</p>
+            <h2>{t('coll.form.newOf', { label: ty.label.toLocaleLowerCase(localeTag()) })}</h2>
+            <p className="muted small">{t('coll.form.intro', { plural: ty.plural })}</p>
           </div>
         </div>
         {done && (
           <div className="form-done">
-            ✓ “{done.title}” eklendi. <button type="button" className="linkbtn" onClick={() => openPeek(done.id)}>Aç</button>
+            {t('coll.form.added', { title: done.title })} <button type="button" className="linkbtn" onClick={() => openPeek(done.id)}>{t('coll.open')}</button>
           </div>
         )}
         <label className="form-field">
-          <span>Ad <span className="req">*</span></span>
-          <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`${ty.label} adı`} autoFocus />
+          <span>{t('coll.form.name')} <span className="req">*</span></span>
+          <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('coll.form.namePlaceholder', { label: ty.label })} autoFocus />
         </label>
         {fields.map((d) => (
           <div key={d.key} className="form-field">
@@ -121,8 +122,8 @@ export function FormView({ ty, view, newProps }: ViewProps) {
           </div>
         ))}
         <div className="form-actions">
-          <button type="button" className="btn" onClick={() => { setTitle(''); setVals({}); setDone(null); }}>Temizle</button>
-          <button type="submit" className="btn primary">Gönder</button>
+          <button type="button" className="btn" onClick={() => { setTitle(''); setVals({}); setDone(null); }}>{t('coll.form.clear')}</button>
+          <button type="submit" className="btn primary">{t('coll.form.submit')}</button>
         </div>
       </div>
     </form>

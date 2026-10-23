@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { displayTitle, noteIcon } from '../lib/format';
@@ -61,17 +62,17 @@ export default function CommandPalette() {
       return { key: n.id, icon: noteIcon(n), label: displayTitle(n), hint: typeOf(n.type).label, snippet, run: () => go(`/n/${n.id}`) };
     });
     if (q.trim()) {
-      for (const t of TYPES.filter((x) => x.id !== 'daily')) {
-        out.push({ key: `new-${t.id}`, icon: '＋', label: `Yeni ${t.label.toLocaleLowerCase('tr')}: “${q.trim()}”`, run: () => go(`/n/${createNote(t.id, q.trim()).id}`) });
+      for (const ty of TYPES.filter((x) => x.id !== 'daily')) {
+        out.push({ key: `new-${ty.id}`, icon: '＋', label: t('palette.newOf', { type: ty.label.toLocaleLowerCase(localeTag()), q: q.trim() }), run: () => go(`/n/${createNote(ty.id, q.trim()).id}`) });
       }
     } else {
       out.push(
-        { key: 'go-daily', icon: '📅', label: 'Bugünün günlüğü', run: () => go('/daily') },
-        { key: 'go-graph', icon: '🕸', label: 'Bağlantı haritası', run: () => go('/graph') },
-        { key: 'go-dict', icon: '🔤', label: 'Sözlük', run: () => go('/dictionary') },
-        { key: 'go-market', icon: '🧩', label: 'Eklenti marketi', run: () => go('/market') },
+        { key: 'go-daily', icon: '📅', label: t('palette.daily'), run: () => go('/daily') },
+        { key: 'go-graph', icon: '🕸', label: t('palette.graph'), run: () => go('/graph') },
+        { key: 'go-dict', icon: '🔤', label: t('palette.dict'), run: () => go('/dictionary') },
+        { key: 'go-market', icon: '🧩', label: t('palette.market'), run: () => go('/market') },
       );
-      if (isInstalled('sticky')) out.push({ key: 'sticky', icon: '🗒', label: 'Yeni yapışkan not', run: () => addSticky() });
+      if (isInstalled('sticky')) out.push({ key: 'sticky', icon: '🗒', label: t('palette.sticky'), run: () => addSticky() });
     }
     return out;
   }, [open, q, alive]);
@@ -92,7 +93,7 @@ export default function CommandPalette() {
         <input
           ref={inputRef}
           value={q}
-          placeholder="Not ara veya yeni oluştur…"
+          placeholder={t('palette.placeholder')}
           onChange={(e) => { setQ(e.target.value); setSel(0); }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') close();
@@ -113,7 +114,7 @@ export default function CommandPalette() {
             </button>
           ))}
         </div>
-        <div className="palette-foot muted small">↑↓ seç · Enter aç · Esc kapat · Ctrl+K her yerden açar</div>
+        <div className="palette-foot muted small">{t('palette.foot')}</div>
       </div>
     </div>
   );

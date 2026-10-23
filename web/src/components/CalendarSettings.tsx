@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useState } from 'react';
 import ExternalCalendars from './ExternalCalendars';
 import { getMeta } from '../lib/db';
@@ -36,10 +37,10 @@ export default function CalendarSettings() {
   };
   const syncNowMsg = async () => {
     const r = await syncCalendar();
-    setMsg(`Takvim eşitlendi: ${r.created} yeni, ${r.updated} güncellenen, ${r.deleted} silinen etkinlik${r.pulled ? `, takvimden ${r.pulled} değişiklik notlara alındı` : ''}.`);
+    setMsg(t(r.pulled ? 'calendar.sync.donePulled' : 'calendar.sync.done', { created: r.created, updated: r.updated, deleted: r.deleted, pulled: r.pulled }));
   };
 
-  const connect = () => run('Bağlanıyor…', async () => {
+  const connect = () => run(t('calendar.sync.connecting'), async () => {
     await grantCalendar();
     setGranted(true);
     await save({ enabled: true });
@@ -61,28 +62,23 @@ export default function CalendarSettings() {
 
   return (
     <section data-tour="gcal">
-      <h3>Google Takvim eşitlemesi</h3>
-      <p className="muted small">
-        Seçtiğin tarih alanları Google Takvim’inde <b>“Thalamus”</b> adlı ayrı bir takvimde etkinlik olur. Eşitleme iki yönlüdür:
-        Thalamus’ta tarihi değiştirince etkinlik taşınır, notu ya da tarihi silince etkinlik de silinir; Google Takvim’de etkinliği
-        taşırsan nottaki tarih değişir, silersen o tarih alanı boşalır. Aynı tarihi iki tarafta birden değiştirdiysen Thalamus’taki geçerli
-        olur. Bu takvime elle eklediğin etkinliklere dokunulmaz. Thalamus yalnızca bu takvime erişebilir, diğer takvimlerini göremez.
-      </p>
+      <h3>{t('calendar.sync.title')}</h3>
+      <p className="muted small">{t.rich('calendar.sync.intro', { cal: <b>“Thalamus”</b> })}</p>
       {!granted || !cs.enabled ? (
         <div className="row">
-          <button className="btn primary" disabled={Boolean(busy)} onClick={() => (granted ? void run('Açılıyor…', async () => { await save({ enabled: true }); await syncNowMsg(); }) : void connect())}>
-            {busy ?? (granted ? 'Eşitlemeyi aç' : '📅 Google Takvim’i bağla')}
+          <button className="btn primary" disabled={Boolean(busy)} onClick={() => (granted ? void run(t('calendar.sync.opening'), async () => { await save({ enabled: true }); await syncNowMsg(); }) : void connect())}>
+            {busy ?? (granted ? t('calendar.sync.enable') : t('calendar.sync.connect'))}
           </button>
-          {!granted && <span className="muted small">Google senden yalnızca bu uygulamanın oluşturduğu takvimi yönetme izni ister.</span>}
+          {!granted && <span className="muted small">{t('calendar.sync.permission')}</span>}
         </div>
       ) : (
         <>
           <div className="row">
-            <span className="ok small">● Açık</span>
-            {last && <span className="muted small">son eşitleme {relTime(last)}</span>}
-            <button className="btn small" disabled={Boolean(busy)} onClick={() => void run('Eşitleniyor…', syncNowMsg)}>{busy ?? 'Şimdi eşitle'}</button>
+            <span className="ok small">{t('calendar.sync.on')}</span>
+            {last && <span className="muted small">{t('calendar.sync.lastSync', { time: relTime(last) })}</span>}
+            <button className="btn small" disabled={Boolean(busy)} onClick={() => void run(t('calendar.sync.syncing'), syncNowMsg)}>{busy ?? t('calendar.sync.syncNow')}</button>
           </div>
-          <div className="bm-h">Hangi tarihler takvime gitsin?</div>
+          <div className="bm-h">{t('calendar.sync.which')}</div>
           <div className="cal-fields">
             {dateFields().map(({ type, fields }) => (
               <div key={type.id} className="cal-field-group">
@@ -96,17 +92,17 @@ export default function CalendarSettings() {
               </div>
             ))}
           </div>
-          <div className="bm-h">Hatırlatma (sabah 09:00)</div>
+          <div className="bm-h">{t('calendar.sync.reminder')}</div>
           <div className="row">
             {REMINDER_OPTS.map((d) => (
-              <label key={d} className="small"><input type="checkbox" checked={cs.reminders.includes(d)} onChange={() => toggleReminder(d)} /> <span>{d === 0 ? 'O gün' : d === 7 ? '1 hafta önce' : d === 14 ? '2 hafta önce' : `${d} gün önce`}</span></label>
+              <label key={d} className="small"><input type="checkbox" checked={cs.reminders.includes(d)} onChange={() => toggleReminder(d)} /> <span>{d === 0 ? t('calendar.sync.sameDay') : d === 7 ? t('calendar.sync.oneWeek') : d === 14 ? t('calendar.sync.twoWeeks') : t('calendar.sync.daysBefore', { count: d })}</span></label>
             ))}
           </div>
           <div className="row">
-            <button className="btn small" disabled={Boolean(busy)} onClick={() => void run("…", () => disconnectCalendar(false))}>Eşitlemeyi durdur</button>
+            <button className="btn small" disabled={Boolean(busy)} onClick={() => void run("…", () => disconnectCalendar(false))}>{t('calendar.sync.stop')}</button>
             <button className="btn small danger" disabled={Boolean(busy)} onClick={() => {
-              if (confirm('Google Takvim’deki “Thalamus” takvimi ve içindeki bütün etkinlikler silinsin mi? Notların etkilenmez.')) void run('Siliniyor…', () => disconnectCalendar(true));
-            }}>Thalamus takvimini sil</button>
+              if (confirm(t('calendar.sync.confirmDelete'))) void run(t('calendar.sync.deleting'), () => disconnectCalendar(true));
+            }}>{t('calendar.sync.delete')}</button>
           </div>
         </>
       )}

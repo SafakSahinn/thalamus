@@ -1,0 +1,28 @@
+// Google Takvim eşitlemesi ve Takvim sayfası
+export default {
+  sync: {
+    title: 'Google Takvim eşitlemesi',
+    intro: 'Seçtiğin tarih alanları Google Takvim’inde {cal} adlı ayrı bir takvimde etkinlik olur. Eşitleme iki yönlüdür: Thalamus’ta tarihi değiştirince etkinlik taşınır, notu ya da tarihi silince etkinlik de silinir; Google Takvim’de etkinliği taşırsan nottaki tarih değişir, silersen o tarih alanı boşalır. Aynı tarihi iki tarafta birden değiştirdiysen Thalamus’taki geçerli olur. Bu takvime elle eklediğin etkinliklere dokunulmaz. Thalamus yalnızca bu takvime erişebilir, diğer takvimlerini göremez.',
+    done: 'Takvim eşitlendi: {created} yeni, {updated} güncellenen, {deleted} silinen etkinlik.',
+    donePulled: 'Takvim eşitlendi: {created} yeni, {updated} güncellenen, {deleted} silinen etkinlik, takvimden {pulled} değişiklik notlara alındı.',
+    connecting: 'Bağlanıyor…',
+    opening: 'Açılıyor…',
+    enable: 'Eşitlemeyi aç',
+    connect: '📅 Google Takvim’i bağla',
+    permission: 'Google senden yalnızca bu uygulamanın oluşturduğu takvimi yönetme izni ister.',
+    on: '● Açık',
+    lastSync: 'son eşitleme {time}',
+    syncing: 'Eşitleniyor…',
+    syncNow: 'Şimdi eşitle',
+    which: 'Hangi tarihler takvime gitsin?',
+    reminder: 'Hatırlatma (sabah 09:00)',
+    sameDay: 'O gün',
+    oneWeek: '1 hafta önce',
+    twoWeeks: '2 hafta önce',
+    daysBefore: '{count} gün önce',
+    stop: 'Eşitlemeyi durdur',
+    confirmDelete: 'Google Takvim’deki “Thalamus” takvimi ve içindeki bütün etkinlikler silinsin mi? Notların etkilenmez.',
+    deleting: 'Siliniyor…',
+    delete: 'Thalamus takvimini sil',
+  },
+};
