@@ -6,7 +6,7 @@ import { createDefault, createFromTemplate, defaultTemplateId, newBlankTemplate,
 import type { TypeDef } from '../lib/types';
 
 /** "+ Yeni" düğmesi ve şablon menüsü */
-export default function NewButton({ t: type, extraProps }: { t: TypeDef; extraProps: () => Record<string, unknown> }) {
+export default function NewButton({ ty: type, extraProps }: { ty: TypeDef; extraProps: () => Record<string, unknown> }) {
   const notes = useStore((s) => s.notes);
   useStore((s) => s.settings.defaultTemplates);
   const [open, setOpen] = useState(false);

@@ -28,9 +28,9 @@ const RENDER: Record<ViewKind, (p: ViewProps) => React.ReactNode> = {
 
 function useViews(typeId: string) {
   const saved = useStore((s) => s.settings.views?.[typeId]);
-  const t = typeOf(typeId);
+  const ty = typeOf(typeId);
   // Kayıtlı görünüm yoksa varsayılanlar (ilk değişiklikte kaydedilir)
-  const defaults = useMemo(() => defaultViews(t), [t.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const defaults = useMemo(() => defaultViews(ty), [ty.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const views = saved?.length ? saved : defaults;
   const save = (next: SavedView[]) => {
     const s = useStore.getState().settings;
@@ -90,19 +90,19 @@ function AddView({ onAdd }: { onAdd: (k: ViewKind) => void }) {
 }
 
 export default function CollectionPage({ type, edit }: { type: string; edit?: boolean }) {
-  const t = typeOf(type);
+  const ty = typeOf(type);
   const notes = useStore((s) => s.notes);
   const { alive } = useIndex();
   const [editing, setEditing] = useState(Boolean(edit));
-  const { views, save } = useViews(t.id);
-  const pref = `activeView:${t.id}`;
+  const { views, save } = useViews(ty.id);
+  const pref = `activeView:${ty.id}`;
   const [activeId, setActiveId] = useState(() => localStorage.getItem(pref) ?? '');
   const [q, setQ] = useState('');
   useEffect(() => {
-    setActiveId(localStorage.getItem(`activeView:${t.id}`) ?? '');
+    setActiveId(localStorage.getItem(`activeView:${ty.id}`) ?? '');
     setQ('');
     setEditing(Boolean(edit));
-  }, [t.id, edit]);
+  }, [ty.id, edit]);
   const view = views.find((v) => v.id === activeId) ?? views[0];
 
   const select = (id: string) => {
@@ -118,17 +118,17 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
     const k = VIEW_KINDS.find((x) => x.id === kind)!;
     const v: SavedView = {
       id: newViewId(), name: k.label.replace(' (kanban)', ''), kind, filters: [], sort: [],
-      groupBy: kind === 'board' ? t.props.find((p) => p.kind === 'select')?.key : undefined,
-      dateKey: kind === 'calendar' || kind === 'timeline' ? t.props.find((p) => p.kind === 'date')?.key : undefined,
-      endKey: kind === 'timeline' ? t.props.filter((p) => p.kind === 'date')[1]?.key : undefined,
+      groupBy: kind === 'board' ? ty.props.find((p) => p.kind === 'select')?.key : undefined,
+      dateKey: kind === 'calendar' || kind === 'timeline' ? ty.props.find((p) => p.kind === 'date')?.key : undefined,
+      endKey: kind === 'timeline' ? ty.props.filter((p) => p.kind === 'date')[1]?.key : undefined,
     };
     save([...views, v]);
     select(v.id);
   };
 
   const rows = useMemo(
-    () => applyView(alive.filter((n) => n.type === t.id), view, t, notes, q),
-    [alive, t, view, notes, q],
+    () => applyView(alive.filter((n) => n.type === ty.id), view, ty, notes, q),
+    [alive, ty, view, notes, q],
   );
 
   // Filtrelenmiş görünümde yeni not: filtre değerleri baştan dolu gelsin (Notion gibi)
@@ -137,7 +137,7 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
     // "veya" ile birleşen filtrelerde hangisinin geçerli olacağı belli değil: doldurma
     if (view.filterMode === 'or' && view.filters.length > 1) return props;
     for (const f of view.filters) {
-      const def = t.props.find((p) => p.key === f.key);
+      const def = ty.props.find((p) => p.key === f.key);
       if (!def) continue;
       if (def.kind === 'checkbox' && f.op === 'checked') props[def.key] = true;
       if (f.value === undefined || f.value === '') continue;
@@ -146,19 +146,19 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
     }
     return props;
   };
-  const newNote = () => go(`/n/${createDefault(t.id, newProps()).id}`);
+  const newNote = () => go(`/n/${createDefault(ty.id, newProps()).id}`);
   const Render = RENDER[view.kind];
-  const total = alive.filter((n) => n.type === t.id).length;
+  const total = alive.filter((n) => n.type === ty.id).length;
 
   return (
     <div className={`page wide coll-page view-${view.kind}`}>
-      {editing && <TypeEditor typeId={t.id} onClose={() => { setEditing(false); if (edit) history.replaceState(null, '', `#/c/${t.id}`); }} />}
+      {editing && <TypeEditor typeId={ty.id} onClose={() => { setEditing(false); if (edit) history.replaceState(null, '', `#/c/${ty.id}`); }} />}
       <div className="coll-head">
-        <h1>{t.icon} {t.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
+        <h1>{ty.icon} {ty.plural} <span className="count">{rows.length !== total ? `${rows.length}/${total}` : total}</span></h1>
         <span className="spacer" />
         <button className="btn" onClick={() => setEditing(true)} title="Koleksiyonun adını, simgesini ve alanlarını düzenle">⚙ Alanlar</button>
-        {t.id === 'paper' && <PaperImportButton extraProps={newProps} rows={rows} />}
-        <NewButton t={t} extraProps={newProps} />
+        {ty.id === 'paper' && <PaperImportButton extraProps={newProps} rows={rows} />}
+        <NewButton ty={ty} extraProps={newProps} />
       </div>
       <div className="view-tabs" data-tour="views">
         {views.map((v) => (
@@ -184,18 +184,18 @@ export default function CollectionPage({ type, edit }: { type: string; edit?: bo
       </div>
       <div className="toolbar">
         <input className="search" placeholder="Bu koleksiyonda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <FilterMenu t={t} view={view} update={update} />
-        <SortMenu t={t} view={view} update={update} />
-        <ViewOptions t={t} view={view} update={update} />
+        <FilterMenu ty={ty} view={view} update={update} />
+        <SortMenu ty={ty} view={view} update={update} />
+        <ViewOptions ty={ty} view={view} update={update} />
       </div>
 
       {total === 0 ? (
         <div className="empty">
-          <p>Henüz {t.label.toLocaleLowerCase('tr')} yok.</p>
+          <p>Henüz {ty.label.toLocaleLowerCase('tr')} yok.</p>
           <button className="btn" onClick={newNote}>İlkini ekle</button>
         </div>
       ) : (
-        <Render t={t} rows={rows} view={view} newProps={newProps} />
+        <Render ty={ty} rows={rows} view={view} newProps={newProps} />
       )}
     </div>
   );

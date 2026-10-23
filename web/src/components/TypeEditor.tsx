@@ -60,7 +60,7 @@ function OptionsEditor({ typeId, def }: { typeId: string; def: PropDef }) {
 function FormulaEditor({ typeId, def }: { typeId: string; def: PropDef }) {
   const [src, setSrc] = useState(def.formula ?? '');
   const err = src.trim() ? checkFormula(src) : null;
-  const t = typeOf(typeId);
+  const ty = typeOf(typeId);
   return (
     <div className="formula-editor">
       <textarea rows={2} value={src} spellCheck={false} placeholder='Örnek: if(prop("Durum") == "Bitti", "✅", "⏳")' onChange={(e) => setSrc(e.target.value)}
@@ -68,7 +68,7 @@ function FormulaEditor({ typeId, def }: { typeId: string; def: PropDef }) {
       {err ? <div className="err small">{err}</div> : <div className="ok small">{src.trim() ? 'Formül geçerli' : ''}</div>}
       <details className="small muted">
         <summary>Yardım</summary>
-        <p>Alanlar: {t.props.filter((p) => p.key !== def.key).map((p) => <code key={p.key}>prop("{p.label}")</code>).reduce<React.ReactNode[]>((a, x) => [...a, x, ' '], [])} <code>prop("Ad")</code></p>
+        <p>Alanlar: {ty.props.filter((p) => p.key !== def.key).map((p) => <code key={p.key}>prop("{p.label}")</code>).reduce<React.ReactNode[]>((a, x) => [...a, x, ' '], [])} <code>prop("Ad")</code></p>
         <p>İşlemler: <code>+ - * / % ^</code> · <code>== != &gt; &lt; &gt;= &lt;=</code> · <code>and or not</code></p>
         <p>İşlevler: {FUNCTION_NAMES.filter((f) => f !== 'prop').map((f) => <code key={f}>{f}()</code>).reduce<React.ReactNode[]>((a, x) => [...a, x, ' '], [])}</p>
         <p>Örnekler: <code>prop("Sayfa") / 30</code> (kaç günde biter) · <code>dateBetween(prop("Bitiş"), prop("Başlama"), "days")</code> · <code>round(prop("Puan") * 20) + "%"</code></p>
@@ -78,8 +78,8 @@ function FormulaEditor({ typeId, def }: { typeId: string; def: PropDef }) {
 }
 
 function RollupEditor({ typeId, def }: { typeId: string; def: PropDef }) {
-  const t = typeOf(typeId);
-  const rels = t.props.filter((p) => p.kind === 'relation');
+  const ty = typeOf(typeId);
+  const rels = ty.props.filter((p) => p.kind === 'relation');
   const r = def.rollup ?? { relation: rels[0]?.key ?? '', prop: '__title', fn: 'count' as const };
   const rel = rels.find((p) => p.key === r.relation);
   const target = typeOf(rel?.target?.[0] ?? 'note');
@@ -150,10 +150,10 @@ function PropRow({ typeId, def, hidden, index, keys }: { typeId: string; def: Pr
             <div className="row">
               <span className="small muted">Bağlanacak koleksiyon:</span>
               <select value={def.target?.[0] ?? 'note'} disabled={builtin} onChange={(e) => void updateProp(typeId, def.key, { target: [e.target.value] })}>
-                {TYPES.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.plural}</option>)}
+                {TYPES.map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.plural}</option>)}
               </select>
               <label className="small" title="Notion'daki 1 sayfa sınırı: yeni seçim öncekinin yerine geçer">
-                <input type="checkbox" checked={Boolean(def.single)} onChange={(e) => void updateProp(typeId, def.key, { single: e.target.checked || undefined })} /> yalnızca tek kayıt
+                <input type="checkbox" checked={Boolean(def.single)} onChange={(e) => void updateProp(typeId, def.key, { single: e.target.checked || undefined })} /> yalnızca tek kayıty
               </label>
             </div>
           )}
@@ -189,7 +189,7 @@ function AddProp({ typeId }: { typeId: string }) {
       </select>
       {kind === 'relation' && (
         <select value={target} onChange={(e) => setTarget(e.target.value)}>
-          {TYPES.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.plural}</option>)}
+          {TYPES.map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.plural}</option>)}
         </select>
       )}
       <button type="button" className="btn primary small" disabled={!label.trim()} onClick={() => void add()}>Alan ekle</button>
@@ -200,11 +200,11 @@ function AddProp({ typeId }: { typeId: string }) {
 /** Koleksiyonu düzenle: ad, simge, renk, alanlar */
 export default function TypeEditor({ typeId, onClose }: { typeId: string; onClose: () => void }) {
   useStore((s) => s.settings.types);
-  const t = editableType(typeId);
+  const ty = editableType(typeId);
   const [pick, setPick] = useState(false);
-  if (!t) return null;
+  if (!ty) return null;
   const hiddenKeys = new Set(Object.entries(useStore.getState().settings.types?.overrides[typeId]?.props ?? {}).filter(([, v]) => v.hidden).map(([k]) => k));
-  const keys = t.props.map((p) => p.key);
+  const keys = ty.props.map((p) => p.key);
   const custom = !isBuiltinType(typeId);
   const count = Object.values(useStore.getState().notes).filter((n) => n.type === typeId && !n.deleted_at).length;
 
@@ -213,16 +213,16 @@ export default function TypeEditor({ typeId, onClose }: { typeId: string; onClos
       <div className="modal type-editor" role="dialog" aria-label="Koleksiyonu düzenle">
         <div className="te-head">
           <span className="rel">
-            <button type="button" className="te-icon" onClick={() => setPick(!pick)} title="Simge">{t.icon}</button>
+            <button type="button" className="te-icon" onClick={() => setPick(!pick)} title="Simge">{ty.icon}</button>
             {pick && <EmojiPicker onClose={() => setPick(false)} onPick={(e) => { if (e) void updateCollection(typeId, { icon: e }); setPick(false); }} />}
           </span>
           <div className="grow">
-            <input className="te-name" defaultValue={t.plural} placeholder="Koleksiyon adı (çoğul)" onBlur={(e) => e.target.value.trim() && e.target.value !== t.plural && void updateCollection(typeId, { plural: e.target.value.trim() })} />
+            <input className="te-name" defaultValue={ty.plural} placeholder="Koleksiyon adı (çoğul)" onBlur={(e) => e.target.value.trim() && e.target.value !== ty.plural && void updateCollection(typeId, { plural: e.target.value.trim() })} />
             <div className="row small muted">
               Tek bir not:
-              <input className="te-single" defaultValue={t.label} onBlur={(e) => e.target.value.trim() && e.target.value !== t.label && void updateCollection(typeId, { label: e.target.value.trim() })} />
+              <input className="te-single" defaultValue={ty.label} onBlur={(e) => e.target.value.trim() && e.target.value !== ty.label && void updateCollection(typeId, { label: e.target.value.trim() })} />
               Renk:
-              <input type="color" value={t.color} onChange={(e) => void updateCollection(typeId, { color: e.target.value })} />
+              <input type="color" value={ty.color} onChange={(e) => void updateCollection(typeId, { color: e.target.value })} />
             </div>
           </div>
           <button type="button" className="iconbtn" onClick={onClose} aria-label="Kapat">×</button>
@@ -231,7 +231,7 @@ export default function TypeEditor({ typeId, onClose }: { typeId: string; onClos
         <h4>Alanlar</h4>
         <p className="muted small">Her notta “Ad” alanı her zaman vardır. Hazır alanları silemezsin ama gizleyebilirsin; verileri kaybolmaz.</p>
         <div className="prop-rows">
-          {t.props.map((p, i) => <PropRow key={p.key} typeId={typeId} def={p} hidden={hiddenKeys.has(p.key)} index={i} keys={keys} />)}
+          {ty.props.map((p, i) => <PropRow key={p.key} typeId={typeId} def={p} hidden={hiddenKeys.has(p.key)} index={i} keys={keys} />)}
         </div>
         <AddProp typeId={typeId} />
 
@@ -240,18 +240,18 @@ export default function TypeEditor({ typeId, onClose }: { typeId: string; onClos
 
         <h4>Gelişmiş</h4>
         <label className="te-opt">
-          <input type="checkbox" checked={Boolean(t.subItems)} onChange={(e) => void setSubItems(typeId, e.target.checked)} />
+          <input type="checkbox" checked={Boolean(ty.subItems)} onChange={(e) => void setSubItems(typeId, e.target.checked)} />
           <span><b>Alt öğeler</b><span className="muted small"> · Bir kaydın altına alt kayıtlar ekle (ör. projenin görevleri); tabloda iç içe görünür.</span></span>
         </label>
         <label className="te-opt">
-          <input type="checkbox" checked={Boolean(t.blockedBy)} onChange={(e) => void setDependencies(typeId, e.target.checked)} />
+          <input type="checkbox" checked={Boolean(ty.blockedBy)} onChange={(e) => void setDependencies(typeId, e.target.checked)} />
           <span><b>Bağımlılıklar</b><span className="muted small"> · “Şu bitmeden bu başlamaz” bağları; zaman çizelgesinde ok olarak çizilir, çakışanlar kırmızı olur.</span></span>
         </label>
 
         {custom && (
           <div className="te-danger">
             <button type="button" className="btn danger small" onClick={async () => {
-              if (!confirm(`"${t.plural}" koleksiyonu silinsin mi? İçindeki ${count} not “Notlar”a taşınır, silinmez.`)) return;
+              if (!confirm(`"${ty.plural}" koleksiyonu silinsin mi? İçindeki ${count} not “Notlar”a taşınır, silinmez.`)) return;
               await deleteCollection(typeId);
               onClose();
               go('/');

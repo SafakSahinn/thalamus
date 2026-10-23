@@ -9,7 +9,7 @@ import { openPeek, peekClick } from '../../components/Peek';
 import { Cell, Cover, EditCell } from './Cells';
 
 export interface ViewProps {
-  t: TypeDef;
+  ty: TypeDef;
   rows: Note[];
   view: SavedView;
   /** Yeni not oluştururken varsayılan alanlar (aktif filtrelerden) */
@@ -80,8 +80,8 @@ function TableRows({ rows, cols, sel, toggle, nest }: { rows: Note[]; cols: Prop
 }
 
 /** Seçili satırlara toplu işlem */
-function BulkBar({ t, ids, clear }: { t: TypeDef; ids: string[]; clear: () => void }) {
-  const editable = t.props.filter((p) => ['select', 'checkbox', 'date', 'rating', 'multiselect'].includes(p.kind));
+function BulkBar({ ty, ids, clear }: { ty: TypeDef; ids: string[]; clear: () => void }) {
+  const editable = ty.props.filter((p) => ['select', 'checkbox', 'date', 'rating', 'multiselect'].includes(p.kind));
   const [key, setKey] = useState(editable[0]?.key ?? '');
   const def = editable.find((p) => p.key === key);
   const apply = (value: unknown) => {
@@ -133,25 +133,25 @@ function BulkBar({ t, ids, clear }: { t: TypeDef; ids: string[]; clear: () => vo
   );
 }
 
-export function TableView({ t, rows, view, newProps }: ViewProps) {
+export function TableView({ ty, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const [openSub, setOpenSub] = useState<Set<string>>(new Set());
-  const nest: Nest | undefined = t.subItems
+  const nest: Nest | undefined = ty.subItems
     ? {
-        key: t.subItems,
+        key: ty.subItems,
         open: openSub,
         toggle: (id) => setOpenSub((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; }),
         addChild: (parent) => {
           setOpenSub((s) => new Set(s).add(parent));
-          openPeek(createDefault(t.id, { ...newProps(), [t.subItems!]: [parent] }).id);
+          openPeek(createDefault(ty.id, { ...newProps(), [ty.subItems!]: [parent] }).id);
         },
       }
     : undefined;
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const cols = t.props.filter((p) => !hidden.has(p.key));
-  const gdef = view.groupBy ? t.props.find((p) => p.key === view.groupBy) : undefined;
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
+  const cols = ty.props.filter((p) => !hidden.has(p.key));
+  const gdef = view.groupBy ? ty.props.find((p) => p.key === view.groupBy) : undefined;
   const groups: Group[] = gdef ? groupNotes(rows, gdef, notes) : [{ key: '*', label: '', notes: rows }];
   const visible = new Set(rows.map((r) => r.id));
   const selected = [...sel].filter((id) => visible.has(id));
@@ -172,11 +172,11 @@ export function TableView({ t, rows, view, newProps }: ViewProps) {
   const add = (g?: Group) => {
     const props = newProps();
     if (gdef && g && g.key) props[gdef.key] = gdef.kind === 'multiselect' || gdef.kind === 'relation' ? [g.key] : gdef.kind === 'checkbox' ? g.key === 'true' : g.key;
-    openPeek(createDefault(t.id, props).id);
+    openPeek(createDefault(ty.id, props).id);
   };
   return (
     <>
-      {selected.length > 0 && <BulkBar t={t} ids={selected} clear={() => setSel(new Set())} />}
+      {selected.length > 0 && <BulkBar ty={ty} ids={selected} clear={() => setSel(new Set())} />}
       <div className="tablewrap">
         <table className="dbtable editable">
           <thead>
@@ -204,18 +204,18 @@ export function TableView({ t, rows, view, newProps }: ViewProps) {
 
 // ---------- galeri ----------
 
-export function CardsView({ t, rows, view }: ViewProps) {
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const cols = t.props.filter((p) => !hidden.has(p.key) && p.key !== t.cover).slice(0, 4);
+export function CardsView({ ty, rows, view }: ViewProps) {
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
+  const cols = ty.props.filter((p) => !hidden.has(p.key) && p.key !== ty.cover).slice(0, 4);
   return (
     <div className="cards">
       {rows.map((n) => (
         <a key={n.id} className="card" href={`#/n/${n.id}`} onClick={peekClick(n.id)}>
-          {t.cover && <Cover src={n.props[t.cover] as string | undefined} icon={noteIcon(n)} />}
+          {ty.cover && <Cover src={n.props[ty.cover] as string | undefined} icon={noteIcon(n)} />}
           <div className="card-body">
-            <div className="card-title">{!t.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
+            <div className="card-title">{!ty.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
             {cols.map((c) => (n.props[c.key] !== undefined || ['formula', 'rollup'].includes(c.kind) ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
-            {!t.cover && n.text && <div className="card-snip">{n.text.slice(0, 140)}</div>}
+            {!ty.cover && n.text && <div className="card-snip">{n.text.slice(0, 140)}</div>}
           </div>
         </a>
       ))}
@@ -225,9 +225,9 @@ export function CardsView({ t, rows, view }: ViewProps) {
 
 // ---------- liste ----------
 
-export function ListView({ t, rows, view }: ViewProps) {
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const cols = t.props.filter((p) => !hidden.has(p.key)).slice(0, 4);
+export function ListView({ ty, rows, view }: ViewProps) {
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
+  const cols = ty.props.filter((p) => !hidden.has(p.key)).slice(0, 4);
   return (
     <div className="list dblist">
       {rows.map((n) => (
@@ -243,18 +243,18 @@ export function ListView({ t, rows, view }: ViewProps) {
 
 // ---------- pano (kanban) ----------
 
-export function BoardView({ t, rows, view, newProps }: ViewProps) {
+export function BoardView({ ty, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
   const [over, setOver] = useState<string | null>(null);
   const [folded, setFolded] = useState<Set<string>>(new Set());
-  const gdef = t.props.find((p) => p.key === view.groupBy && (p.kind === 'select' || p.kind === 'checkbox'));
+  const gdef = ty.props.find((p) => p.key === view.groupBy && (p.kind === 'select' || p.kind === 'checkbox'));
   if (!gdef) return <p className="muted">Pano için bir “Seçim” alanı gerekli. Görünüm ayarlarından gruplama alanını seç ya da ⚙ Alanlar’dan bir seçim alanı ekle.</p>;
   // Alt gruplama: sütunlar bir alana, satırlar (şeritler) başka bir alana göre
-  const sdef = t.props.find((p) => p.key === view.subGroupBy && p.key !== gdef.key && (p.kind === 'select' || p.kind === 'checkbox'));
+  const sdef = ty.props.find((p) => p.key === view.subGroupBy && p.key !== gdef.key && (p.kind === 'select' || p.kind === 'checkbox'));
   const columns = groupNotes(rows, gdef, notes);
   const lanes: Group[] = sdef ? groupNotes(rows, sdef, notes).filter((l) => l.notes.length || l.key) : [{ key: '*', label: '', notes: rows }];
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const cols = t.props.filter((p) => !hidden.has(p.key) && p.key !== gdef.key && p.key !== sdef?.key && p.key !== t.cover).slice(0, 3);
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
+  const cols = ty.props.filter((p) => !hidden.has(p.key) && p.key !== gdef.key && p.key !== sdef?.key && p.key !== ty.cover).slice(0, 3);
   const valueOf = (def: PropDef, g: Group) => (def.kind === 'checkbox' ? g.key === 'true' || undefined : g.key || undefined);
   const move = (id: string, col: Group, lane: Group) => {
     setProp(id, gdef.key, valueOf(gdef, col));
@@ -303,8 +303,8 @@ export function BoardView({ t, rows, view, newProps }: ViewProps) {
                           draggable
                           onDragStart={(e) => { e.dataTransfer.setData('text/thalamus-note', n.id); e.dataTransfer.effectAllowed = 'move'; }}
                         >
-                          {t.cover && typeof n.props[t.cover] === 'string' && <Cover src={n.props[t.cover] as string} icon={noteIcon(n)} />}
-                          <div className="board-title">{!t.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
+                          {ty.cover && typeof n.props[ty.cover] === 'string' && <Cover src={n.props[ty.cover] as string} icon={noteIcon(n)} />}
+                          <div className="board-title">{!ty.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
                           {cols.map((c) => (n.props[c.key] !== undefined ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}
                           {/* Dokunmatik ekranlarda sürükleme yerine */}
                           <select className="board-move" value={g.key} onClick={(e) => e.preventDefault()} onChange={(e) => { const to = columns.find((x) => x.key === e.target.value); if (to) move(n.id, to, lane); }} aria-label="Taşı">
@@ -312,7 +312,7 @@ export function BoardView({ t, rows, view, newProps }: ViewProps) {
                           </select>
                         </a>
                       ))}
-                      <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(t.id, { ...newProps(), [gdef.key]: valueOf(gdef, g), ...(sdef ? { [sdef.key]: valueOf(sdef, lane) } : {}) }).id)}>＋ Yeni</button>
+                      <button type="button" className="linkbtn muted small board-add" onClick={() => open(createDefault(ty.id, { ...newProps(), [gdef.key]: valueOf(gdef, g), ...(sdef ? { [sdef.key]: valueOf(sdef, lane) } : {}) }).id)}>＋ Yeni</button>
                     </div>
                   );
                 })}
@@ -332,14 +332,14 @@ const MONTH = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' 
 const p2 = (n: number) => String(n).padStart(2, '0');
 const ymd = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
-export function CalendarView({ t, rows, view, newProps }: ViewProps) {
+export function CalendarView({ ty, rows, view, newProps }: ViewProps) {
   const notes = useStore((s) => s.notes);
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [over, setOver] = useState<string | null>(null);
-  const ddef = t.props.find((p) => p.key === view.dateKey && ['date', 'created', 'updated'].includes(p.kind));
+  const ddef = ty.props.find((p) => p.key === view.dateKey && ['date', 'created', 'updated'].includes(p.kind));
   const days = useMemo(() => {
     const first = new Date(cursor);
     const offset = (first.getDay() + 6) % 7; // pazartesi başlangıç
@@ -393,7 +393,7 @@ export function CalendarView({ t, rows, view, newProps }: ViewProps) {
             >
               <div className="cal-num">
                 <span className="cal-n">{parseDay(k).getDate()}</span>
-                {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(t.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
+                {editable && <button type="button" className="cal-add" title="Bu güne ekle" onClick={() => open(createDefault(ty.id, { ...newProps(), [ddef.key]: k }).id)}>＋</button>}
               </div>
               {items.slice(0, 4).map((n) => (
                 <a key={n.id} href={`#/n/${n.id}`} onClick={peekClick(n.id)} className="cal-item" draggable={editable}
@@ -454,11 +454,11 @@ function DependencyArrows({ dated, depKey, min, px, width }: { dated: { n: Note;
   );
 }
 
-export function TimelineView({ t, rows, view, newProps }: ViewProps) {
+export function TimelineView({ ty, rows, view, newProps }: ViewProps) {
   const [scale, setScale] = useState<Scale>(() => (localStorage.getItem('tlScale') as Scale) || 'hafta');
   const [drag, setDrag] = useState<{ id: string; mode: 'move' | 'end'; x0: number; s0: number; e0: number; dx: number } | null>(null);
-  const sdef = t.props.find((p) => p.key === view.dateKey && p.kind === 'date');
-  const edef = t.props.find((p) => p.key === view.endKey && p.kind === 'date');
+  const sdef = ty.props.find((p) => p.key === view.dateKey && p.kind === 'date');
+  const edef = ty.props.find((p) => p.key === view.endKey && p.kind === 'date');
   if (!sdef) return <p className="muted">Zaman çizelgesi için bir “Tarih” alanı gerekli. Görünüm ayarlarından başlangıç alanını seç.</p>;
   const px = SCALES[scale];
   const today = dayNum(todayStr());
@@ -509,7 +509,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
             <button key={k} className={scale === k ? 'on' : ''} onClick={() => { setScale(k); localStorage.setItem('tlScale', k); }}>{k[0].toLocaleUpperCase('tr') + k.slice(1)}</button>
           ))}
         </div>
-        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}{t.blockedBy ? ' · oklar bağımlılıkları gösterir (kırmızı: çakışma)' : ''}</span>
+        <span className="muted small">{sdef.label}{edef ? ` → ${edef.label}` : ''} · çubuğu sürükle: tarih kayar{edef ? ', sağ ucu çek: bitiş değişir' : ''}{ty.blockedBy ? ' · oklar bağımlılıkları gösterir (kırmızı: çakışma)' : ''}</span>
       </div>
       <div className="tl-scroll" ref={(el) => {
         if (el && !el.dataset.done) {
@@ -522,7 +522,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
             {marks.map((m) => <span key={m.x} className="tl-month" style={{ left: m.x }}>{m.label}</span>)}
             <span className="tl-today" style={{ left: (today - min) * px }} title="Bugün" />
           </div>
-          {t.blockedBy && <DependencyArrows dated={dated.map((x) => ({ ...x, ...shift(x, x.n.id) }))} depKey={t.blockedBy} min={min} px={px} width={width} />}
+          {ty.blockedBy && <DependencyArrows dated={dated.map((x) => ({ ...x, ...shift(x, x.n.id) }))} depKey={ty.blockedBy} min={min} px={px} width={width} />}
           {dated.map((x) => {
             const p = shift(x, x.n.id);
             return (
@@ -532,7 +532,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
                   <span className="tl-today-line" style={{ left: (today - min) * px }} />
                   <div
                     className={`tl-bar ${drag?.id === x.n.id ? 'dragging' : ''}`}
-                    style={{ left: (p.s - min) * px, width: Math.max(px, (p.e - p.s + 1) * px), '--c': t.color } as React.CSSProperties}
+                    style={{ left: (p.s - min) * px, width: Math.max(px, (p.e - p.s + 1) * px), '--c': ty.color } as React.CSSProperties}
                     onPointerDown={(e) => startDrag(e, x, 'move')}
                     onPointerMove={(e) => drag && setDrag({ ...drag, dx: e.clientX - drag.x0 })}
                     onPointerUp={endDrag}
@@ -560,7 +560,7 @@ export function TimelineView({ t, rows, view, newProps }: ViewProps) {
           {undated.map((x) => <button key={x.n.id} type="button" className="chip-soft small" onClick={() => open(x.n.id)}>{noteIcon(x.n)} {displayTitle(x.n)}</button>)}
         </div>
       )}
-      <button type="button" className="linkbtn muted small" onClick={() => open(createDefault(t.id, { ...newProps(), [sdef.key]: todayStr() }).id)}>＋ Yeni</button>
+      <button type="button" className="linkbtn muted small" onClick={() => open(createDefault(ty.id, { ...newProps(), [sdef.key]: todayStr() }).id)}>＋ Yeni</button>
     </div>
   );
 }

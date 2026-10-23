@@ -19,40 +19,40 @@ function CollectionView({ node, updateAttributes, editor }: ReactNodeViewProps) 
   const notes = useStore((s) => s.notes);
   const { alive } = useIndex();
   const [settings, setSettings] = useState(!typeId);
-  const t = typeId ? typeOf(typeId) : null;
+  const ty = typeId ? typeOf(typeId) : null;
   const here = noteId ? notes[noteId] : undefined;
 
   const view: SavedView = useMemo(() => ({
-    id: 'inline', name: '', kind, filters: [], sort: t?.sort ? [{ key: t.sort, dir: 'desc' }] : [],
-    groupBy: kind === 'board' ? t?.props.find((p) => p.kind === 'select')?.key : undefined,
-    dateKey: kind === 'calendar' || kind === 'timeline' ? t?.props.find((p) => p.kind === 'date')?.key : undefined,
-    endKey: kind === 'timeline' ? t?.props.filter((p) => p.kind === 'date')[1]?.key : undefined,
-  }), [kind, t]);
+    id: 'inline', name: '', kind, filters: [], sort: ty?.sort ? [{ key: ty.sort, dir: 'desc' }] : [],
+    groupBy: kind === 'board' ? ty?.props.find((p) => p.kind === 'select')?.key : undefined,
+    dateKey: kind === 'calendar' || kind === 'timeline' ? ty?.props.find((p) => p.kind === 'date')?.key : undefined,
+    endKey: kind === 'timeline' ? ty?.props.filter((p) => p.kind === 'date')[1]?.key : undefined,
+  }), [kind, ty]);
 
   const rows = useMemo(() => {
-    if (!t) return [];
-    const list = alive.filter((n) => n.type === t.id && (!onlyLinked || !noteId || n.links.includes(noteId)));
-    return applyView(list, view, t, notes);
-  }, [alive, t, onlyLinked, noteId, view, notes]);
+    if (!ty) return [];
+    const list = alive.filter((n) => n.type === ty.id && (!onlyLinked || !noteId || n.links.includes(noteId)));
+    return applyView(list, view, ty, notes);
+  }, [alive, ty, onlyLinked, noteId, view, notes]);
 
   // Buradan eklenen not bu sayfaya bağlansın
   const newProps = () => {
-    if (!t || !onlyLinked || !noteId) return {};
-    const rel = t.props.find((p) => p.kind === 'relation' && !p.back && here && p.target?.includes(here.type));
+    if (!ty || !onlyLinked || !noteId) return {};
+    const rel = ty.props.find((p) => p.kind === 'relation' && !p.back && here && p.target?.includes(here.type));
     return rel ? { [rel.key]: [noteId] } : { parent: [noteId] };
   };
-  const linkVia = t && here ? t.props.find((p) => p.kind === 'relation' && !p.back && p.target?.includes(here.type))?.label : undefined;
+  const linkVia = ty && here ? ty.props.find((p) => p.kind === 'relation' && !p.back && p.target?.includes(here.type))?.label : undefined;
   const Render = RENDER[kind] ?? TableView;
 
   return (
     <NodeViewWrapper className="inline-db" contentEditable={false} data-drag-handle="">
       <div className="idb-head">
-        {t ? (
-          <a className="idb-title" href={`#/c/${t.id}`} onClick={(e) => { e.preventDefault(); go(`/c/${t.id}`); }}>
-            {t.icon} {t.plural} <span className="muted small">{rows.length}</span>
+        {ty ? (
+          <a className="idb-title" href={`#/c/${ty.id}`} onClick={(e) => { e.preventDefault(); go(`/c/${ty.id}`); }}>
+            {ty.icon} {ty.plural} <span className="muted small">{rows.length}</span>
           </a>
         ) : <b>Sayfa içinde koleksiyon</b>}
-        {t && onlyLinked && <span className="chip-soft small">yalnızca bu sayfaya bağlı{linkVia ? ` (${linkVia})` : ''}</span>}
+        {ty && onlyLinked && <span className="chip-soft small">yalnızca bu sayfaya bağlı{linkVia ? ` (${linkVia})` : ''}</span>}
         <span className="spacer" />
         {editor.isEditable && <button type="button" className="btn small ghost" onClick={() => setSettings(!settings)}>⚙ Ayarlar</button>}
       </div>
@@ -73,12 +73,12 @@ function CollectionView({ node, updateAttributes, editor }: ReactNodeViewProps) 
           {typeId && <button type="button" className="btn small" onClick={() => setSettings(false)}>Tamam</button>}
         </div>
       )}
-      {t && (rows.length || !onlyLinked ? (
-        <div className="idb-body"><Render t={t} rows={rows} view={view} newProps={newProps} /></div>
+      {ty && (rows.length || !onlyLinked ? (
+        <div className="idb-body"><Render ty={ty} rows={rows} view={view} newProps={newProps} /></div>
       ) : (
         <div className="idb-empty muted small">
-          Bu sayfaya bağlı {t.label.toLocaleLowerCase('tr')} yok.{' '}
-          <button type="button" className="linkbtn" onClick={() => void import('../lib/templates').then(({ createDefault }) => import('../components/Peek').then(({ openPeek }) => openPeek(createDefault(t.id, newProps()).id)))}>＋ Ekle</button>
+          Bu sayfaya bağlı {ty.label.toLocaleLowerCase('tr')} yok.{' '}
+          <button type="button" className="linkbtn" onClick={() => void import('../lib/templates').then(({ createDefault }) => import('../components/Peek').then(({ openPeek }) => openPeek(createDefault(ty.id, newProps()).id)))}>＋ Ekle</button>
         </div>
       ))}
     </NodeViewWrapper>

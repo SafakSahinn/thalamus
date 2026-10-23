@@ -25,9 +25,9 @@ function Popover({ label, count, children }: { label: string; count?: number; ch
   );
 }
 
-const SORTABLE = (t: TypeDef) => [
+const SORTABLE = (ty: TypeDef) => [
   { key: 'title', label: 'Ad' },
-  ...t.props.filter((p) => !['relation', 'longtext'].includes(p.kind)).map((p) => ({ key: p.key, label: p.label })),
+  ...ty.props.filter((p) => !['relation', 'longtext'].includes(p.kind)).map((p) => ({ key: p.key, label: p.label })),
   { key: '__updated', label: 'Son düzenlenme' },
   { key: '__created', label: 'Oluşturulma' },
 ];
@@ -62,9 +62,9 @@ function ValueInput({ def, f, set }: { def: PropDef | 'title'; f: ViewFilter; se
   return <input value={String(f.value ?? '')} placeholder="değer" onChange={(e) => set({ value: e.target.value })} />;
 }
 
-export function FilterMenu({ t, view, update }: { t: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
-  const fields: (PropDef | 'title')[] = ['title', ...t.props];
-  const defOf = (key: string) => (key === 'title' ? 'title' : t.props.find((p) => p.key === key)) as PropDef | 'title' | undefined;
+export function FilterMenu({ ty, view, update }: { ty: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
+  const fields: (PropDef | 'title')[] = ['title', ...ty.props];
+  const defOf = (key: string) => (key === 'title' ? 'title' : ty.props.find((p) => p.key === key)) as PropDef | 'title' | undefined;
   const setAt = (i: number, p: Partial<ViewFilter>) => update({ filters: view.filters.map((f, j) => (j === i ? { ...f, ...p } : f)) });
   return (
     <Popover label="Filtre" count={view.filters.length}>
@@ -97,7 +97,7 @@ export function FilterMenu({ t, view, update }: { t: TypeDef; view: SavedView; u
         );
       })}
       <button type="button" className="linkbtn small" onClick={() => {
-        const first = t.props.find((p) => p.kind === 'select') ?? 'title';
+        const first = ty.props.find((p) => p.kind === 'select') ?? 'title';
         const key = first === 'title' ? 'title' : first.key;
         update({ filters: [...view.filters, { key, op: opsFor(first)[0].id }] });
       }}>＋ Filtre ekle</button>
@@ -105,8 +105,8 @@ export function FilterMenu({ t, view, update }: { t: TypeDef; view: SavedView; u
   );
 }
 
-export function SortMenu({ t, view, update }: { t: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
-  const fields = SORTABLE(t);
+export function SortMenu({ ty, view, update }: { ty: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
+  const fields = SORTABLE(ty);
   const setAt = (i: number, p: Partial<SavedView['sort'][number]>) => update({ sort: view.sort.map((s, j) => (j === i ? { ...s, ...p } : s)) });
   return (
     <Popover label="Sırala" count={view.sort.length}>
@@ -128,11 +128,11 @@ export function SortMenu({ t, view, update }: { t: TypeDef; view: SavedView; upd
   );
 }
 
-export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
-  const groupable = t.props.filter((p) => ['select', 'multiselect', 'checkbox', 'relation'].includes(p.kind));
-  const boardable = t.props.filter((p) => ['select', 'checkbox'].includes(p.kind));
-  const dates = t.props.filter((p) => ['date', 'created', 'updated'].includes(p.kind));
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
+export function ViewOptions({ ty, view, update }: { ty: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
+  const groupable = ty.props.filter((p) => ['select', 'multiselect', 'checkbox', 'relation'].includes(p.kind));
+  const boardable = ty.props.filter((p) => ['select', 'checkbox'].includes(p.kind));
+  const dates = ty.props.filter((p) => ['date', 'created', 'updated'].includes(p.kind));
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
   const toggle = (key: string) => {
     const h = new Set(hidden);
     if (h.has(key)) h.delete(key);
@@ -173,7 +173,7 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
           </label>
         </>
       )}
-      {view.kind === 'chart' && <ChartOptions t={t} view={view} update={update} />}
+      {view.kind === 'chart' && <ChartOptions ty={ty} view={view} update={update} />}
       {view.kind === 'calendar' && (
         <label className="opt-line">Tarih alanı:
           <select value={view.dateKey ?? ''} onChange={(e) => update({ dateKey: e.target.value })}>
@@ -194,7 +194,7 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
         <>
           <div className="bm-h">{view.kind === 'form' ? 'Formda sorulacak alanlar' : 'Gösterilen alanlar'}</div>
           <div className="col-toggles">
-            {t.props.map((p) => (
+            {ty.props.map((p) => (
               <label key={p.key}><input type="checkbox" checked={!hidden.has(p.key)} onChange={() => toggle(p.key)} /> {p.label}</label>
             ))}
           </div>
@@ -205,11 +205,11 @@ export function ViewOptions({ t, view, update }: { t: TypeDef; view: SavedView; 
 }
 
 /** Grafik görünümü ayarları: tür, gruplama alanı, tarih aralığı, ölçü */
-function ChartOptions({ t, view, update }: { t: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
-  const c = chartConfig(t, view);
+function ChartOptions({ ty, view, update }: { ty: TypeDef; view: SavedView; update: (p: Partial<SavedView>) => void }) {
+  const c = chartConfig(ty, view);
   const set = (p: Partial<NonNullable<SavedView['chart']>>) => update({ chart: { ...c, ...p } });
-  const xdef = t.props.find((p) => p.key === c.x);
-  const ys = chartableY(t);
+  const xdef = ty.props.find((p) => p.key === c.x);
+  const ys = chartableY(ty);
   return (
     <>
       <label className="opt-line">Grafik:
@@ -221,7 +221,7 @@ function ChartOptions({ t, view, update }: { t: TypeDef; view: SavedView; update
       </label>
       <label className="opt-line">Gruplama:
         <select value={c.x ?? ''} onChange={(e) => set({ x: e.target.value })}>
-          {chartableX(t).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          {chartableX(ty).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
         </select>
       </label>
       {xdef && ['date', 'created', 'updated'].includes(xdef.kind) && (
@@ -238,7 +238,7 @@ function ChartOptions({ t, view, update }: { t: TypeDef; view: SavedView; update
           const [fn, y] = e.target.value.split(':');
           set({ fn: fn as 'count' | 'sum' | 'avg', y: y || undefined });
         }}>
-          <option value="count">Kayıt sayısı</option>
+          <option value="count">Kayıty sayısı</option>
           {ys.flatMap((p) => [
             <option key={`sum${p.key}`} value={`sum:${p.key}`}>{p.label} · toplam</option>,
             <option key={`avg${p.key}`} value={`avg:${p.key}`}>{p.label} · ortalama</option>,

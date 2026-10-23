@@ -543,7 +543,7 @@ function ExtraProps({ note }: { note: Note }) {
 }
 
 export default function PropertyPanel({ note }: { note: Note }) {
-  const t = typeOf(note.type);
+  const ty = typeOf(note.type);
   const notes = useStore((s) => s.notes);
   const [showEmpty, setShowEmpty] = useState(false);
   const isEmpty = (d: PropDef) => {
@@ -551,8 +551,8 @@ export default function PropertyPanel({ note }: { note: Note }) {
     const v = d.back ? propValue(note, d, notes) : note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };
-  const hidden = t.props.filter((d) => isEmpty(d) && !alwaysShow(note, d));
-  const visible = t.props.filter((d) => showEmpty || !hidden.includes(d));
+  const hidden = ty.props.filter((d) => isEmpty(d) && !alwaysShow(note, d));
+  const visible = ty.props.filter((d) => showEmpty || !hidden.includes(d));
   return (
     <div className="props" data-tour="props">
       {visible.map((d) => (

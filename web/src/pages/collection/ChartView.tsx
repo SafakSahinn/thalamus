@@ -23,12 +23,12 @@ export interface ChartConfig {
   y?: string;
 }
 
-export const chartableX = (t: TypeDef) => t.props.filter((p) => ['select', 'multiselect', 'checkbox', 'relation', 'date', 'created', 'updated'].includes(p.kind));
-export const chartableY = (t: TypeDef) => t.props.filter((p) => ['number', 'rating', 'formula', 'rollup'].includes(p.kind));
+export const chartableX = (ty: TypeDef) => ty.props.filter((p) => ['select', 'multiselect', 'checkbox', 'relation', 'date', 'created', 'updated'].includes(p.kind));
+export const chartableY = (ty: TypeDef) => ty.props.filter((p) => ['number', 'rating', 'formula', 'rollup'].includes(p.kind));
 
-export function chartConfig(t: TypeDef, view: SavedView): ChartConfig {
+export function chartConfig(ty: TypeDef, view: SavedView): ChartConfig {
   const c = (view.chart ?? {}) as Partial<ChartConfig>;
-  const xs = chartableX(t);
+  const xs = chartableX(ty);
   const x = c.x && xs.some((p) => p.key === c.x) ? c.x : (xs.find((p) => p.kind === 'select') ?? xs[0])?.key;
   return { type: c.type ?? 'bar', x, bucket: c.bucket ?? 'month', fn: c.fn ?? 'count', y: c.y };
 }
@@ -69,9 +69,9 @@ function measure(list: Note[], cfg: ChartConfig, ydef: PropDef | undefined, note
   return cfg.fn === 'sum' ? sum : sum / vals.length;
 }
 
-export function buildBuckets(rows: Note[], t: TypeDef, cfg: ChartConfig, notes: Record<string, Note>): Bucket[] {
-  const xdef = t.props.find((p) => p.key === cfg.x);
-  const ydef = t.props.find((p) => p.key === cfg.y);
+export function buildBuckets(rows: Note[], ty: TypeDef, cfg: ChartConfig, notes: Record<string, Note>): Bucket[] {
+  const xdef = ty.props.find((p) => p.key === cfg.x);
+  const ydef = ty.props.find((p) => p.key === cfg.y);
   if (!xdef) return [];
   if (['date', 'created', 'updated'].includes(xdef.kind)) {
     const b = cfg.bucket ?? 'month';
@@ -109,10 +109,10 @@ function niceTicks(max: number, count = 4, integer = false): number[] {
 
 const fmtVal = (v: number) => fmtNum(Math.round(v * 10) / 10);
 
-export function ChartView({ t, rows, view }: ViewProps) {
+export function ChartView({ ty, rows, view }: ViewProps) {
   const notes = useStore((s) => s.notes);
-  const cfg = chartConfig(t, view);
-  const buckets = useMemo(() => buildBuckets(rows, t, cfg, notes), [rows, t, cfg.x, cfg.y, cfg.fn, cfg.bucket, notes]);
+  const cfg = chartConfig(ty, view);
+  const buckets = useMemo(() => buildBuckets(rows, ty, cfg, notes), [rows, ty, cfg.x, cfg.y, cfg.fn, cfg.bucket, notes]);
   const box = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(720);
   const [hover, setHover] = useState<number | null>(null);
@@ -127,8 +127,8 @@ export function ChartView({ t, rows, view }: ViewProps) {
     return () => ro.disconnect();
   }, []);
 
-  const xdef = t.props.find((p) => p.key === cfg.x);
-  const ydef = t.props.find((p) => p.key === cfg.y);
+  const xdef = ty.props.find((p) => p.key === cfg.x);
+  const ydef = ty.props.find((p) => p.key === cfg.y);
   if (!xdef) return <p className="muted">Grafik için gruplanacak bir alan gerekli (seçim, durum, tarih…). Görünüm ayarlarından seç.</p>;
 
   const title = cfg.fn === 'count' || !ydef ? 'Kayıt sayısı' : `${ydef.label} (${cfg.fn === 'sum' ? 'toplam' : 'ortalama'})`;
@@ -168,7 +168,7 @@ export function ChartView({ t, rows, view }: ViewProps) {
       </div>
 
       {!buckets.length ? (
-        <p className="muted">Bu görünümde gösterilecek kayıt yok.</p>
+        <p className="muted">Bu görünümde gösterilecek kayıty yok.</p>
       ) : asTable ? (
         <table className="dbtable chart-table">
           <thead><tr><th>{xdef.label}</th><th className="num">{title}</th></tr></thead>
@@ -246,13 +246,13 @@ export function ChartView({ t, rows, view }: ViewProps) {
 
       {sel && (
         <div className="chart-picked">
-          <div className="muted small">{sel.label} · {sel.notes.length} kayıt</div>
+          <div className="muted small">{sel.label} · {sel.notes.length} kayıty</div>
           {sel.notes.map((n) => (
             <button key={n.id} type="button" className="chip-soft" onClick={() => openPeek(n.id)}>{noteIcon(n)} {displayTitle(n)}</button>
           ))}
         </div>
       )}
-      {!sel && buckets.length > 0 && !asTable && <p className="muted small">Bir çubuğa tıklarsan o gruptaki kayıtlar aşağıda listelenir.</p>}
+      {!sel && buckets.length > 0 && !asTable && <p className="muted small">Bir çubuğa tyıklarsan o gruptaki kayıtlar aşağıda listelenir.</p>}
     </div>
   );
 }

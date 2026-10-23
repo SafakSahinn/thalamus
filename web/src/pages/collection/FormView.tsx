@@ -31,9 +31,9 @@ function RelationPick({ def, value, onChange }: { def: PropDef; value: string[];
   );
 }
 
-export function FormView({ t, view, newProps }: ViewProps) {
-  const hidden = new Set(view.hidden ?? t.props.filter((p) => !p.table).map((p) => p.key));
-  const fields = t.props.filter((p) => ASKABLE.has(p.kind) && !hidden.has(p.key));
+export function FormView({ ty, view, newProps }: ViewProps) {
+  const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
+  const fields = ty.props.filter((p) => ASKABLE.has(p.kind) && !hidden.has(p.key));
   const [title, setTitle] = useState('');
   const [vals, setVals] = useState<Record<string, unknown>>({});
   const [done, setDone] = useState<{ id: string; title: string } | null>(null);
@@ -46,7 +46,7 @@ export function FormView({ t, view, newProps }: ViewProps) {
       if (v === '' || v === undefined || v === false || (Array.isArray(v) && !v.length)) continue;
       props[k] = v;
     }
-    const n = createNote(t.id, title.trim(), props);
+    const n = createNote(ty.id, title.trim(), props);
     setDone({ id: n.id, title: title.trim() || 'Adsız' });
     setTitle('');
     setVals({});
@@ -99,10 +99,10 @@ export function FormView({ t, view, newProps }: ViewProps) {
     <form className="form-view" onSubmit={submit}>
       <div className="form-card">
         <div className="form-head">
-          <span className="form-icon">{t.icon}</span>
+          <span className="form-icon">{ty.icon}</span>
           <div>
-            <h2>Yeni {t.label.toLocaleLowerCase('tr')}</h2>
-            <p className="muted small">Formu doldurup gönderince {t.plural} koleksiyonuna yeni bir kayıt eklenir. Sorulan alanları “Görünüm ayarları”ndan seçebilirsin.</p>
+            <h2>Yeni {ty.label.toLocaleLowerCase('tr')}</h2>
+            <p className="muted small">Formu doldurup gönderince {ty.plural} koleksiyonuna yeni bir kayıty eklenir. Sorulan alanları “Görünüm ayarları”ndan seçebilirsin.</p>
           </div>
         </div>
         {done && (
@@ -112,7 +112,7 @@ export function FormView({ t, view, newProps }: ViewProps) {
         )}
         <label className="form-field">
           <span>Ad <span className="req">*</span></span>
-          <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`${t.label} adı`} autoFocus />
+          <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`${ty.label} adı`} autoFocus />
         </label>
         {fields.map((d) => (
           <div key={d.key} className="form-field">
