@@ -1,3 +1,4 @@
+import { fmtNumber, localeTag, t } from '../i18n';
 import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -133,11 +134,11 @@ export default function PdfReaderPage({ id }: { id: string }) {
     };
   }, [active]);
 
-  if (!note) return <div className="page"><p className="muted">Not bulunamadı.</p></div>;
+  if (!note) return <div className="page"><p className="muted">{t('reading.pdf.notFound')}</p></div>;
 
   const mark = async (color: HlColor, withComment = false) => {
     if (!sel) return;
-    const comment = withComment ? await promptText('Vurguya not', '', { multiline: true, hint: `“${sel.text.slice(0, 80)}${sel.text.length > 80 ? '…' : ''}”` }) : undefined;
+    const comment = withComment ? await promptText(t('reading.pdf.commentPrompt'), '', { multiline: true, hint: `“${sel.text.slice(0, 80)}${sel.text.length > 80 ? '…' : ''}”` }) : undefined;
     if (withComment && comment === null) return;
     addHighlight(note.id, { src: active!, page: sel.page, rects: sel.rects, text: sel.text, color, comment: comment?.trim() || undefined });
     window.getSelection()?.removeAllRanges();
@@ -167,7 +168,7 @@ export default function PdfReaderPage({ id }: { id: string }) {
   return (
     <div className="pdf-reader" onMouseDown={(e) => !(e.target as HTMLElement).closest('.pdf-tools') && setSel(null)}>
       <div className="pdf-bar">
-        <button className="btn small" onClick={() => go(`/n/${note.id}`)}>← Not</button>
+        <button className="btn small" onClick={() => go(`/n/${note.id}`)}>{t('reading.pdf.back')}</button>
         <b className="pdf-title">{displayTitle(note)}</b>
         {sources.length > 1 && (
           <select value={active ?? ''} onChange={(e) => setSrc(e.target.value)}>
@@ -175,32 +176,32 @@ export default function PdfReaderPage({ id }: { id: string }) {
           </select>
         )}
         <span className="spacer" />
-        {pdf && <span className="muted small">{fmtNum(pdf.numPages)} sayfa</span>}
-        <button className="cal-nav" onClick={() => setScale((s) => Math.max(0.5, s - 0.15))} aria-label="Uzaklaştır">−</button>
-        <span className="muted small">%{Math.round(scale * 100)}</span>
-        <button className="cal-nav" onClick={() => setScale((s) => Math.min(3, s + 0.15))} aria-label="Yakınlaştır">+</button>
-        <button className="btn small" disabled={busy} onClick={() => upload.current?.click()}>{busy ? 'Yükleniyor…' : '⬆ PDF yükle'}</button>
+        {pdf && <span className="muted small">{t('reading.pdf.pages', { count: fmtNum(pdf.numPages) })}</span>}
+        <button className="cal-nav" onClick={() => setScale((s) => Math.max(0.5, s - 0.15))} aria-label={t('reading.pdf.zoomOut')}>−</button>
+        <span className="muted small">{fmtNumber(scale, { style: 'percent', maximumFractionDigits: 0 })}</span>
+        <button className="cal-nav" onClick={() => setScale((s) => Math.min(3, s + 0.15))} aria-label={t('reading.pdf.zoomIn')}>+</button>
+        <button className="btn small" disabled={busy} onClick={() => upload.current?.click()}>{busy ? t('common.loading') : t('reading.pdf.upload')}</button>
         <input ref={upload} type="file" accept="application/pdf" hidden onChange={(e) => void onUpload(e.target.files?.[0])} />
       </div>
       <div className="pdf-main">
         <div className="pdf-scroll">
-          {!active && <p className="muted pdf-empty">Bu notta PDF yok. “⬆ PDF yükle” ile bir PDF ekle.</p>}
+          {!active && <p className="muted pdf-empty">{t('reading.pdf.none')}</p>}
           {err && <p className="err pdf-empty">{err}</p>}
-          {active && !pdf && !err && <p className="muted pdf-empty">PDF yükleniyor…</p>}
+          {active && !pdf && !err && <p className="muted pdf-empty">{t('reading.pdf.loading')}</p>}
           {pdf && Array.from({ length: pdf.numPages }, (_, i) => (
             <PdfPage key={`${active}-${i}`} pdf={pdf} num={i + 1} scale={scale} highlights={highlights.filter((h) => h.page === i + 1)} onSelect={setSel} focusId={focus} />
           ))}
         </div>
         <aside className="pdf-side">
-          <b>🖍 Vurgular ({highlights.length})</b>
-          {highlights.length === 0 && <p className="muted small">Metni seçip bir renk seçince vurgu buraya ve notun içine eklenir.</p>}
+          <b>{t('reading.pdf.highlights', { count: highlights.length })}</b>
+          {highlights.length === 0 && <p className="muted small">{t('reading.pdf.noHighlights')}</p>}
           {highlights.map((h) => (
             <div key={h.id} className={`pdf-hl-item ${focus === h.id ? 'focus' : ''}`} style={{ borderLeftColor: HL_COLORS.find((c) => c.id === h.color)?.css }}>
               <button type="button" className="pdf-hl-text" onClick={() => setFocus(h.id)}>“{h.text.length > 160 ? `${h.text.slice(0, 159)}…` : h.text}”</button>
               {h.comment && <div className="small">{h.comment}</div>}
               <div className="pdf-hl-meta">
-                <span className="muted small">s. {h.page}</span>
-                <button type="button" className="linkbtn small danger-link" onClick={() => removeHighlight(note.id, h.id)}>Sil</button>
+                <span className="muted small">{t('reading.pdf.page', { page: h.page })}</span>
+                <button type="button" className="linkbtn small danger-link" onClick={() => removeHighlight(note.id, h.id)}>{t('common.delete')}</button>
               </div>
             </div>
           ))}
@@ -208,9 +209,9 @@ export default function PdfReaderPage({ id }: { id: string }) {
       </div>
       {sel && (
         <div className="pdf-tools" style={{ left: Math.min(window.innerWidth - 300, Math.max(8, sel.x - 140)), top: sel.y + 8 }}>
-          {HL_COLORS.map((c) => <button key={c.id} type="button" className="pdf-sw" style={{ background: c.css }} title={`${c.label} vurgula`} onClick={() => void mark(c.id)} />)}
-          <button type="button" className="btn small" onClick={() => void mark('yellow', true)}>💬 Not</button>
-          <button type="button" className="btn small" onClick={addWord} title="Seçili kelimeyi sözlüğe ekle ve bu nota bağla">🔤 Kelime</button>
+          {HL_COLORS.map((c) => <button key={c.id} type="button" className="pdf-sw" style={{ background: c.css }} title={t('reading.pdf.highlightWith', { color: c.label.toLocaleLowerCase(localeTag()) })} onClick={() => void mark(c.id)} />)}
+          <button type="button" className="btn small" onClick={() => void mark('yellow', true)}>{t('reading.pdf.note')}</button>
+          <button type="button" className="btn small" onClick={addWord} title={t('reading.pdf.wordTitle')}>{t('reading.pdf.word')}</button>
         </div>
       )}
     </div>

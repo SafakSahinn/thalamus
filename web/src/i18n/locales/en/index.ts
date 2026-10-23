@@ -15,6 +15,7 @@ import palette from './palette';
 import panels from './panels';
 import plugins from './plugins';
 import props from './props';
+import reading from './reading';
 import schema from './schema';
 import settings from './settings';
 import sidebar from './sidebar';
@@ -41,6 +42,7 @@ export default {
   panels,
   plugins,
   props,
+  reading,
   schema,
   settings,
   sidebar,

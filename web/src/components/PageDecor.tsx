@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { EmojiPicker } from '../editor/EmojiPicker';
 import { resolveFileUrl, setProp, uploadFile } from '../lib/store';
@@ -63,21 +64,21 @@ function BannerPicker({ note, onClose }: { note: Note; onClose: () => void }) {
     input.click();
   };
   const link = async () => {
-    const v = await promptText('Kapak görselinin adresi', 'https://');
+    const v = await promptText(t('reading.decor.urlPrompt'), 'https://');
     if (v?.trim().startsWith('http')) set(v.trim());
   };
   return (
     <div className="banner-picker" ref={ref}>
-      <div className="bm-h">Hazır kapaklar</div>
+      <div className="bm-h">{t('reading.decor.presets')}</div>
       <div className="bp-grid">
         {GRADIENTS.map((g, i) => (
-          <button key={i} type="button" style={{ background: g }} onClick={() => set(`g:${i}`)} aria-label={`Kapak ${i + 1}`} />
+          <button key={i} type="button" style={{ background: g }} onClick={() => set(`g:${i}`)} aria-label={t('reading.decor.cover', { n: i + 1 })} />
         ))}
       </div>
       <div className="row">
-        <button type="button" className="btn small" onClick={upload} disabled={busy}>{busy ? 'Yükleniyor…' : 'Görsel yükle'}</button>
-        <button type="button" className="btn small ghost" onClick={() => void link()}>Bağlantı</button>
-        {note.props.banner ? <button type="button" className="btn small ghost danger" onClick={() => set(undefined)}>Kaldır</button> : null}
+        <button type="button" className="btn small" onClick={upload} disabled={busy}>{busy ? t('common.loading') : t('reading.decor.upload')}</button>
+        <button type="button" className="btn small ghost" onClick={() => void link()}>{t('reading.decor.link')}</button>
+        {note.props.banner ? <button type="button" className="btn small ghost danger" onClick={() => set(undefined)}>{t('common.remove')}</button> : null}
       </div>
     </div>
   );
@@ -95,23 +96,23 @@ export default function PageDecor({ note }: { note: Note }) {
     <div className={`page-decor ${banner ? 'has-banner' : ''}`}>
       {style && (
         <div className="page-banner" style={style}>
-          <button type="button" className="btn small banner-change" onClick={() => setBannerPick(true)}>Kapağı değiştir</button>
+          <button type="button" className="btn small banner-change" onClick={() => setBannerPick(true)}>{t('reading.decor.change')}</button>
         </div>
       )}
       {icon && (
         <div className="page-icon-wrap">
-          <button type="button" className="page-icon" onClick={() => setIconPick(!iconPick)} title="Simgeyi değiştir">{icon}</button>
+          <button type="button" className="page-icon" onClick={() => setIconPick(!iconPick)} title={t('reading.decor.changeIcon')}>{icon}</button>
           {iconPick && <EmojiPicker allowRemove onClose={() => setIconPick(false)} onPick={(e) => { setProp(note.id, 'icon', e || undefined); setIconPick(false); }} />}
         </div>
       )}
       <div className="decor-actions">
         {!icon && (
           <span className="rel">
-            <button type="button" className="linkbtn muted" onClick={() => setIconPick(!iconPick)}>😀 Simge ekle</button>
+            <button type="button" className="linkbtn muted" onClick={() => setIconPick(!iconPick)}>{t('reading.decor.addIcon')}</button>
             {iconPick && <EmojiPicker onClose={() => setIconPick(false)} onPick={(e) => { setProp(note.id, 'icon', e || undefined); setIconPick(false); }} />}
           </span>
         )}
-        {!banner && <button type="button" className="linkbtn muted" onClick={() => setBannerPick(true)}>🖼 Kapak ekle</button>}
+        {!banner && <button type="button" className="linkbtn muted" onClick={() => setBannerPick(true)}>{t('reading.decor.addCover')}</button>}
       </div>
       {bannerPick && <BannerPicker note={note} onClose={() => setBannerPick(false)} />}
     </div>
