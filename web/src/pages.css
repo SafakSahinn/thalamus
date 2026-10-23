@@ -326,7 +326,7 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 }
 .sticky.pat .sticky-head { background: color-mix(in srgb, var(--sk-head) 85%, transparent); }
 /* yazı desenin üstünde okunur kalsın: harflerin çevresinde kâğıt renginde hafif hale */
-.sticky.pat textarea { text-shadow: 0 0 2px var(--sk), 0 0 4px var(--sk), 0 0 6px var(--sk); }
+.sticky.pat textarea { font-weight: 700; text-shadow: 0 0 2px var(--sk), 0 0 4px var(--sk), 0 0 6px var(--sk); }
 .sticky-tab.pat { text-shadow: 0 0 3px #fff, 0 0 5px #fff; }
 .sticky.dragging { user-select: none; }
 .sticky.dragging::before, .sticky.dragging::after { box-shadow: 0 22px 18px rgb(0 0 0 / 30%); }
