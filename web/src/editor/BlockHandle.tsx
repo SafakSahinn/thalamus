@@ -1,7 +1,9 @@
+import { t } from '../i18n';
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import type { Messages } from '../i18n';
 import { BG_COLORS, TEXT_COLORS } from './colors';
 import { openDetailsAt } from './extensions';
 
@@ -21,25 +23,27 @@ function blockAt(editor: Editor, el: HTMLElement): { start: number; node: PMNode
   return found;
 }
 
-const TURN_INTO: { label: string; icon: string; run: (e: Editor) => void }[] = [
-  { label: 'Metin', icon: 'T', run: (e) => e.chain().clearNodes().run() },
-  { label: 'Başlık 1', icon: 'H1', run: (e) => e.chain().clearNodes().toggleHeading({ level: 1 }).run() },
-  { label: 'Başlık 2', icon: 'H2', run: (e) => e.chain().clearNodes().toggleHeading({ level: 2 }).run() },
-  { label: 'Başlık 3', icon: 'H3', run: (e) => e.chain().clearNodes().toggleHeading({ level: 3 }).run() },
-  { label: 'Madde listesi', icon: '•', run: (e) => e.chain().clearNodes().toggleBulletList().run() },
-  { label: 'Numaralı liste', icon: '1.', run: (e) => e.chain().clearNodes().toggleOrderedList().run() },
-  { label: 'Yapılacaklar', icon: '☑', run: (e) => e.chain().clearNodes().toggleTaskList().run() },
-  { label: 'Açılır bölüm', icon: '▸', run: (e) => e.chain().clearNodes().setDetails().run() && openDetailsAt(e) },
-  { label: 'Açılır başlık 1', icon: '▸1', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e) },
-  { label: 'Açılır başlık 2', icon: '▸2', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e) },
-  { label: 'Açılır başlık 3', icon: '▸3', run: (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e) },
-  { label: 'Bilgi kutusu', icon: '💡', run: (e) => e.chain().clearNodes().wrapIn('callout').run() },
-  { label: 'Alıntı', icon: '❝', run: (e) => e.chain().clearNodes().toggleBlockquote().run() },
-  { label: 'Kod', icon: '{}', run: (e) => e.chain().clearNodes().toggleCodeBlock().run() },
+type TurnKey = keyof Messages['importer']['handle']['turnInto'];
+const turn = (key: TurnKey, icon: string, run: (e: Editor) => void) => ({ icon, run, get label() { return t(`importer.handle.turnInto.${key}`); } });
+const TURN_INTO: { readonly label: string; icon: string; run: (e: Editor) => void }[] = [
+  turn('text', 'T', (e) => e.chain().clearNodes().run()),
+  turn('h1', 'H1', (e) => e.chain().clearNodes().toggleHeading({ level: 1 }).run()),
+  turn('h2', 'H2', (e) => e.chain().clearNodes().toggleHeading({ level: 2 }).run()),
+  turn('h3', 'H3', (e) => e.chain().clearNodes().toggleHeading({ level: 3 }).run()),
+  turn('bullet', '•', (e) => e.chain().clearNodes().toggleBulletList().run()),
+  turn('ordered', '1.', (e) => e.chain().clearNodes().toggleOrderedList().run()),
+  turn('todo', '☑', (e) => e.chain().clearNodes().toggleTaskList().run()),
+  turn('toggle', '▸', (e) => e.chain().clearNodes().setDetails().run() && openDetailsAt(e)),
+  turn('toggle1', '▸1', (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 1 }).run() && openDetailsAt(e)),
+  turn('toggle2', '▸2', (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 2 }).run() && openDetailsAt(e)),
+  turn('toggle3', '▸3', (e) => e.chain().clearNodes().setDetails().updateAttributes('details', { level: 3 }).run() && openDetailsAt(e)),
+  turn('callout', '💡', (e) => e.chain().clearNodes().wrapIn('callout').run()),
+  turn('quote', '❝', (e) => e.chain().clearNodes().toggleBlockquote().run()),
+  turn('code', '{}', (e) => e.chain().clearNodes().toggleCodeBlock().run()),
 ];
 
 export default function BlockHandle({ editor, container }: { editor: Editor; container: RefObject<HTMLDivElement | null> }) {
-  const [t, setT] = useState<Target | null>(null);
+  const [tg, setT] = useState<Target | null>(null);
   const [menu, setMenu] = useState(false);
   const hide = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -97,34 +101,34 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
     return () => document.removeEventListener('mousedown', out);
   }, [menu]);
 
-  if (!t || !editor.isEditable) return null;
+  if (!tg || !editor.isEditable) return null;
   // Belge değiştiyse (başka nota geçildi) eski konum geçersiz olabilir
   let cur: ReturnType<typeof editor.state.doc.nodeAt> = null;
   try {
-    cur = t.start <= editor.state.doc.content.size ? editor.state.doc.nodeAt(t.start) : null;
+    cur = tg.start <= editor.state.doc.content.size ? editor.state.doc.nodeAt(tg.start) : null;
   } catch {
     cur = null;
   }
   if (!cur) return null;
-  const end = t.start + cur.nodeSize;
+  const end = tg.start + cur.nodeSize;
 
   const selectInside = () => {
     // İmleci bloğun içine koy (dönüştürme komutları seçim üzerinde çalışır)
-    const inside = Math.min(t.start + 1, editor.state.doc.content.size);
+    const inside = Math.min(tg.start + 1, editor.state.doc.content.size);
     editor.chain().focus().setTextSelection(inside).run();
   };
-  const selectText = () => editor.chain().focus().setTextSelection({ from: t.start + 1, to: end - 1 }).run();
+  const selectText = () => editor.chain().focus().setTextSelection({ from: tg.start + 1, to: end - 1 }).run();
   const done = () => setMenu(false);
 
   const onDragStart = (e: React.DragEvent) => {
     const { view } = editor;
-    const sel = NodeSelection.create(view.state.doc, t.start);
+    const sel = NodeSelection.create(view.state.doc, tg.start);
     view.dispatch(view.state.tr.setSelection(sel));
     (view as unknown as { dragging: unknown }).dragging = { slice: sel.content(), move: true };
     e.dataTransfer.clearData();
     e.dataTransfer.setData('text/html', '');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setDragImage(t.el, 0, 0);
+    e.dataTransfer.setDragImage(tg.el, 0, 0);
   };
 
   const addBelow = () => {
@@ -134,12 +138,12 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
   };
 
   return (
-    <div className="block-handle" style={{ top: t.top }} onMouseEnter={() => clearTimeout(hide.current)}>
-      <button type="button" className="bh-btn" title="Altına blok ekle" onClick={addBelow}>+</button>
+    <div className="block-handle" style={{ top: tg.top }} onMouseEnter={() => clearTimeout(hide.current)}>
+      <button type="button" className="bh-btn" title={t('importer.handle.addBelow')} onClick={addBelow}>+</button>
       <button
         type="button"
         className="bh-btn grip"
-        title="Sürükleyerek taşı · tıklayarak menüyü aç"
+        title={t('importer.handle.drag')}
         draggable
         onDragStart={onDragStart}
         onDragEnd={() => setT(null)}
@@ -147,7 +151,7 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
       >⋮⋮</button>
       {menu && (
         <div className="block-menu" ref={menuRef}>
-          <div className="bm-h">Dönüştür</div>
+          <div className="bm-h">{t('importer.handle.turn')}</div>
           <div className="bm-grid">
             {TURN_INTO.map((x) => (
               <button key={x.label} type="button" onClick={() => { selectInside(); x.run(editor); done(); }}>
@@ -155,7 +159,7 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
               </button>
             ))}
           </div>
-          <div className="bm-h">Yazı rengi</div>
+          <div className="bm-h">{t('importer.handle.textColor')}</div>
           <div className="swatches">
             {TEXT_COLORS.map((c) => (
               <button key={c.id} type="button" title={c.label} className={`sw tc-${c.id}`} onClick={() => {
@@ -165,7 +169,7 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
               }}>A</button>
             ))}
           </div>
-          <div className="bm-h">Arka plan</div>
+          <div className="bm-h">{t('importer.handle.background')}</div>
           <div className="swatches">
             {BG_COLORS.map((c) => (
               <button key={c.id} type="button" title={c.label} className={`sw bgsw-${c.id}`} onClick={() => {
@@ -176,8 +180,8 @@ export default function BlockHandle({ editor, container }: { editor: Editor; con
             ))}
           </div>
           <div className="bm-sep" />
-          <button type="button" className="bm-row" onClick={() => { editor.chain().focus().insertContentAt(end, cur.toJSON()).run(); done(); }}>⧉ Çoğalt</button>
-          <button type="button" className="bm-row danger" onClick={() => { editor.chain().focus().deleteRange({ from: t.start, to: end }).run(); setT(null); done(); }}>🗑 Sil</button>
+          <button type="button" className="bm-row" onClick={() => { editor.chain().focus().insertContentAt(end, cur.toJSON()).run(); done(); }}>{t('importer.handle.duplicate')}</button>
+          <button type="button" className="bm-row danger" onClick={() => { editor.chain().focus().deleteRange({ from: tg.start, to: end }).run(); setT(null); done(); }}>{t('importer.handle.delete')}</button>
         </div>
       )}
     </div>

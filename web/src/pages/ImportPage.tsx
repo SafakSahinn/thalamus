@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { norm } from '../lib/links';
 import { buildNotes, guessColumn, guessType, inferKind, readNotionZip, type DbMapping, type Parsed } from '../lib/notionImport';
@@ -19,10 +20,10 @@ export default function ImportPage() {
     if (!f) return;
     setErr(null);
     setResult(null);
-    setBusy('Zip dosyası okunuyor…');
+    setBusy(t('importer.notion.reading'));
     try {
       const p = await readNotionZip(f);
-      if (!p.pages.length && !p.databases.length) throw new Error('Zip içinde Notion sayfası (.md) veya veritabanı (.csv) bulunamadı. Dışa aktarma biçiminin “Markdown & CSV” olduğundan emin ol.');
+      if (!p.pages.length && !p.databases.length) throw new Error(t('importer.notion.empty'));
       const m: Record<string, DbMapping> = {};
       for (const db of p.databases) {
         const type = guessType(db.name);
@@ -44,7 +45,7 @@ export default function ImportPage() {
 
   const run = async () => {
     if (!parsed) return;
-    setBusy('Hazırlanıyor…');
+    setBusy(t('importer.notion.preparing'));
     setErr(null);
     try {
       // "Yeni alan" seçilen sütunlar için koleksiyona alan ekle (tür değerlerden tahmin edilir)
@@ -53,7 +54,7 @@ export default function ImportPage() {
         const m = mappings[db.key];
         for (const [col, target] of Object.entries(m.columns)) {
           if (target !== 'new') continue;
-          setBusy(`"${col}" alanı oluşturuluyor…`);
+          setBusy(t('importer.notion.creatingField', { col }));
           m.columns[col] = await addProp(m.type, { label: col, table: true, ...inferKind(db.rows.map((r) => r[col] ?? '')) });
         }
       }
@@ -62,7 +63,7 @@ export default function ImportPage() {
         pageType,
         existing: alive,
         upload: uploadFile,
-        onProgress: (d, t) => setBusy(`Dönüştürülüyor… ${d}/${t}`),
+        onProgress: (done, total) => setBusy(t('importer.notion.converting', { done, total })),
       });
       insertNotes(res.notes);
       if (res.routines.length) {
@@ -72,7 +73,7 @@ export default function ImportPage() {
         if (add.length) await saveSettings({ ...s, routines: [...s.routines, ...add] });
       }
       void syncNow();
-      setResult(`${res.notes.length} not aktarıldı${res.skipped ? `, daha önce aktarılmış ${res.skipped} sayfa atlandı` : ''}.`);
+      setResult(t(res.skipped ? 'importer.notion.doneSkipped' : 'importer.notion.done', { count: res.notes.length, skipped: res.skipped }));
       setParsed(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -85,28 +86,28 @@ export default function ImportPage() {
 
   return (
     <div className="page wide import">
-      <h1>⬇ İçe aktar</h1>
+      <h1>{t('importer.notion.title')}</h1>
       <h2 className="import-h">Notion</h2>
       {!parsed && (
         <>
           <ol className="steps">
-            <li>Notion’da sol menüden <b>Settings</b> → <b>Workspace</b> → <b>Export all workspace content</b> (veya tek bir sayfada ⋯ → <b>Export</b>).</li>
-            <li>Export format: <b>Markdown &amp; CSV</b> · Include content: <b>Everything</b> · <b>Include subpages</b> açık · <b>Create folders for subpages</b> açık.</li>
-            <li>İnen <b>.zip</b> dosyasını (açmadan) aşağıdan seç.</li>
+            <li>{t.rich('importer.notion.step1', { settings: <b>Settings</b>, workspace: <b>Workspace</b>, exportAll: <b>Export all workspace content</b>, export: <b>Export</b> })}</li>
+            <li>{t.rich('importer.notion.step2', { format: <b>Markdown &amp; CSV</b>, everything: <b>Everything</b>, subpages: <b>Include subpages</b>, folders: <b>Create folders for subpages</b> })}</li>
+            <li>{t.rich('importer.notion.step3', { zip: <b>.zip</b> })}</li>
           </ol>
           <label className="dropzone">
             <input type="file" accept=".zip,application/zip" onChange={(e) => void pick(e.target.files?.[0])} hidden />
-            {busy ?? 'Notion .zip dosyasını seç'}
+            {busy ?? t('importer.notion.pick')}
           </label>
-          <p className="muted small">Aynı dışa aktarımı tekrar yüklersen daha önce aktarılan sayfalar atlanır. Görseller ayarlarındaki ek seçeneğine göre Drive’ına ya da yalnızca bu cihaza kaydedilir.</p>
+          <p className="muted small">{t('importer.notion.hint')}</p>
         </>
       )}
-      {result && <div className="banner ok">{result} <a href="#/graph">Haritada gör →</a></div>}
+      {result && <div className="banner ok">{result} <a href="#/graph">{t('importer.notion.seeMap')}</a></div>}
       {err && <div className="banner warn">{err}</div>}
 
       {parsed && (
         <>
-          <p>Bulunan: <b>{parsed.databases.length}</b> veritabanı, <b>{parsed.pages.length}</b> sayfa, <b>{parsed.assets.size}</b> dosya.</p>
+          <p>{t.rich('importer.notion.found', { dbs: <b>{parsed.databases.length}</b>, pages: <b>{parsed.pages.length}</b>, files: <b>{parsed.assets.size}</b> })}</p>
           {parsed.databases.map((db) => {
             const m = maps[db.key];
             const props = TYPE_MAP[m.type].props.filter((p) => !p.back);
@@ -115,26 +116,26 @@ export default function ImportPage() {
                 <div className="row">
                   <h3>🗂 {db.name} <span className="count">{db.rows.length}</span></h3>
                   <span className="spacer" />
-                  <span className="muted small">aktarılacağı tip:</span>
+                  <span className="muted small">{t('importer.notion.targetType')}</span>
                   <select value={m.type} onChange={(e) => setType(db.key, e.target.value as TypeId)}>
-                    {TYPES.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                    {TYPES.map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.label}</option>)}
                   </select>
                 </div>
                 <table className="maptable">
-                  <thead><tr><th>Notion sütunu</th><th>Örnek</th><th>Thalamus alanı</th></tr></thead>
+                  <thead><tr><th>{t('importer.notion.colNotion')}</th><th>{t('importer.notion.colExample')}</th><th>{t('importer.notion.colField')}</th></tr></thead>
                   <tbody>
-                    <tr><td>{db.titleColumn}</td><td className="muted clip">{db.rows[0]?.[db.titleColumn]}</td><td><b>Başlık</b></td></tr>
+                    <tr><td>{db.titleColumn}</td><td className="muted clip">{db.rows[0]?.[db.titleColumn]}</td><td><b>{t('importer.notion.titleField')}</b></td></tr>
                     {Object.entries(m.columns).map(([col, target]) => (
                       <tr key={col}>
                         <td>{col}</td>
                         <td className="muted clip">{db.rows.find((r) => r[col])?.[col] ?? ''}</td>
                         <td>
                           <select value={target} onChange={(e) => setMaps({ ...maps, [db.key]: { ...m, columns: { ...m.columns, [col]: e.target.value } } })}>
-                            {props.map((p) => <option key={p.key} value={p.key}>{p.label}{p.kind === 'relation' ? ' (bağlantı)' : ''}</option>)}
-                            {m.type === 'daily' && <option value="routine">Rutin (işaret kutusu)</option>}
-                            <option value="new">＋ Yeni alan olarak ekle</option>
-                            <option value="extra">Ek bilgi olarak sakla</option>
-                            <option value="skip">Aktarma</option>
+                            {props.map((p) => <option key={p.key} value={p.key}>{p.label}{p.kind === 'relation' ? t('importer.notion.relation') : ''}</option>)}
+                            {m.type === 'daily' && <option value="routine">{t('importer.notion.routine')}</option>}
+                            <option value="new">{t('importer.notion.newField')}</option>
+                            <option value="extra">{t('importer.notion.extra')}</option>
+                            <option value="skip">{t('importer.notion.skip')}</option>
                           </select>
                         </td>
                       </tr>
@@ -147,18 +148,18 @@ export default function ImportPage() {
           {standalone > 0 && (
             <section className="dbmap">
               <div className="row">
-                <h3>📄 Veritabanı dışındaki sayfalar <span className="count">{standalone}</span></h3>
+                <h3>{t('importer.notion.standalone')} <span className="count">{standalone}</span></h3>
                 <span className="spacer" />
                 <select value={pageType} onChange={(e) => setPageType(e.target.value as TypeId)}>
-                  {TYPES.map((t) => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                  {TYPES.map((ty) => <option key={ty.id} value={ty.id}>{ty.icon} {ty.label}</option>)}
                 </select>
               </div>
             </section>
           )}
-          <p className="muted small">Bağlantı alanlarına (ör. Yazar, Konular) eşlenen sütunlardaki adlar ayrı notlar olarak oluşturulur ve haritada birbirine bağlanır. Sayfalar arasındaki Notion bağlantıları <code>[[ ]]</code> bağlantısına çevrilir.</p>
+          <p className="muted small">{t.rich('importer.notion.relHint', { code: <code>[[ ]]</code> })}</p>
           <div className="row">
-            <button className="btn ghost" onClick={() => setParsed(null)} disabled={Boolean(busy)}>Vazgeç</button>
-            <button className="btn primary" onClick={() => void run()} disabled={Boolean(busy)}>{busy ?? 'İçe aktar'}</button>
+            <button className="btn ghost" onClick={() => setParsed(null)} disabled={Boolean(busy)}>{t('common.cancel')}</button>
+            <button className="btn primary" onClick={() => void run()} disabled={Boolean(busy)}>{busy ?? t('importer.notion.import')}</button>
           </div>
         </>
       )}
