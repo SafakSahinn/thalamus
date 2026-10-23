@@ -1,5 +1,6 @@
 // Alan değerleri: kayıtlı değer ya da hesaplanan (formül, toplama, oluşturulma/düzenlenme zamanı).
 
+import { t } from '../i18n';
 import { evaluate, FormulaError, toDate, toNum, toStr } from './formula';
 import { norm } from './links';
 import { builtinSourceLabel, relationIds, typeOf, type Note, type PropDef } from './types';
@@ -43,13 +44,13 @@ export function propValue(note: Note, def: PropDef, notes: Record<string, Note>,
       return note.updated_at;
     case 'formula': {
       if (!def.formula?.trim()) return '';
-      if (depth > MAX_DEPTH) return { error: 'Formüller birbirine çok derin bağlı' };
+      if (depth > MAX_DEPTH) return { error: t('schema.formula.deep') };
       try {
         return evaluate(def.formula, {
           prop: (name) => {
-            if (norm(name) === 'ad' || norm(name) === 'baslik' || name === 'title') return note.title;
+            if (norm(name) === 'ad' || norm(name) === 'baslik' || name === 'title' || norm(name) === norm(t('schema.editor.nameField'))) return note.title;
             const p = findProp(note, name);
-            if (!p) throw new FormulaError(`"${name}" adında alan yok`);
+            if (!p) throw new FormulaError(t('schema.formula.noField', { name }));
             const v = propValue(note, p, notes, depth + 1);
             if (p.kind === 'relation') return relationIds(v).map((id) => notes[id]?.title ?? '').filter(Boolean);
             if (v && typeof v === 'object' && 'error' in (v as object)) throw new FormulaError((v as { error: string }).error);
@@ -100,18 +101,8 @@ function rollup(values: unknown[], fn: string): unknown {
   }
 }
 
-export const ROLLUP_FNS: { id: string; label: string }[] = [
-  { id: 'list', label: 'Değerleri listele' },
-  { id: 'count', label: 'Say' },
-  { id: 'sum', label: 'Topla' },
-  { id: 'avg', label: 'Ortalama' },
-  { id: 'min', label: 'En küçük' },
-  { id: 'max', label: 'En büyük' },
-  { id: 'checked', label: 'İşaretli sayısı' },
-  { id: 'percent_checked', label: 'İşaretli yüzdesi' },
-  { id: 'earliest', label: 'En erken tarih' },
-  { id: 'latest', label: 'En geç tarih' },
-];
+const ROLLUP_IDS = ['list', 'count', 'sum', 'avg', 'min', 'max', 'checked', 'percent_checked', 'earliest', 'latest'] as const;
+export const ROLLUP_FNS: { id: string; readonly label: string }[] = ROLLUP_IDS.map((id) => ({ id, get label() { return t(`schema.rollup.${id}`); } }));
 
 /** Görüntülemek için metne çevir */
 export function showValue(v: unknown): string {

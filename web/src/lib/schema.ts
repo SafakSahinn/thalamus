@@ -1,6 +1,7 @@
 // Koleksiyon ve alan düzenleme: ayarlardaki TypeSettings üzerinde değişiklik yapar
 // (ayarlar Drive ile eşitlendiği için bütün cihazlara yayılır).
 
+import { t as tr, tSource, type MsgKey } from '../i18n';
 import { assignUids, saveSettings, uid, updateNote, useStore } from './store';
 import {
   EMPTY_TYPE_SETTINGS, isBuiltinType, typeOf, type PropDef, type PropOverride, type TypeDef, type TypeSettings,
@@ -24,7 +25,7 @@ const isCustomProp = (ts: TypeSettings, typeId: string, key: string) =>
 function propList(ts: TypeSettings, typeId: string): PropDef[] {
   if (isBuiltinType(typeId)) return (ts.extra[typeId] ??= []);
   const t = ts.custom.find((x) => x.id === typeId);
-  if (!t) throw new Error('Koleksiyon bulunamadı');
+  if (!t) throw new Error(tr('schema.errors.notFound'));
   return t.props;
 }
 
@@ -33,7 +34,7 @@ export async function createCollection(label: string, icon = '🗂️', color = 
   const id = `c_${short()}`;
   const t: TypeDef = {
     id, label, plural: label, icon, color,
-    props: [{ key: 'tags', label: 'Etiketler', kind: 'multiselect', options: [], table: true, custom: true }],
+    props: [{ key: 'tags', label: tr('schema.defaults.tags'), kind: 'multiselect', options: [], table: true, custom: true }],
   };
   ts.custom.push(t);
   await commit(ts);
@@ -58,8 +59,8 @@ export async function updateCollection(id: string, patch: Partial<Pick<TypeDef, 
 export async function setSubItems(typeId: string, on: boolean) {
   if (!on) return updateCollection(typeId, { subItems: undefined });
   const t = typeOf(typeId);
-  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && p.backLabel === 'Alt öğeler' && p.target?.[0] === typeId);
-  const key = existing?.key ?? (await addProp(typeId, { label: 'Üst öğe', kind: 'relation', target: [typeId], backLabel: 'Alt öğeler' }));
+  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && anyLang('schema.defaults.children', p.backLabel) && p.target?.[0] === typeId);
+  const key = existing?.key ?? (await addProp(typeId, { label: tr('schema.defaults.parent'), kind: 'relation', target: [typeId], backLabel: tr('schema.defaults.children') }));
   await updateCollection(typeId, { subItems: key });
 }
 
@@ -67,14 +68,14 @@ export async function setSubItems(typeId: string, on: boolean) {
 export async function setDependencies(typeId: string, on: boolean) {
   if (!on) return updateCollection(typeId, { blockedBy: undefined });
   const t = typeOf(typeId);
-  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && p.backLabel === 'Engelledikleri' && p.target?.[0] === typeId);
-  const key = existing?.key ?? (await addProp(typeId, { label: 'Bekledikleri', kind: 'relation', target: [typeId], backLabel: 'Engelledikleri' }));
+  const existing = t.props.find((p) => p.kind === 'relation' && !p.back && anyLang('schema.defaults.blocks', p.backLabel) && p.target?.[0] === typeId);
+  const key = existing?.key ?? (await addProp(typeId, { label: tr('schema.defaults.waitsFor'), kind: 'relation', target: [typeId], backLabel: tr('schema.defaults.blocks') }));
   await updateCollection(typeId, { blockedBy: key });
 }
 
 /** Kullanıcı koleksiyonunu siler; içindeki notlar "Notlar"a taşınır (silinmez). */
 export async function deleteCollection(id: string) {
-  if (isBuiltinType(id)) throw new Error('Hazır koleksiyonlar silinemez');
+  if (isBuiltinType(id)) throw new Error(tr('schema.errors.builtin'));
   for (const n of Object.values(useStore.getState().notes)) {
     if (n.type === id) updateNote(n.id, { type: 'note' });
   }
@@ -152,25 +153,30 @@ export async function renameOption(typeId: string, def: PropDef, from: string, t
   }
 }
 
-export const PROP_KINDS: { id: PropDef['kind'] | 'status'; label: string; icon: string }[] = [
-  { id: 'text', label: 'Metin', icon: 'Aa' },
-  { id: 'longtext', label: 'Uzun metin', icon: '¶' },
-  { id: 'number', label: 'Sayı', icon: '#' },
-  { id: 'status', label: 'Durum', icon: '◐' },
-  { id: 'select', label: 'Seçim', icon: '◉' },
-  { id: 'multiselect', label: 'Çoklu seçim', icon: '☰' },
-  { id: 'date', label: 'Tarih', icon: '📅' },
-  { id: 'checkbox', label: 'Onay kutusu', icon: '☑' },
-  { id: 'rating', label: 'Puan (yıldız)', icon: '★' },
-  { id: 'url', label: 'Bağlantı / dosya', icon: '🔗' },
-  { id: 'email', label: 'E-posta', icon: '✉' },
-  { id: 'phone', label: 'Telefon', icon: '📞' },
-  { id: 'relation', label: 'Bağlantı (başka notlar)', icon: '↗' },
-  { id: 'files', label: 'Dosyalar', icon: '📎' },
-  { id: 'uid', label: 'Benzersiz numara', icon: '№' },
-  { id: 'button', label: 'Düğme', icon: '▶' },
-  { id: 'formula', label: 'Formül', icon: 'Σ' },
-  { id: 'rollup', label: 'Toplama (rollup)', icon: '∑' },
-  { id: 'created', label: 'Oluşturulma zamanı', icon: '🕓' },
-  { id: 'updated', label: 'Son düzenlenme', icon: '✎' },
+/** Bu metin etkin dilde ya da kaynak dilde bu anahtarın karşılığı mı (dil değiştirilmiş hesaplarda eski adlar için) */
+const anyLang = (key: MsgKey, s: string | undefined) => s !== undefined && (s === tr(key) || s === tSource(key));
+
+type KindId = PropDef['kind'] | 'status';
+const kind = (id: KindId, icon: string) => ({ id, icon, get label() { return tr(`schema.kinds.${id}`); } });
+export const PROP_KINDS: { id: KindId; readonly label: string; icon: string }[] = [
+  kind('text', 'Aa'),
+  kind('longtext', '¶'),
+  kind('number', '#'),
+  kind('status', '◐'),
+  kind('select', '◉'),
+  kind('multiselect', '☰'),
+  kind('date', '📅'),
+  kind('checkbox', '☑'),
+  kind('rating', '★'),
+  kind('url', '🔗'),
+  kind('email', '✉'),
+  kind('phone', '📞'),
+  kind('relation', '↗'),
+  kind('files', '📎'),
+  kind('uid', '№'),
+  kind('button', '▶'),
+  kind('formula', 'Σ'),
+  kind('rollup', '∑'),
+  kind('created', '🕓'),
+  kind('updated', '✎'),
 ];

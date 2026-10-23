@@ -1,3 +1,4 @@
+import { localeTag, t } from '../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { propValue, showValue } from '../lib/compute';
 import { relTime } from '../lib/format';
@@ -8,7 +9,7 @@ import { fetchImageBlob, getCoverMode, searchBookCovers, searchPosters, type Cov
 async function saveCover(url: string, title: string): Promise<string> {
   const blob = await fetchImageBlob(url);
   const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-  const safe = title.normalize('NFD').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'kapak';
+  const safe = title.normalize('NFD').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || t('props.coverFile');
   return uploadFile(blob, `kapak-${safe}.${ext}`);
 }
 import { displayTitle, optionHue, noteIcon } from '../lib/format';
@@ -16,7 +17,7 @@ import { fillFromPdf, pdfFillMessage } from '../lib/paperImport';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
 import { createNote, indexOf, resolveFileUrl, runButton, setProp, uploadFile, useIndex, useStore } from '../lib/store';
-import { fileRefs, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
+import { fileRefs, optionLabel, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
 
 /** Seçenek rengi: Durum alanında gruba göre (yapılacak gri, sürüyor mavi, bitti yeşil), diğerlerinde ada göre */
 export function chipStyle(text: string, def?: PropDef): { className: string; style: React.CSSProperties } {
@@ -28,13 +29,13 @@ export function chipStyle(text: string, def?: PropDef): { className: string; sty
 
 export function Chip({ text, def }: { text: string; def?: PropDef }) {
   const { className, style } = chipStyle(text, def);
-  return <span className={className} style={style}>{def?.statusGroups && <span className="status-dot" />}{text}</span>;
+  return <span className={className} style={style}>{def?.statusGroups && <span className="status-dot" />}{optionLabel(text)}</span>;
 }
 
 /** Düğme alanı: tıklayınca bu kayıtta tanımlı eylemler uygulanır */
 export function PropButton({ note, def }: { note: Note; def: PropDef }) {
   const [done, setDone] = useState(false);
-  if (!def.actions?.length) return <span className="muted small">Bu düğmeye ⚙ Alanlar’dan bir eylem ekle.</span>;
+  if (!def.actions?.length) return <span className="muted small">{t('props.buttonNoAction')}</span>;
   return (
     <button
       type="button"
@@ -73,11 +74,11 @@ function FilesInput({ note, def }: { note: Note; def: PropDef }) {
     <div className="relation files-input">
       {files.map((f) => (
         <span key={f.src} className="relchip">
-          <button type="button" className="notechip file-chip" title="Aç" onClick={() => void resolveFileUrl(f.src).then((u) => window.open(u, '_blank', 'noopener'))}>📎 {f.name}</button>
-          <button className="x" title="Kaldır" onClick={() => setProp(note.id, def.key, files.filter((x) => x.src !== f.src))}>×</button>
+          <button type="button" className="notechip file-chip" title={t('common.open')} onClick={() => void resolveFileUrl(f.src).then((u) => window.open(u, '_blank', 'noopener'))}>📎 {f.name}</button>
+          <button className="x" title={t('common.remove')} onClick={() => setProp(note.id, def.key, files.filter((x) => x.src !== f.src))}>×</button>
         </span>
       ))}
-      <button type="button" className="btn small" disabled={busy} onClick={() => input.current?.click()}>{busy ? 'Yükleniyor…' : '+ Dosya ekle'}</button>
+      <button type="button" className="btn small" disabled={busy} onClick={() => input.current?.click()}>{busy ? t('common.loading') : t('props.addFile')}</button>
       <input ref={input} type="file" multiple hidden onChange={(e) => void add(e.target.files)} />
     </div>
   );
@@ -137,13 +138,13 @@ function RelationInput({ note, def }: { note: Note; def: PropDef }) {
       {linked.map((n) => (
         <span key={n.id} className="relchip">
           <NoteChip note={n} />
-          <button className="x" title="Kaldır" onClick={() => setProp(note.id, def.key, ids.filter((x) => x !== n.id))}>×</button>
+          <button className="x" title={t('common.remove')} onClick={() => setProp(note.id, def.key, ids.filter((x) => x !== n.id))}>×</button>
         </span>
       ))}
       <span className="relinput">
         <input
           value={q}
-          placeholder={linked.length ? (def.single ? 'değiştir…' : '+') : `${TYPE_MAP[targets[0]].label} ekle…`}
+          placeholder={linked.length ? (def.single ? t('props.change') : '+') : t('props.addOf', { label: TYPE_MAP[targets[0]].label })}
           onChange={(e) => {
             setQ(e.target.value);
             setOpen(true);
@@ -168,7 +169,7 @@ function RelationInput({ note, def }: { note: Note; def: PropDef }) {
             ))}
             {canCreate && (
               <button className={sel === options.length ? 'sel' : ''} onMouseDown={(e) => { e.preventDefault(); create(); }}>
-                <span className="ic">＋</span><span className="lb">Yeni {TYPE_MAP[targets[0]].label.toLocaleLowerCase('tr')}: “{q.trim()}”</span>
+                <span className="ic">＋</span><span className="lb">{t('props.newOf', { label: TYPE_MAP[targets[0]].label.toLocaleLowerCase(localeTag()), q: q.trim() })}</span>
               </button>
             )}
           </div>
@@ -211,28 +212,28 @@ function WordList({ note, def }: { note: Note; def: PropDef }) {
             <input
               className="meaning"
               defaultValue={(wd.props.meaning as string) ?? ''}
-              placeholder="anlamı…"
+              placeholder={t('props.meaning')}
               onBlur={(e) => e.target.value !== (wd.props.meaning ?? '') && setProp(wd.id, 'meaning', e.target.value)}
             />
             {others.length > 0 && (
               <span className="also" title={others.map((id) => displayTitle(notes[id])).join(', ')}>
-                +{others.length} yerde
+                {t('props.elsewhere', { count: others.length })}
               </span>
             )}
-            <button className="x" title="Bu kaynaktan kaldır (sözlükte kalır)" onClick={() => setProp(note.id, def.key, ids.filter((x) => x !== wd.id))}>×</button>
+            <button className="x" title={t('props.removeWord')} onClick={() => setProp(note.id, def.key, ids.filter((x) => x !== wd.id))}>×</button>
           </div>
         );
       })}
       <div className="wordrow add">
-        <input ref={wordRef} className="word" value={w} placeholder="Yeni kelime" onChange={(e) => setW(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
+        <input ref={wordRef} className="word" value={w} placeholder={t('props.newWord')} onChange={(e) => setW(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
         <input
           className="meaning"
           value={m}
-          placeholder={existing ? `Sözlükte var: ${(existing.props.meaning as string) || 'anlamı boş'}` : 'anlamı (isteğe bağlı)'}
+          placeholder={existing ? t('props.inDict', { meaning: (existing.props.meaning as string) || t('props.emptyMeaning') }) : t('props.meaningOptional')}
           onChange={(e) => setM(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
         />
-        <button className="btn small" onClick={add} disabled={!w.trim()}>Ekle</button>
+        <button className="btn small" onClick={add} disabled={!w.trim()}>{t('common.add')}</button>
       </div>
     </div>
   );
@@ -293,15 +294,15 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
   return (
     <div className="cover-finder" ref={ref}>
       <div className="row">
-        <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? 'Kitap adı ve yazar' : 'Film adı'} />
-        <button type="button" className="btn small" onClick={() => void run(q)}>Ara</button>
+        <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? t('props.finder.bookQ') : t('props.finder.movieQ')} />
+        <button type="button" className="btn small" onClick={() => void run(q)}>{t('props.finder.search')}</button>
       </div>
-      <p className="muted small">{isBook ? 'Google Books, Open Library ve Wikipedia’dan.' : 'Wikipedia’dan.'} {saving ? 'Görsel indirilip kaydediliyor…' : 'Seçtiğin görsel kapak olur'}{isBook ? '; yazar ve sayfa sayısı boşsa onlar da doldurulur' : ''}.</p>
+      <p className="muted small">{isBook ? t('props.finder.bookSrc') : t('props.finder.movieSrc')} {saving ? t('props.finder.saving') : t('props.finder.pick')}{isBook ? t('props.finder.bookFill') : ''}.</p>
       {err && <p className="err small">{err}</p>}
       {hits === null ? (
-        <p className="muted small">Aranıyor…</p>
+        <p className="muted small">{t('props.finder.searching')}</p>
       ) : hits.length === 0 ? (
-        <p className="muted small">Sonuç bulunamadı. Adı farklı yazmayı dene.</p>
+        <p className="muted small">{t('props.finder.none')}</p>
       ) : (
         <div className="cf-grid">
           {hits.map((h) => (
@@ -359,7 +360,7 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
         if (def.key === 'pdf' && note.type === 'paper') {
           setReading(true);
           const r = await fillFromPdf(note.id, await f.arrayBuffer()).catch((e: Error) => {
-            setSaveErr(`PDF yüklendi ama içinden bilgi okunamadı: ${e.message}`);
+            setSaveErr(t('props.pdfNoInfo', { error: e.message }));
             return null;
           });
           if (r) setPdfMsg(pdfFillMessage(r));
@@ -378,21 +379,21 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
     <div className="urlinput">
       {def.key === 'cover' && v && <CoverThumb src={v} />}
       {isFile ? (
-        <span className="muted">📎 {decodeURIComponent(v.split('#')[1] ?? 'Dosya')}</span>
+        <span className="muted">📎 {decodeURIComponent(v.split('#')[1] ?? t('props.file'))}</span>
       ) : (
         <input key={note.id + def.key} defaultValue={v} placeholder="https://…" onBlur={(e) => e.target.value.trim() !== v && setProp(note.id, def.key, e.target.value.trim())} />
       )}
-      {v && <button className="btn small ghost" onClick={() => void open()}>Aç ↗</button>}
-      {isFile && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>Kaldır</button>}
+      {v && <button className="btn small ghost" onClick={() => void open()}>{t('props.open')}</button>}
+      {isFile && <button className="btn small ghost" onClick={() => setProp(note.id, def.key, '')}>{t('common.remove')}</button>}
       {(def.key === 'cover' || (!v && def.key === 'pdf')) && (
-        <button className="btn small ghost" disabled={busy} onClick={upload}>{reading ? 'PDF okunuyor…' : busy ? 'Yükleniyor…' : v ? 'Değiştir' : 'Dosya yükle'}</button>
+        <button className="btn small ghost" disabled={busy} onClick={upload}>{reading ? t('props.readingPdf') : busy ? t('common.loading') : v ? t('props.replace') : t('props.upload')}</button>
       )}
       {def.key === 'cover' && /^https?:/.test(v) && (
-        <button className="btn small ghost" disabled={busy} onClick={() => void keep()} title="Görseli indirip Drive’ına kaydeder; site kaldırsa bile kapak kaybolmaz">💾 Drive’a kaydet</button>
+        <button className="btn small ghost" disabled={busy} onClick={() => void keep()} title={t('props.keepTitle')}>{t('props.keep')}</button>
       )}
       {saveErr && <span className="err small">{saveErr}</span>}
       {pdfMsg && <span className="muted small">✓ {pdfMsg}</span>}
-      {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? 'Kapak bul' : 'Afiş bul'}</button>}
+      {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? t('props.findCover') : t('props.findPoster')}</button>}
       {finder && <CoverFinder note={note} onClose={() => setFinder(false)} />}
     </div>
   );
@@ -411,19 +412,19 @@ export function AddToCalendar({ note, def, date }: { note: Note; def: PropDef; d
   const ics = () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([icsFile(note, def, date)], { type: 'text/calendar;charset=utf-8' }));
-    a.download = `${(note.title || 'etkinlik').replace(/[\\/:*?"<>|]+/g, '-')} - ${def.label}.ics`;
+    a.download = `${(note.title || t('props.icsName')).replace(/[\\/:*?"<>|]+/g, '-')} - ${def.label}.ics`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     setOpen(false);
   };
   return (
     <span className="cal-btn" ref={ref}>
-      <button type="button" className="iconbtn" title="Takvime ekle (hatırlatma için)" onClick={() => setOpen(!open)}>📅</button>
+      <button type="button" className="iconbtn" title={t('props.addToCal')} onClick={() => setOpen(!open)}>📅</button>
       {open && (
         <div className="tb-pop cal-pop">
-          <a className="bm-row" href={googleCalendarUrl(note, def, date)} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>Google Takvim’e ekle ↗</a>
-          <button type="button" className="bm-row" onClick={ics}>Apple / Outlook takvimine ekle (.ics)</button>
-          <p className="muted small">Takvim uygulaman tarihten önce sana hatırlatır.</p>
+          <a className="bm-row" href={googleCalendarUrl(note, def, date)} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>{t('props.google')}</a>
+          <button type="button" className="bm-row" onClick={ics}>{t('props.ics')}</button>
+          <p className="muted small">{t('props.calHint')}</p>
         </div>
       )}
     </span>
@@ -453,19 +454,19 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
     case 'phone':
       return (
         <div className="urlinput">
-          <input key={k} type={def.kind === 'email' ? 'email' : 'tel'} defaultValue={(v as string) ?? ''} placeholder="Boş" onBlur={(e) => e.target.value.trim() !== (v ?? '') && setProp(note.id, def.key, e.target.value.trim())} />
+          <input key={k} type={def.kind === 'email' ? 'email' : 'tel'} defaultValue={(v as string) ?? ''} placeholder={t('props.empty')} onBlur={(e) => e.target.value.trim() !== (v ?? '') && setProp(note.id, def.key, e.target.value.trim())} />
           {typeof v === 'string' && v && <a className="btn small ghost" href={`${def.kind === 'email' ? 'mailto' : 'tel'}:${v}`}>{def.kind === 'email' ? '✉' : '📞'}</a>}
         </div>
       );
     case 'text':
-      return <input key={k} defaultValue={(v as string) ?? ''} placeholder="Boş" onBlur={(e) => e.target.value !== (v ?? '') && setProp(note.id, def.key, e.target.value)} />;
+      return <input key={k} defaultValue={(v as string) ?? ''} placeholder={t('props.empty')} onBlur={(e) => e.target.value !== (v ?? '') && setProp(note.id, def.key, e.target.value)} />;
     case 'longtext':
       return (
         <textarea
           key={k}
           rows={1}
           defaultValue={(v as string) ?? ''}
-          placeholder="Boş"
+          placeholder={t('props.empty')}
           onInput={(e) => autosize(e.currentTarget)}
           ref={(el) => {
             if (el) autosize(el);
@@ -474,7 +475,7 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
         />
       );
     case 'number':
-      return <input key={k} type="number" defaultValue={(v as number) ?? ''} placeholder="Boş" onBlur={(e) => setProp(note.id, def.key, e.target.value === '' ? undefined : Number(e.target.value))} />;
+      return <input key={k} type="number" defaultValue={(v as number) ?? ''} placeholder={t('props.empty')} onBlur={(e) => setProp(note.id, def.key, e.target.value === '' ? undefined : Number(e.target.value))} />;
     case 'date':
       return (
         <div className="urlinput">
@@ -498,8 +499,8 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
       return (
         <select value={(v as string) ?? ''} onChange={(e) => setProp(note.id, def.key, e.target.value)} className={v ? `chip-select ${chipStyle(v as string, def).className.replace('chip', '')}` : ''} style={v ? chipStyle(v as string, def).style : undefined}>
           <option value="">—</option>
-          {def.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-          {typeof v === 'string' && v && !def.options?.includes(v) && <option value={v}>{v}</option>}
+          {def.options?.map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
+          {typeof v === 'string' && v && !def.options?.includes(v) && <option value={v}>{optionLabel(v)}</option>}
         </select>
       );
     case 'multiselect': {
@@ -511,7 +512,7 @@ export function PropValue({ note, def }: { note: Note; def: PropDef }) {
           ))}
           <select value="" onChange={(e) => e.target.value && setProp(note.id, def.key, [...arr, e.target.value])}>
             <option value="">+</option>
-            {def.options?.filter((o) => !arr.includes(o)).map((o) => <option key={o}>{o}</option>)}
+            {def.options?.filter((o) => !arr.includes(o)).map((o) => <option key={o} value={o}>{optionLabel(o)}</option>)}
           </select>
         </div>
       );
@@ -534,7 +535,7 @@ function ExtraProps({ note }: { note: Note }) {
     <>
       {Object.entries(extra).map(([k, val]) => (
         <div className="prop" key={k}>
-          <label title="Notion'dan aktarılan alan">{k}</label>
+          <label title={t('props.imported')}>{k}</label>
           <div className="val muted">{val}</div>
         </div>
       ))}
@@ -564,7 +565,7 @@ export default function PropertyPanel({ note }: { note: Note }) {
       <ExtraProps note={note} />
       {hidden.length > 0 && (
         <button className="btn ghost small more" onClick={() => setShowEmpty((s) => !s)}>
-          {showEmpty ? 'Boş alanları gizle' : `+ ${hidden.length} alan daha`}
+          {showEmpty ? t('props.hideEmpty') : t('props.moreFields', { count: hidden.length })}
         </button>
       )}
     </div>

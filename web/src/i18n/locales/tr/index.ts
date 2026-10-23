@@ -12,6 +12,8 @@ import pages from './pages';
 import palette from './palette';
 import panels from './panels';
 import plugins from './plugins';
+import props from './props';
+import schema from './schema';
 import settings from './settings';
 import sidebar from './sidebar';
 import time from './time';
@@ -33,6 +35,8 @@ export default {
   palette,
   panels,
   plugins,
+  props,
+  schema,
   settings,
   sidebar,
   time,

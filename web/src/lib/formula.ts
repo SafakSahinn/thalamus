@@ -7,7 +7,16 @@
 //
 // Değerler: sayı, metin, mantıksal, tarih (Date) ve liste. Hata durumunda FormulaError fırlatılır.
 
+import { t } from '../i18n';
+import { optionLabel } from './types';
+
 export class FormulaError extends Error {}
+
+/** Eşitlik: hazır seçenekler kaynak dilde saklandığından ekranda görünen (çevrilmiş) adıyla da eşleşir */
+const strEq = (a: unknown, b: unknown) => {
+  const [x, y] = [toStr(a), toStr(b)];
+  return x === y || optionLabel(x) === y || x === optionLabel(y);
+};
 
 type Tok = { t: 'num'; v: number } | { t: 'str'; v: string } | { t: 'id'; v: string } | { t: 'op'; v: string };
 
@@ -33,7 +42,7 @@ function lex(src: string): Tok[] {
         if (src[j] === '\\' && j + 1 < src.length) { v += src[j + 1]; j += 2; continue; }
         v += src[j++];
       }
-      if (j >= src.length) throw new FormulaError('Kapatılmamış tırnak');
+      if (j >= src.length) throw new FormulaError(t('schema.formula.unclosed'));
       out.push({ t: 'str', v });
       i = j + 1;
       continue;
@@ -49,7 +58,7 @@ function lex(src: string): Tok[] {
       continue;
     }
     const op = OPS.find((o) => src.startsWith(o, i));
-    if (!op) throw new FormulaError(`Beklenmeyen karakter: ${c}`);
+    if (!op) throw new FormulaError(t('schema.formula.badChar', { c }));
     out.push({ t: 'op', v: op });
     i += op.length;
   }
@@ -69,12 +78,12 @@ function parse(toks: Tok[]): Node {
   const peek = () => toks[i];
   const isOp = (v: string) => peek()?.t === 'op' && peek()!.v === v;
   const expect = (v: string) => {
-    if (!isOp(v)) throw new FormulaError(`"${v}" bekleniyordu`);
+    if (!isOp(v)) throw new FormulaError(t('schema.formula.expected', { v }));
     i++;
   };
   const primary = (): Node => {
     const tk = toks[i++];
-    if (!tk) throw new FormulaError('İfade eksik');
+    if (!tk) throw new FormulaError(t('schema.formula.missing'));
     if (tk.t === 'num' || tk.t === 'str') return { k: 'lit', v: tk.v };
     if (tk.t === 'id') {
       if (tk.v === 'true' || tk.v === 'false') return { k: 'lit', v: tk.v === 'true' };
@@ -88,7 +97,7 @@ function parse(toks: Tok[]): Node {
         expect(')');
         return { k: 'call', name: tk.v, args };
       }
-      throw new FormulaError(`Bilinmeyen ad: ${tk.v} (alan için prop("Ad") yaz)`);
+      throw new FormulaError(t('schema.formula.unknownName', { name: tk.v }));
     }
     if (tk.v === '(') {
       const e = expr(0);
@@ -96,7 +105,7 @@ function parse(toks: Tok[]): Node {
       return e;
     }
     if (tk.v === '-' || tk.v === '!') return { k: 'un', op: tk.v, a: unary(tk.v) };
-    throw new FormulaError(`Beklenmeyen: ${tk.v}`);
+    throw new FormulaError(t('schema.formula.unexpected', { v: tk.v }));
   };
   const unary = (op: string): Node => (op === '-' ? expr(7) : expr(2.5));
   const expr = (min: number): Node => {
@@ -113,7 +122,7 @@ function parse(toks: Tok[]): Node {
     return left;
   };
   const tree = expr(0);
-  if (i < toks.length) throw new FormulaError(`Fazladan: ${(toks[i] as { v: unknown }).v}`);
+  if (i < toks.length) throw new FormulaError(t('schema.formula.extra', { v: String((toks[i] as { v: unknown }).v) }));
   return tree;
 }
 
@@ -225,10 +234,10 @@ function evalNode(n: Node, ctx: FormulaCtx): unknown {
       return n.v;
     case 'call': {
       const f = FUNCS[n.name];
-      if (!f) throw new FormulaError(`Bilinmeyen işlev: ${n.name}()`);
+      if (!f) throw new FormulaError(t('schema.formula.unknownFn', { name: n.name }));
       // if() yalnızca seçilen dalı değerlendirsin
       if (n.name === 'if') {
-        if (n.args.length < 2) throw new FormulaError('if(koşul, doğruysa, yanlışsa)');
+        if (n.args.length < 2) throw new FormulaError(t('schema.formula.ifUsage'));
         return truthy(evalNode(n.args[0], ctx)) ? evalNode(n.args[1], ctx) : n.args[2] ? evalNode(n.args[2], ctx) : '';
       }
       return f(n.args.map((a) => evalNode(a, ctx)), ctx);
@@ -253,13 +262,13 @@ function evalNode(n: Node, ctx: FormulaCtx): unknown {
         case '*': return toNum(a) * toNum(b);
         case '/': {
           const d = toNum(b);
-          if (d === 0) throw new FormulaError('Sıfıra bölme');
+          if (d === 0) throw new FormulaError(t('schema.formula.divZero'));
           return toNum(a) / d;
         }
         case '%': return toNum(a) % toNum(b);
         case '^': return toNum(a) ** toNum(b);
-        case '==': return toStr(a) === toStr(b);
-        case '!=': return toStr(a) !== toStr(b);
+        case '==': return strEq(a, b);
+        case '!=': return !strEq(a, b);
         case '>': return cmp(a, b) > 0;
         case '<': return cmp(a, b) < 0;
         case '>=': return cmp(a, b) >= 0;
@@ -267,7 +276,7 @@ function evalNode(n: Node, ctx: FormulaCtx): unknown {
       }
     }
   }
-  throw new FormulaError('Geçersiz ifade');
+  throw new FormulaError(t('schema.formula.invalid'));
 }
 
 function cmp(a: unknown, b: unknown) {
