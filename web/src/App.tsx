@@ -8,7 +8,6 @@ import CommentsPanel from './components/CommentsPanel';
 import { startReminders } from './lib/notify';
 import { watchTimer } from './lib/timer';
 import QuickCapture from './components/QuickCapture';
-import StickyNotes from './components/StickyNotes';
 import ContextMenu from './components/ContextMenu';
 import ErrorBoundary from './components/ErrorBoundary';
 import Tour from './components/Tour';
@@ -23,6 +22,7 @@ import Home, { homeContextMenu } from './pages/Home';
 import Login from './pages/Login';
 import NotePage from './pages/NotePage';
 import { go } from './lib/router';
+import { useInstalled } from './lib/plugins';
 
 const GraphPage = lazy(() => import('./pages/GraphPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
@@ -36,6 +36,9 @@ const ImportPage = lazy(() => import('./pages/ImportPage'));
 const TrashPage = lazy(() => import('./pages/TrashPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const SharedPage = lazy(() => import('./pages/SharedPage'));
+const MarketPage = lazy(() => import('./pages/MarketPage'));
+// Eklentiler: kurulu değilse kodu hiç yüklenmez
+const StickyNotes = lazy(() => import('./components/StickyNotes'));
 
 export default function App() {
   const account = useStore((s) => s.account);
@@ -44,6 +47,7 @@ export default function App() {
   useStore((s) => s.settings.types);
   const route = parse(useHash());
   const [drawer, setDrawer] = useState(false);
+  const sticky = useInstalled('sticky');
 
   useEffect(() => {
     if (!cloud) void initLocal();
@@ -85,6 +89,7 @@ export default function App() {
     case 'settings': page = <SettingsPage />; break;
     case 'import': page = <ImportPage />; break;
     case 'trash': page = <TrashPage />; break;
+    case 'market': page = <MarketPage />; break;
     case 'legal': page = <LegalPage kind={route.kind} />; break;
   }
 
@@ -111,7 +116,7 @@ export default function App() {
       <Tour />
       <CommentsPanel />
       <QuickCapture />
-      <StickyNotes home={route.name === 'home'} />
+      {sticky && <Suspense fallback={null}><StickyNotes home={route.name === 'home'} /></Suspense>}
       <ContextMenu />
       <Shortcuts />
       <Peek />

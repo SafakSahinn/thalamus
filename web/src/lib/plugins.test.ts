@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+import { installedList } from './plugins';
+import { DEFAULT_SETTINGS, type Settings } from './types';
+
+const s = (extra: Partial<Settings>): Settings => ({ ...DEFAULT_SETTINGS, ...extra });
+
+describe('installedList', () => {
+  it('yeni hesapta hiçbir eklenti kurulu değil', () => {
+    expect(installedList(s({}))).toEqual([]);
+  });
+
+  it('market öncesi hesapta kullanılanlar kurulu sayılır', () => {
+    const sticky = { id: 'a', text: '', color: 'yellow' as const, x: 0, y: 0, w: 200, h: 160 };
+    expect(installedList(s({ stickies: [sticky], homeLayout: [{ id: 'otd', on: true }] }))).toEqual(['sticky', 'otd']);
+    expect(installedList(s({ stickies: [], homeLayout: [{ id: 'otd', on: false }] }))).toEqual([]);
+  });
+
+  it('kaydedilmiş liste varsa ona uyulur, bilinmeyen kimlikler atlanır', () => {
+    expect(installedList(s({ installed: ['otd', 'eski'], stickies: [{ id: 'a', text: '', color: 'yellow', x: 0, y: 0, w: 200, h: 160 }] }))).toEqual(['otd']);
+  });
+});

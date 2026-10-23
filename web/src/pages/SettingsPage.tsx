@@ -15,6 +15,7 @@ import {
 import { getCoverMode, type CoverMode } from '../lib/covers';
 import { exportAllZip } from '../lib/exporter';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
+import { useInstalled } from '../lib/plugins';
 import type { Note, Routine } from '../lib/types';
 
 function Routines() {
@@ -136,6 +137,7 @@ export default function SettingsPage() {
   const notes = useStore((s) => s.notes);
   const settings = useStore((s) => s.settings);
   const [theme, setTheme] = useState<Theme>(getTheme());
+  const sticky = useInstalled('sticky');
   const [msg, setMsg] = useState('');
   const [zipBusy, setZipBusy] = useState<string | null>(null);
   const exportZip = async () => {
@@ -275,7 +277,7 @@ export default function SettingsPage() {
         <HomeSettings />
       </section>
 
-      <section>
+      {sticky && <section>
         <h3>Yapışkan notlar</h3>
         <p className="muted small">Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” ile oluşturulur; Alt Y bu cihazda gizler / gösterir.</p>
         <div className="seg">
@@ -284,7 +286,7 @@ export default function SettingsPage() {
               onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{label}</button>
           ))}
         </div>
-      </section>
+      </section>}
 
       <section>
         <h3>Görünüm</h3>

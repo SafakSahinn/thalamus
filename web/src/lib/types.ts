@@ -389,6 +389,8 @@ export interface Settings {
   stickies?: import('./sticky').Sticky[];
   /** Yapışkan notlar her sayfada mı yoksa yalnız ana sayfada mı görünsün (varsayılan: her sayfada) */
   stickyScope?: import('./sticky').StickyScope;
+  /** Marketten kurulan eklentiler (bkz. plugins.ts); hiç kaydedilmemişse o an kullanılanlar kurulu sayılır */
+  installed?: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {

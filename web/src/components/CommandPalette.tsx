@@ -5,6 +5,7 @@ import { go } from '../lib/router';
 import { searchNotes } from '../lib/search';
 import { createNote, useIndex } from '../lib/store';
 import { addSticky } from '../lib/sticky';
+import { isInstalled } from '../lib/plugins';
 import { TYPES, typeOf } from '../lib/types';
 
 export const usePalette = create<{ open: boolean }>(() => ({ open: false }));
@@ -68,8 +69,9 @@ export default function CommandPalette() {
         { key: 'go-daily', icon: '📅', label: 'Bugünün günlüğü', run: () => go('/daily') },
         { key: 'go-graph', icon: '🕸', label: 'Bağlantı haritası', run: () => go('/graph') },
         { key: 'go-dict', icon: '🔤', label: 'Sözlük', run: () => go('/dictionary') },
-        { key: 'sticky', icon: '🗒', label: 'Yeni yapışkan not', run: () => addSticky() },
+        { key: 'go-market', icon: '🧩', label: 'Eklenti marketi', run: () => go('/market') },
       );
+      if (isInstalled('sticky')) out.push({ key: 'sticky', icon: '🗒', label: 'Yeni yapışkan not', run: () => addSticky() });
     }
     return out;
   }, [open, q, alive]);

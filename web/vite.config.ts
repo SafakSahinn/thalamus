@@ -30,7 +30,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         maximumFileSizeToCacheInBytes: 6_000_000,
         navigateFallbackDenylist: [/^\/auth/, /\/(privacy|terms)\.html$/],
         // Bildirime tıklayınca notu aç

@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
 export type Route =
-  | { name: 'home' }
+    | { name: 'market' }
+| { name: 'home' }
   | { name: 'note'; id: string }
   | { name: 'collection'; type: string; edit?: boolean }
   | { name: 'graph' }
@@ -34,6 +35,7 @@ export function parse(hash: string): Route {
     case 'settings': return { name: 'settings' };
     case 'import': return { name: 'import' };
     case 'trash': return { name: 'trash' };
+    case 'market': return { name: 'market' };
     case 'p': return parts[1] ? { name: 'shared', id: parts[1] } : { name: 'home' };
     case 'gizlilik': return { name: 'legal', kind: 'privacy' };
     case 'kosullar': return { name: 'legal', kind: 'terms' };

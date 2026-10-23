@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { openMenu } from '../components/ContextMenu';
-import OnThisDay from '../components/OnThisDay';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { calSettings } from '../lib/gcal';
@@ -17,6 +16,10 @@ import { RoutineChecks } from './DailyPage';
 import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
 import { addSticky } from '../lib/sticky';
+import { installedList, isInstalled, type PluginId } from '../lib/plugins';
+
+const OnThisDayLazy = lazy(() => import('../components/OnThisDay'));
+const OnThisDay = () => <Suspense fallback={null}><OnThisDayLazy /></Suspense>;
 
 // Ana sayfa: bileşenlerden oluşur; hangilerinin görüneceği ve sırası Ayarlar > Ana sayfa'dan seçilir
 // (ayarlar.homeLayout, Drive'da eşitlenir). Boş bileşenler kendini gizler.
@@ -31,6 +34,8 @@ interface Widget {
   wide?: boolean;
   /** varsayılan olarak kapalı (Ayarlar'dan açılır) */
   off?: boolean;
+  /** eklentiye ait bileşen: yalnız marketten kurulduysa var olur (kurulunca görünür gelir) */
+  plugin?: PluginId;
   C: () => React.ReactNode;
 }
 
@@ -47,16 +52,16 @@ const WIDGETS: Widget[] = [
   { id: 'agenda', label: 'Bugünün takvimi', off: true, C: Agenda },
   { id: 'reading', label: 'Okuma hedefi', off: true, C: Reading },
   { id: 'colls', label: 'Koleksiyonlar', off: true, C: Colls },
-  { id: 'otd', label: 'Tarihte bugün', wide: true, off: true, C: OnThisDay },
+  { id: 'otd', label: 'Gazete: Tarihte bugün', wide: true, plugin: 'otd', C: OnThisDay },
 ];
 
 type Layout = { id: string; on: boolean }[];
 
-/** Kayıtlı düzen + sonradan eklenen bileşenler (sona, varsayılan görünürlükle) */
-export function homeLayout(saved?: Layout): Layout {
-  const known = new Set(WIDGETS.map((w) => w.id));
+/** Kayıtlı düzen + sonradan eklenen bileşenler (sona, varsayılan görünürlükle); kurulu olmayan eklentilerin bileşenleri çıkarılır */
+export function homeLayout(saved?: Layout, installed: string[] = []): Layout {
+  const known = new Set(WIDGETS.filter((w) => !w.plugin || installed.includes(w.plugin)).map((w) => w.id));
   const list = (saved ?? []).filter((x) => known.has(x.id));
-  for (const w of WIDGETS) if (!list.some((x) => x.id === w.id)) list.push({ id: w.id, on: !w.off });
+  for (const w of WIDGETS) if (known.has(w.id) && !list.some((x) => x.id === w.id)) list.push({ id: w.id, on: !w.off });
   return list;
 }
 
@@ -64,6 +69,7 @@ export function homeLayout(saved?: Layout): Layout {
 export function homeContextMenu(e: React.MouseEvent) {
   const t = e.target as HTMLElement;
   if (t.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
+  if (!isInstalled('sticky')) return;
   e.preventDefault();
   const at = { x: e.clientX, y: e.clientY };
   openMenu(e.clientX, e.clientY, [
@@ -72,7 +78,8 @@ export function homeContextMenu(e: React.MouseEvent) {
 }
 
 export default function Home() {
-  const layout = homeLayout(useStore((s) => s.settings.homeLayout));
+  const settings = useStore((s) => s.settings);
+  const layout = homeLayout(settings.homeLayout, installedList(settings));
   return (
     <div className="page wide home">
       <div className="home-grid">
@@ -87,8 +94,9 @@ export default function Home() {
 
 /** Ayarlar > Ana sayfa: bileşenleri aç/kapat ve sırala */
 export function HomeSettings() {
-  const saved = useStore((s) => s.settings.homeLayout);
-  const layout = homeLayout(saved);
+  const settings = useStore((s) => s.settings);
+  const saved = settings.homeLayout;
+  const layout = homeLayout(saved, installedList(settings));
   const save = (homeLayout: Layout | undefined) => void saveSettings({ ...useStore.getState().settings, homeLayout });
   const move = (i: number, d: number) => {
     const l = [...layout];
