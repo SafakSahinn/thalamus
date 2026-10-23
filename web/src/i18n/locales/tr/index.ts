@@ -12,6 +12,7 @@ import home from './home';
 import importer from './importer';
 import market from './market';
 import misc from './misc';
+import note from './note';
 import options from './options';
 import pages from './pages';
 import palette from './palette';
@@ -45,6 +46,7 @@ export default {
   importer,
   market,
   misc,
+  note,
   options,
   pages,
   palette,
