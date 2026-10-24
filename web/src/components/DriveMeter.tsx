@@ -110,6 +110,9 @@ export default function DriveMeter({ home }: { home: boolean }) {
   const hide = () => void patchMeter({ hidden: true });
   const menu = (x: number, y: number) => openMenu(x, y, meterMenuItems(s, [
     { key: 's3', sep: true },
+    { key: 'scope-all', icon: s.scope !== 'home' ? '✓' : '', label: t('meter.settings.scopeAll'), run: () => void patchMeter({ scope: 'all' }) },
+    { key: 'scope-home', icon: s.scope === 'home' ? '✓' : '', label: t('meter.settings.scopeHome'), run: () => void patchMeter({ scope: 'home' }) },
+    { key: 's4', sep: true },
     { key: 'hide', icon: '×', label: t('meter.hide'), run: hide },
   ]));
   const win7 = (s.view ?? 'win7') === 'win7';
