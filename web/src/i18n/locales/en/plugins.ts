@@ -51,7 +51,7 @@ export default {
   },
   drivemeter: {
     name: 'Storage meter',
-    summary: 'Like the Windows 7 CPU meter gadget: shows how much space is left in your Drive and how much Thalamus takes up.',
+    summary: 'Shows how much space is left in your Google Drive and how much of it Thalamus takes up.',
     description: {
       p1: 'A two-dial meter that floats above the screen. The big dial shows how full your Google Drive is; the small dial shows how much space Thalamus uses in it.',
       p2: 'Pick one of four views: a faithful Windows 7 CPU meter, a ring, a pie or a small badge. You can also add it to your home page as a widget.',

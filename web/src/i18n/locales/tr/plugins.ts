@@ -49,7 +49,7 @@ export default {
   },
   drivemeter: {
     name: 'Depolama göstergesi',
-    summary: 'Windows 7’nin CPU meter gadget’ı gibi: Drive’ında ne kadar yer kaldığını ve Thalamus’un ne kadar yer kapladığını gösterir.',
+    summary: 'Google Drive’ında ne kadar yer kaldığını ve Thalamus’un ne kadar yer kapladığını gösterir.',
     description: {
       p1: 'Ekranın üstünde serbest duran iki kadranlı bir gösterge. Büyük kadran Google Drive’ının doluluğunu, küçük kadran Thalamus’un Drive’da kapladığı yeri gösterir.',
       p2: 'Dört görünümden birini seçebilirsin: birebir Windows 7 CPU meter, halka, pasta ya da küçük bir rozet. İstersen ana sayfaya bileşen olarak da ekleyebilirsin.',
