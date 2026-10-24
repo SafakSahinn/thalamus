@@ -399,3 +399,61 @@ body.focus-mode .sticky-layer { display: none; }
 @media (max-width: 600px) { .market-grid { grid-template-columns: 1fr; } .market-detail-body { padding: 14px; } }
 .market-purge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
 .market-purge p { margin: 0; flex: 1 1 260px; }
+
+/* ---------- Depolama göstergesi (drivemeter eklentisi) ---------- */
+.meter-gadget, .meter-widget, .meter-settings {
+  --m-other: color-mix(in srgb, var(--muted) 55%, transparent);
+  --m-free: color-mix(in srgb, var(--muted) 16%, transparent);
+}
+.meter-gadget { position: fixed; z-index: 33; cursor: grab; user-select: none; touch-action: none; }
+.meter-gadget.dragging { cursor: grabbing; }
+.meter-gadget.mobile { left: 10px; right: auto; bottom: 14px; cursor: pointer; }
+.meter-gadget.mobile .meter-badge { font-size: 11.5px; padding: 6px 10px; }
+body.focus-mode .meter-gadget { display: none; }
+/* Win7'deki gibi: üzerine gelince sağda dikey küçük düğmeler */
+.meter-tools { position: absolute; top: 4px; left: 100%; display: flex; flex-direction: column; gap: 3px; padding-left: 4px; opacity: 0; transition: opacity .15s; }
+.meter-gadget:hover .meter-tools, .meter-gadget:focus-within .meter-tools { opacity: 1; }
+.meter-tools button { width: 20px; height: 20px; border-radius: 5px; border: 1px solid rgba(0,0,0,.35); padding: 0; font-size: 12px; line-height: 1;
+  color: #fff; background: linear-gradient(#5d636a, #2b2f33); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); cursor: pointer; }
+.meter-tools button:hover { background: linear-gradient(#78808a, #3a3f45); }
+.meter-w7 .w7 { display: block; width: 260px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+.meter-w7.small .w7 { width: 150px; }
+.w7-needle { transition: transform .9s cubic-bezier(.34,1.45,.55,1); }
+@media (prefers-reduced-motion: reduce) { .w7-needle { transition: none; } }
+
+.meter-chart { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.meter-gadget .meter-chart, .meter-gadget > .meter-badge { background: var(--bg); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+.meter-gadget > .meter-badge { padding: 7px 12px; border-radius: 999px; }
+.meter-chart.ring .m-track { stroke: var(--m-free); }
+.meter-chart.ring .m-other { stroke: var(--m-other); }
+.meter-chart.ring .m-thal { stroke: var(--accent); }
+.meter-chart.ring circle { transition: stroke-dasharray .6s ease, stroke-dashoffset .6s ease; }
+.meter-chart .m-big { fill: var(--text); font-size: 21px; font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
+.meter-chart .m-sub { fill: var(--muted); font-size: 10.5px; }
+.meter-chart.pie .m-thal { fill: var(--accent); }
+.meter-chart.pie .m-other { fill: var(--m-other); }
+.meter-chart.pie .m-track { fill: var(--m-free); }
+.meter-chart.pie .m-slice { stroke: var(--bg); stroke-width: 1.5; }
+.meter-legend { display: grid; gap: 7px; font-size: 12px; min-width: 0; }
+.meter-legend > div { display: grid; grid-template-columns: 10px auto; gap: 2px 8px; align-items: center; }
+.meter-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.meter-legend small { grid-column: 2; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.meter-legend .meter-note { display: block; max-width: 22ch; color: var(--muted); font-size: 11px; }
+.meter-legend .m-thal, .meter-badge .m-thal { background: var(--accent); }
+.meter-legend .m-other, .meter-badge .m-other { background: var(--m-other); }
+.meter-legend .m-free { background: var(--m-free); }
+
+.meter-badge { display: inline-flex; align-items: center; gap: 9px; font-size: 12.5px; white-space: nowrap; }
+.meter-badge.dim, .meter-badge .dim { color: var(--muted); }
+.meter-badge .bar { width: 46px; height: 6px; border-radius: 3px; background: var(--m-free); overflow: hidden; display: flex; flex: none; }
+.meter-badge .bar i { display: block; height: 100%; }
+.meter-badge b { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter-badge .sep { width: 1px; align-self: stretch; background: var(--border); }
+
+.meter-widget .row { display: flex; align-items: center; gap: 4px; }
+.meter-widget-body { display: flex; justify-content: center; padding: 8px 0 4px; }
+.iconbtn.spin { animation: meter-spin 1s linear infinite; }
+@keyframes meter-spin { to { transform: rotate(360deg); } }
+.meter-settings { display: grid; gap: 10px; }
+.meter-set-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.meter-set-row > span:first-child { min-width: 80px; }

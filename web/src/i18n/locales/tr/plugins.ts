@@ -47,4 +47,21 @@ export default {
     usage: 'Ana sayfada en altta görünür; sırasını Ayarlar > Ana sayfa’dan değiştirebilirsin.',
     dataLabel: 'dil tercihi ve ana sayfadaki yeri',
   },
+  drivemeter: {
+    name: 'Depolama göstergesi',
+    summary: 'Windows 7’nin CPU meter gadget’ı gibi: Drive’ında ne kadar yer kaldığını ve Thalamus’un ne kadar yer kapladığını gösterir.',
+    description: {
+      p1: 'Ekranın üstünde serbest duran iki kadranlı bir gösterge. Büyük kadran Google Drive’ının doluluğunu, küçük kadran Thalamus’un Drive’da kapladığı yeri gösterir.',
+      p2: 'Dört görünümden birini seçebilirsin: birebir Windows 7 CPU meter, halka, pasta ya da küçük bir rozet. İstersen ana sayfaya bileşen olarak da ekleyebilirsin.',
+    },
+    features: {
+      f1: 'Win7 CPU meter görünümü: orijinal ve 5 kaplama, büyük ve küçük boy',
+      f2: 'Halka, pasta ve rozet görünümleri',
+      f3: 'Açılışta ve 10 dakikada bir kendiliğinden yenilenir',
+      f4: 'Drive bağlı değilken tarayıcının bu cihazda ayırdığı alanı gösterir',
+      f5: 'Telefonda sol altta küçük bir metin rozeti olur',
+    },
+    usage: 'Kurulunca sağ üstte görünür; sürükleyerek taşıyabilirsin. Üzerine gelince çıkan ⚙ düğmesinden görünümü seçersin. Ana sayfa bileşenini Ayarlar > Ana sayfa’dan açabilirsin.',
+    dataLabel: 'görünüm seçimleri, gadget’ın konumu ve ana sayfadaki yeri',
+  },
 };

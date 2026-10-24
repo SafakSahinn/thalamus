@@ -14,6 +14,7 @@ import home from './home';
 import importer from './importer';
 import keys from './keys';
 import market from './market';
+import meter from './meter';
 import misc from './misc';
 import note from './note';
 import options from './options';
@@ -52,6 +53,7 @@ export default {
   importer,
   keys,
   market,
+  meter,
   misc,
   note,
   options,

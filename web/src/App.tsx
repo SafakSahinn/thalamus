@@ -40,6 +40,7 @@ const SharedPage = lazy(() => import('./pages/SharedPage'));
 const MarketPage = lazy(() => import('./pages/MarketPage'));
 // Eklentiler: kurulu değilse kodu hiç yüklenmez
 const StickyNotes = lazy(() => import('./components/StickyNotes'));
+const DriveMeter = lazy(() => import('./components/DriveMeter'));
 
 export default function App() {
   const account = useStore((s) => s.account);
@@ -49,6 +50,7 @@ export default function App() {
   const route = parse(useHash());
   const [drawer, setDrawer] = useState(false);
   const sticky = useInstalled('sticky');
+  const meter = useInstalled('drivemeter');
   // Dil değişince arayüz ağacı baştan kurulur (bu bileşenin etkileri yeniden çalışmaz)
   const locale = useLocale();
 
@@ -121,6 +123,7 @@ export default function App() {
       <CommentsPanel />
       <QuickCapture />
       {sticky && <Suspense fallback={null}><StickyNotes home={route.name === 'home'} /></Suspense>}
+      {meter && <Suspense fallback={null}><DriveMeter /></Suspense>}
       <ContextMenu />
       <Shortcuts />
       <Peek />

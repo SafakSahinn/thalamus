@@ -1,6 +1,6 @@
 import { t, type Messages } from '../i18n';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { openMenu } from '../components/ContextMenu';
+import { openMenu, type MenuItem } from '../components/ContextMenu';
 import { NoteChip } from '../components/PropertyPanel';
 import { displayTitle, relTime, noteIcon } from '../lib/format';
 import { calSettings } from '../lib/gcal';
@@ -17,10 +17,13 @@ import { RoutineChecks } from './DailyPage';
 import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
 import { addSticky } from '../lib/sticky';
+import { meterSettings, patchMeter } from '../lib/driveMeter';
 import { installedList, isInstalled, type PluginId } from '../lib/plugins';
 
 const OnThisDayLazy = lazy(() => import('../components/OnThisDay'));
 const OnThisDay = () => <Suspense fallback={null}><OnThisDayLazy /></Suspense>;
+const MeterWidgetLazy = lazy(() => import('../components/meter/MeterWidget'));
+const MeterWidget = () => <Suspense fallback={null}><MeterWidgetLazy /></Suspense>;
 
 // Ana sayfa: bileşenlerden oluşur; hangilerinin görüneceği ve sırası Ayarlar > Ana sayfa'dan seçilir
 // (ayarlar.homeLayout, Drive'da eşitlenir). Boş bileşenler kendini gizler.
@@ -59,6 +62,8 @@ const WIDGETS: Widget[] = [
   widget('reading', Reading, { off: true }),
   widget('colls', Colls, { off: true }),
   widget('otd', OnThisDay, { wide: true, plugin: 'otd' }),
+  // varsayılan kapalı: eklenti asıl olarak serbest gadget hâliyle görünür
+  widget('drivemeter', MeterWidget, { off: true, plugin: 'drivemeter' }),
 ];
 
 type Layout = { id: string; on: boolean }[];
@@ -75,12 +80,16 @@ export function homeLayout(saved?: Layout, installed: string[] = []): Layout {
 export function homeContextMenu(e: React.MouseEvent) {
   const el = e.target as HTMLElement;
   if (el.closest('input, textarea, select, a, [contenteditable="true"]') || String(getSelection() ?? '').trim()) return;
-  if (!isInstalled('sticky')) return;
-  e.preventDefault();
   const at = { x: e.clientX, y: e.clientY };
-  openMenu(e.clientX, e.clientY, [
-    { key: 'sticky', icon: '🗒', label: t('home.addSticky'), run: () => addSticky(at) },
-  ]);
+  const items: MenuItem[] = [];
+  if (isInstalled('sticky')) items.push({ key: 'sticky', icon: '🗒', label: t('home.addSticky'), run: () => addSticky(at) });
+  // gizlenmiş depolama göstergesini geri getir (konumu sağ tıklanan yer olur)
+  if (isInstalled('drivemeter') && meterSettings().hidden) {
+    items.push({ key: 'meter', icon: '⏲', label: t('meter.show'), run: () => void patchMeter({ hidden: false, x: at.x / innerWidth, y: at.y / innerHeight }) });
+  }
+  if (!items.length) return;
+  e.preventDefault();
+  openMenu(e.clientX, e.clientY, items);
 }
 
 export default function Home() {

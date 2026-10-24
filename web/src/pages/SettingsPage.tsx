@@ -17,6 +17,7 @@ import { getCoverMode, type CoverMode } from '../lib/covers';
 import { exportAllZip } from '../lib/exporter';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import { useInstalled } from '../lib/plugins';
+import MeterSettings from '../components/meter/MeterSettings';
 import type { Note, Routine } from '../lib/types';
 
 function Routines() {
@@ -140,6 +141,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState<Theme>(getTheme());
   const [lang, setLang] = useState<LocalePref>(getLocalePref());
   const sticky = useInstalled('sticky');
+  const meter = useInstalled('drivemeter');
   const [msg, setMsg] = useState('');
   const [zipBusy, setZipBusy] = useState<string | null>(null);
   const exportZip = async () => {
@@ -282,6 +284,12 @@ export default function SettingsPage() {
               onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{t(`settings.sticky.${v}`)}</button>
           ))}
         </div>
+      </section>}
+
+      {meter && <section>
+        <h3>{t('meter.title')}</h3>
+        <p className="muted small">{t('meter.settings.hint')}</p>
+        <MeterSettings />
       </section>}
 
       <section>

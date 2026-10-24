@@ -49,4 +49,21 @@ export default {
     usage: 'Appears at the bottom of the home page; change its position in Settings > Home page.',
     dataLabel: 'the language choice and its place on the home page',
   },
+  drivemeter: {
+    name: 'Storage meter',
+    summary: 'Like the Windows 7 CPU meter gadget: shows how much space is left in your Drive and how much Thalamus takes up.',
+    description: {
+      p1: 'A two-dial meter that floats above the screen. The big dial shows how full your Google Drive is; the small dial shows how much space Thalamus uses in it.',
+      p2: 'Pick one of four views: a faithful Windows 7 CPU meter, a ring, a pie or a small badge. You can also add it to your home page as a widget.',
+    },
+    features: {
+      f1: 'Win7 CPU meter view: the original plus 5 skins, large and small sizes',
+      f2: 'Ring, pie and badge views',
+      f3: 'Refreshes on its own at startup and every 10 minutes',
+      f4: 'Without Drive, shows the space your browser sets aside on this device',
+      f5: 'On phones, a small text badge in the bottom left',
+    },
+    usage: 'Once installed it appears in the top right; drag it anywhere. Hover and use the ⚙ button to pick a view. Turn on the home page widget in Settings > Home page.',
+    dataLabel: 'your view choices, the gadget’s position and its place on the home page',
+  },
 } satisfies Messages['plugins'];

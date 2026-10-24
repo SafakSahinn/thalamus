@@ -418,6 +418,8 @@ export interface Settings {
   stickies?: import('./sticky').Sticky[];
   /** Yapışkan notlar her sayfada mı yoksa yalnız ana sayfada mı görünsün (varsayılan: her sayfada) */
   stickyScope?: import('./sticky').StickyScope;
+  /** Depolama göstergesi: görünüm, kaplama, gadget konumu (bkz. driveMeter.ts) */
+  meter?: import('./driveMeter').MeterSettings;
   /** Marketten kurulan eklentiler (bkz. plugins.ts); hiç kaydedilmemişse o an kullanılanlar kurulu sayılır */
   installed?: string[];
 }
