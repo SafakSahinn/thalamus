@@ -34,5 +34,8 @@ export default {
     gadget: 'Gadget',
     visible: 'Görünür',
     hidden: 'Gizli',
+    scope: 'Nerede',
+    scopeAll: 'Tüm ekranlarda',
+    scopeHome: 'Yalnız ana sayfada',
   },
 };

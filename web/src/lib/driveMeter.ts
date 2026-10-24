@@ -23,6 +23,8 @@ export interface MeterSettings {
   y?: number;
   /** gadget gizli (ana sayfa bileşeni etkilenmez) */
   hidden?: boolean;
+  /** gadget her sayfada mı yoksa yalnız ana sayfada mı görünsün (varsayılan: her sayfada) */
+  scope?: 'all' | 'home';
 }
 
 export interface MeterData {

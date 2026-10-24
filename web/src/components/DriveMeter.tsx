@@ -41,7 +41,7 @@ export function meterMenuItems(s: MeterSettings, extra: MenuItem[] = []): MenuIt
   return [...items, ...extra];
 }
 
-export default function DriveMeter() {
+export default function DriveMeter({ home }: { home: boolean }) {
   const s = useMeterSettings();
   const data = useMeter((m) => m.data);
   const error = useMeter((m) => m.error);
@@ -58,7 +58,7 @@ export default function DriveMeter() {
     return () => removeEventListener('resize', on);
   }, []);
 
-  if (s.hidden) return null;
+  if (s.hidden || (s.scope === 'home' && !home)) return null;
   const tip = meterTooltip(data, error);
 
   if (mobile) {

@@ -25,6 +25,12 @@ export default function MeterSettings() {
           <button className={s.size === 'small' ? 'on' : ''} onClick={() => void patchMeter({ size: 'small' })}>{t('meter.smaller')}</button>
         </div>
       ))}
+      {row(t('meter.settings.scope'), (
+        <div className="seg">
+          <button className={s.scope !== 'home' ? 'on' : ''} onClick={() => void patchMeter({ scope: 'all' })}>{t('meter.settings.scopeAll')}</button>
+          <button className={s.scope === 'home' ? 'on' : ''} onClick={() => void patchMeter({ scope: 'home' })}>{t('meter.settings.scopeHome')}</button>
+        </div>
+      ))}
       {row(t('meter.settings.gadget'), (
         <div className="seg">
           <button className={!s.hidden ? 'on' : ''} onClick={() => void patchMeter({ hidden: false })}>{t('meter.settings.visible')}</button>

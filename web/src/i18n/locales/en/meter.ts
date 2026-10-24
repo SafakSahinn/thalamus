@@ -36,5 +36,8 @@ export default {
     gadget: 'Gadget',
     visible: 'Visible',
     hidden: 'Hidden',
+    scope: 'Where',
+    scopeAll: 'On every screen',
+    scopeHome: 'Only on the home page',
   },
 } satisfies Messages['meter'];

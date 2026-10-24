@@ -123,7 +123,7 @@ export default function App() {
       <CommentsPanel />
       <QuickCapture />
       {sticky && <Suspense fallback={null}><StickyNotes home={route.name === 'home'} /></Suspense>}
-      {meter && <Suspense fallback={null}><DriveMeter /></Suspense>}
+      {meter && <Suspense fallback={null}><DriveMeter home={route.name === 'home'} /></Suspense>}
       <ContextMenu />
       <Shortcuts />
       <Peek />
