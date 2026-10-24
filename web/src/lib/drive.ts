@@ -38,6 +38,10 @@ export interface DriveApi {
   /** Dosyanın Drive'da tutulan eski sürümleri */
   revisions?(id: string): Promise<{ id: string; modifiedTime: string }[]>;
   readRevision?<T>(id: string, rev: string): Promise<T>;
+  /** Hesabın depolama kotası (bayt); limit sınırsız hesaplarda yoktur */
+  quota?(): Promise<{ limit?: number; usage: number }>;
+  /** Klasörün ve alt klasörlerinin toplam boyutu (bayt; yalnız uygulamanın gördüğü dosyalar) */
+  treeSize?(folder: string): Promise<number>;
 }
 
 export class NotFoundError extends Error {
@@ -196,5 +200,30 @@ export const drive: DriveApi = {
   async readRevision<T>(id: string, rev: string) {
     const r = await req(`${API}/files/${id}/revisions/${rev}?alt=media`);
     return (await r.json()) as T;
+  },
+
+  async quota() {
+    const r = await req(`${API}/about?fields=storageQuota`);
+    const { storageQuota: s } = (await r.json()) as { storageQuota: { limit?: string; usage?: string } };
+    return { limit: s.limit ? Number(s.limit) : undefined, usage: Number(s.usage ?? 0) };
+  },
+
+  async treeSize(folder) {
+    let total = 0;
+    const queue = [folder];
+    while (queue.length) {
+      const parent = queue.shift()!;
+      let page = '';
+      do {
+        const r = await req(`${API}/files?q=${q(`'${parent}' in parents and trashed=false`)}&pageSize=1000&fields=nextPageToken,files(id,mimeType,size)&spaces=drive${page ? `&pageToken=${page}` : ''}`);
+        const d = (await r.json()) as { files: { id: string; mimeType: string; size?: string }[]; nextPageToken?: string };
+        for (const f of d.files) {
+          if (f.mimeType === FOLDER) queue.push(f.id);
+          else total += Number(f.size ?? 0);
+        }
+        page = d.nextPageToken ?? '';
+      } while (page);
+    }
+    return total;
   },
 };

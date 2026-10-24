@@ -492,6 +492,13 @@ export async function unpublicFile(fileId: string) {
   });
 }
 
+/** Depolama göstergesi için: Drive kotası + Thalamus klasörünün boyutu. Bulut yoksa null. */
+export async function driveStorage(): Promise<{ limit?: number; usage: number; thalamus: number } | null> {
+  if (!cloud || !get().account || !api.quota || !api.treeSize) return null;
+  const [q, thalamus] = await Promise.all([api.quota(), getFolders().then((f) => api.treeSize!(f.root))]);
+  return { ...q, thalamus };
+}
+
 /** Notun sürümleri (yeniden eskiye): bu cihaz + Drive */
 export async function noteVersions(id: string): Promise<Version[]> {
   const out = await deviceVersions(id);
