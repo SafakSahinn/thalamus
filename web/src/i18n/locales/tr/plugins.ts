@@ -34,15 +34,15 @@ export default {
   },
   stickyShape: {
     name: 'Şekilli not kâğıtları',
-    summary: 'Kırtasiyedeki şekilli post-it’ler gibi: araba, tabanca, çiçek, ev, kalp, bulut, fincan ve ok şeklinde yapışkan notlar.',
+    summary: 'Kırtasiyedeki şekilli post-it’ler gibi: araba, çiçek, ev, kalp, bulut, fincan ve ok şeklinde yapışkan notlar.',
     description: {
-      p1: 'Kâğıdın kendisi bir şekil: bir arabanın ya da tabancanın yandan görünüşü, bir papatya, bir ev, bir kalp… Kâğıt rengini yine sen seçersin.',
-      p2: 'Yazıyı kâğıdın istediğin yerine koyabilirsin. Kâğıdı büyütüp küçültünce şekil ezilmez, yazı da onunla birlikte büyür. Eklentiyi kaldırırsan şekilli kâğıtlar dikdörtgene döner, notların silinmez.',
+      p1: 'Kâğıdın kendisi bir şekil: yandan görünen bir araba, bir papatya, bir ev, bir kalp… Kâğıt rengini yine sen seçersin.',
+      p2: 'Bir kâğıda istediğin kadar yazı ekleyebilir, her birini sürükleyerek istediğin yere taşıyabilirsin. Kâğıdı büyütüp küçültünce şekil ezilmez, yazılar da onunla birlikte büyür. Eklentiyi kaldırırsan şekilli kâğıtlar dikdörtgene döner, notların silinmez.',
     },
     features: {
-      f1: '11 şekil: BMW M3 (E30), Colt 1911, papatya, ev, kalp, bulut, kahve fincanı ve dört yöne ok',
-      f2: 'Colt 1911 kendi renkleriyle çizilmiş: paslanmaz çelik gövde, ceviz kabza',
-      f3: 'Kâğıdın boş bir yerine tıkla, yazı oraya taşınsın',
+      f1: 'Şekiller: araba, papatya, ev, kalp, bulut, kahve fincanı ve dört yöne ok',
+      f2: 'Kâğıdın boş bir yerine tıkla, oraya yeni bir yazı ekle; yazıları sürükleyerek taşı',
+      f3: 'Boyutlandırınca şekil ezilmez, yazılar kâğıtla birlikte büyür',
     },
     usage: 'Bir yapışkan notun ⋯ düğmesine tıkla; renklerin altındaki şekillerden birini seç. Dikdörtgene dönmek için ilk kutucuğu seç.',
     dataLabel: 'kâğıtlardaki şekil seçimleri (notlar kalır, dikdörtgene döner)',
