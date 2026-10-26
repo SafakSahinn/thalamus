@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 290">
+  <!-- Colt M1911A1, sol yandan: paslanmaz gövde, ceviz kabza. Şekilli not kâğıtlarındaki "colt" kâğıdı. -->
+  <defs>
+    <linearGradient id="sl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f3f5"/><stop offset=".45" stop-color="#cdd2d7"/><stop offset="1" stop-color="#9ea5ac"/></linearGradient>
+    <linearGradient id="fr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d4d8dc"/><stop offset="1" stop-color="#a3aab1"/></linearGradient>
+    <linearGradient id="wd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a5a31"/><stop offset=".6" stop-color="#7a4222"/><stop offset="1" stop-color="#5c2f16"/></linearGradient>
+    <pattern id="ck" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0H5M0 0V5" stroke="#3a1d0c" stroke-width="1.1" opacity=".55"/></pattern>
+    <clipPath id="pc"><path d="M280 140 L348 140 Q352 140 353 144 L383 244 Q384 250 378 250 L310 250 Q305 250 304 245 L276 145 Q275 140 280 140 Z"/></clipPath>
+  </defs>
+  <g stroke="#555d65" stroke-width="1.4" stroke-linejoin="round">
+    <path d="M338 70 L350 53 Q356 45 364 49 Q369 54 362 60 L353 74 L340 82 Z" fill="#3d4349"/>
+    <path fill-rule="evenodd" fill="url(#fr)" d="M62 100 L338 100 L352 97 Q372 96 371 106 Q369 114 354 117 L397 262 Q399 271 390 272 L311 272 Q302 272 301 263 L268 140 Q264 128 256 128 L256 158 Q256 172 242 172 L210 172 Q186 172 184 148 L182 116 L64 116 Q58 116 58 110 L58 104 Q58 100 62 100 Z M194 120 L246 120 Q250 120 250 126 L250 152 Q250 164 238 164 L212 164 Q196 164 194 146 Z"/>
+    <rect x="15" y="58" width="10" height="30" rx="3" fill="#b3b9bf"/>
+    <path d="M34 46 L37 37 L46 37 L48 46 Z" fill="#3d4349"/>
+    <path d="M305 46 L308 37 L327 37 L329 46 Z" fill="#3d4349"/>
+    <path d="M22 52 Q22 46 28 46 L332 46 Q338 46 338 52 L338 100 L22 100 Z" fill="url(#sl)"/>
+    <path d="M226 121 L235 121 L234 146 Q233 153 228 151 Q224 149 225 141 Z" fill="#3d4349"/>
+    <path d="M298 100 L331 100 Q339 101 336 107 L330 113 L304 111 Q298 108 298 100 Z" fill="#3d4349"/>
+    <path d="M156 104 Q156 98 164 98 L214 100 Q221 102 216 108 L166 110 Q156 110 156 104 Z" fill="#3d4349"/>
+    <circle cx="268" cy="122" r="6" fill="#3d4349"/>
+    <path d="M280 140 L348 140 Q352 140 353 144 L383 244 Q384 250 378 250 L310 250 Q305 250 304 245 L276 145 Q275 140 280 140 Z" fill="url(#wd)"/>
+  </g>
+  <rect x="270" y="135" width="120" height="120" fill="url(#ck)" clip-path="url(#pc)"/>
+  <g fill="#c9ced3" stroke="#555d65" stroke-width="1.2"><circle cx="318" cy="156" r="5"/><circle cx="341" cy="233" r="5"/></g>
+  <path d="M314 153 L322 159M337 230 L345 236" stroke="#555d65" stroke-width="1.2"/>
+  <path d="M284 52V94M289 52V94M294 52V94M299 52V94M304 52V94M309 52V94M314 52V94M319 52V94M324 52V94" stroke="#7d858d" stroke-width="1.3"/>
+  <path d="M345 55 L356 61M343 59 L354 65M348 51 L359 57" stroke="#2b2f33" stroke-width="1"/>
+  <circle cx="162" cy="104" r="3" fill="#9ea5ac"/>
+  <path d="M22 50 H336" stroke="#fff" stroke-width="2" opacity=".7"/>
+  <text x="150" y="94" font-family="Georgia, serif" font-size="9" letter-spacing="2.5" fill="#6f777f" opacity=".5">M1911A1  ·  .45 ACP</text>
+</svg>

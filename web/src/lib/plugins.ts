@@ -1,5 +1,5 @@
 import { getLocale, SOURCE_LOCALE, t, tList, type Locale } from '../i18n';
-import { stripPatterns } from './sticky';
+import { stripPatterns, stripShapes } from './sticky';
 import { saveSettings, useStore } from './store';
 import type { Settings } from './types';
 
@@ -7,7 +7,7 @@ import type { Settings } from './types';
 // Katalog şimdilik yalnız bizim yayınladığımız yerleşik eklentilerden oluşur (kodla birlikte gelir).
 // Kurulu listesi Settings.installed'da tutulur ve Drive'a eşitlenir. Kaldırmak veriyi silmez, yalnız gizler.
 
-export type PluginId = 'sticky' | 'stickyArt' | 'otd' | 'drivemeter';
+export type PluginId = 'sticky' | 'stickyArt' | 'stickyShape' | 'otd' | 'drivemeter';
 export type PluginCategory = 'home' | 'tool';
 
 export interface Plugin {
@@ -50,6 +50,7 @@ function plugin(base: Pick<Plugin, 'id' | 'icon' | 'category' | 'author' | 'requ
 export const PLUGINS: Plugin[] = [
   plugin({ id: 'sticky', icon: '🗒', category: 'tool', author: 'Thalamus' }),
   plugin({ id: 'stickyArt', icon: '🌸', category: 'tool', author: 'Thalamus', requires: ['sticky'] }),
+  plugin({ id: 'stickyShape', icon: '❤', category: 'tool', author: 'Thalamus', requires: ['sticky'] }),
   plugin({ id: 'otd', icon: '📰', category: 'home', author: 'Thalamus' }),
   plugin({ id: 'drivemeter', icon: '⏲', category: 'tool', author: 'Thalamus' }),
 ];
@@ -111,6 +112,10 @@ const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Setting
   stickyArt: {
     has: (s) => !!s.stickies?.some((x) => x.pattern),
     clear: (s) => (s.stickies ? { ...s, stickies: stripPatterns(s.stickies) } : s),
+  },
+  stickyShape: {
+    has: (s) => !!s.stickies?.some((x) => x.shape),
+    clear: (s) => (s.stickies ? { ...s, stickies: stripShapes(s.stickies) } : s),
   },
   otd: {
     has: (s) => s.otdLang !== undefined || !!s.homeLayout?.some((x) => x.id === 'otd'),

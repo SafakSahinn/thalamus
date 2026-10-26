@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { create } from 'zustand';
 import { saveSettings, uid, useStore } from './store';
+import { shapeDef, type ShapeDef, type StickyShape } from './stickyShapes';
 
 // Yapışkan notlar (Windows 7 "Sticky Notes" gibi): ekranın üstünde, sayfadan bağımsız duran kâğıtlar.
 // Normal notlardan ayrıdır; ayarlarla birlikte Drive'a eşitlenir (Settings.stickies).
@@ -20,6 +21,11 @@ export interface Sticky {
   h: number;
   /** desenli kâğıt ("Desenli not kâğıtları" eklentisi); eklenti kurulu değilse yok sayılır ve `color` görünür */
   pattern?: StickyPattern;
+  /** şekilli kâğıt ("Şekilli not kâğıtları" eklentisi); eklenti kurulu değilse yok sayılır, kâğıt dikdörtgen görünür */
+  shape?: StickyShape;
+  /** şekilli kâğıtta yazının sol üst köşesi (kâğıda göre kesir); yoksa şeklin varsayılanı */
+  tx?: number;
+  ty?: number;
 }
 
 const color = (id: StickyColor) => ({ id, get label() { return t(`study.sticky.colors.${id}`); } });
@@ -68,8 +74,34 @@ export const stripPatterns = (list: Sticky[]) => list.map(({ pattern: _p, ...s }
 
 export const MIN_W = 160;
 export const MIN_H = 110;
+/** şekilli kâğıdın en küçük genişliği (dikey ok gibi dar şekiller için daha küçük) */
+export const SHAPE_MIN_W = 100;
 const DEF_W = 220;
 const DEF_H = 200;
+
+/** Kâğıdın şekli: yalnız eklenti kuruluyken; bilinmeyen şekil dikdörtgene düşer */
+export const shapeOf = (s: Pick<Sticky, 'shape'>, enabled: boolean) => (enabled ? shapeDef(s.shape) : undefined);
+
+/** Şekil seçimi ('rect' = dikdörtgen): desen kalkar, boyut şeklin oranına göre baştan kurulur, yazı varsayılan yerine döner */
+export function shapePatch(id: string): Partial<Sticky> {
+  const d = shapeDef(id);
+  if (!d) return { shape: undefined, tx: undefined, ty: undefined, w: DEF_W, h: DEF_H };
+  return { shape: d.id, pattern: undefined, tx: undefined, ty: undefined, w: d.width, h: Math.round((d.width * d.h) / d.w) };
+}
+
+/** Şekilli kâğıdın ekrandaki kutusu: en-boy oranı korunur, ekrana sığar */
+export function shapeRect(s: Pick<Sticky, 'x' | 'y' | 'w'>, d: Pick<ShapeDef, 'w' | 'h'>, vw: number, vh: number) {
+  const ratio = d.h / d.w;
+  let w = Math.max(SHAPE_MIN_W, Math.min(s.w, vw));
+  if (w * ratio > vh) w = vh / ratio;
+  const h = w * ratio;
+  const left = Math.max(0, Math.min(s.x * vw, vw - w));
+  const top = Math.max(0, Math.min(s.y * vh, vh - h));
+  return { left, top, w, h };
+}
+
+/** Eklenti verisiyle kaldırılınca: şekil alanları silinir, kâğıtlar dikdörtgene döner */
+export const stripShapes = (list: Sticky[]) => list.map(({ shape: _s, tx: _x, ty: _y, ...s }) => s);
 
 /** Kâğıdın ekrandaki piksel kutusu: boyut ekrana sığar, konum kenardan taşmaz */
 export function placeRect(s: Pick<Sticky, 'x' | 'y' | 'w' | 'h'>, vw: number, vh: number) {
@@ -117,9 +149,10 @@ export function setStickiesHidden(hidden: boolean) {
 const listOf = () => useStore.getState().settings.stickies ?? [];
 const save = (stickies: Sticky[]) => void saveSettings({ ...useStore.getState().settings, stickies });
 
-export function addSticky(at?: { x: number; y: number }, color?: StickyColor, pattern?: StickyPattern) {
+export function addSticky(at?: { x: number; y: number }, color?: StickyColor, pattern?: StickyPattern, shape?: StickyShape) {
   const s = newSticky(listOf(), innerWidth, innerHeight, at, color);
   if (pattern) s.pattern = pattern;
+  if (shape) Object.assign(s, shapePatch(shape));
   save([...listOf(), s]);
   setStickiesHidden(false);
   useStickyUi.setState({ focus: s.id, open: s.id });

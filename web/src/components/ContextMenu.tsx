@@ -8,7 +8,7 @@ export type MenuItem =
   | { key: string; icon?: string; label: string; danger?: boolean; run: () => void }
   | { key: string; sep: true }
   /** tek satırda renk seçimi */
-  | { key: string; swatches: { id: string; label: string; on?: boolean }[]; className: string; pick: (id: string) => void };
+  | { key: string; swatches: { id: string; label: string; on?: boolean; style?: React.CSSProperties }[]; className: string; pick: (id: string) => void };
 
 const useMenu = create<{ menu: { x: number; y: number; items: MenuItem[] } | null }>(() => ({ menu: null }));
 
@@ -62,7 +62,7 @@ export default function ContextMenu() {
           return (
             <div key={it.key} className="ctxmenu-swatches">
               {it.swatches.map((s) => (
-                <button key={s.id} className={`${it.className} c-${s.id} ${s.on ? 'on' : ''}`} title={s.label} aria-label={s.label}
+                <button key={s.id} className={`${it.className} c-${s.id} ${s.on ? 'on' : ''}`} title={s.label} aria-label={s.label} style={s.style}
                   onClick={() => { closeMenu(); it.pick(s.id); }} />
               ))}
             </div>

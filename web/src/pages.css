@@ -361,9 +361,47 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 }
 .sticky-tab.on { outline: 2px solid var(--accent); }
 .sticky.mobile { left: 12px; right: 56px; top: 64px; height: min(55vh, 420px); }
+/* şekilli kâğıtlar (Şekilli not kâğıtları eklentisi): kâğıt, şeklin kırpma yoluyla kesilir; gölge dış kutuda */
+.sticky.shaped {
+  --sk-shadow: drop-shadow(0 1px 1px rgb(0 0 0 / 22%)) drop-shadow(0 6px 8px rgb(0 0 0 / 22%));
+  container-type: size; filter: var(--sk-shadow);
+}
+.sticky.shaped::before, .sticky.shaped::after { content: none; }
+.sticky.shaped.dragging { --sk-shadow: drop-shadow(0 2px 2px rgb(0 0 0 / 20%)) drop-shadow(0 14px 16px rgb(0 0 0 / 26%)); }
+.sticky.shaped.mobile { right: auto; }
+.sticky-shape { position: absolute; inset: 0; background: var(--sk); cursor: text; }
+.s-colt .sticky-shape { background: url(/stickies/colt.svg) 0 0 / 100% 100% no-repeat; }
+.sticky-text {
+  position: absolute; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 1ch; border-radius: 3px;
+  font: calc(var(--fs) * 1cqw)/1.45 'Segoe Print', 'Segoe UI', system-ui, sans-serif;
+}
+.sticky-text:focus { box-shadow: 0 0 0 1px rgb(0 0 0 / 15%); }
+.s-colt .sticky-text { font-weight: 700; text-shadow: 0 0 2px #eef0f2, 0 0 4px #eef0f2; }
+.sticky-tool {
+  position: absolute; right: 0; top: -28px; display: flex; align-items: center; gap: 1px; padding: 2px; border-radius: 6px; cursor: move; touch-action: none;
+  background: rgb(255 255 255 / 88%); box-shadow: 0 1px 3px rgb(0 0 0 / 25%); opacity: 0; transition: opacity 0.12s;
+}
+.sticky.shaped:hover .sticky-tool, .sticky.shaped:focus-within .sticky-tool, .sticky.shaped.dragging .sticky-tool, .sticky.shaped.mobile .sticky-tool { opacity: 1; }
+.sticky-move { width: 18px; text-align: center; color: rgb(0 0 0 / 45%); font-size: 13px; }
+.sticky-tool button {
+  border: none; background: none; color: rgb(0 0 0 / 60%); width: 22px; height: 20px; border-radius: 3px; cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+}
+.sticky-tool button:hover { background: rgb(0 0 0 / 8%); color: #000; }
+.sticky.shaped .sticky-grip { right: -6px; bottom: -6px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #666; }
+.sticky.shaped:hover .sticky-grip { opacity: 1; }
+/* menüdeki şekil kutucukları: şeklin kendisi, kâğıdın renginde, ince bir koyu kenarla */
+.sticky-swatch.shape:not(.c-s-rect) { position: relative; border: none; background: none; filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 70%)); }
+.sticky-swatch.shape:not(.c-s-rect)::before {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: calc(min(1, var(--ar)) * 100%); height: calc(min(1, 1 / var(--ar)) * 100%);
+  background: var(--sk); clip-path: var(--clip);
+}
+.sticky-swatch.shape.c-s-colt::before { background: url(/stickies/colt.svg) 0 0 / 100% 100% no-repeat; }
 body.focus-mode .sticky-layer { display: none; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .sticky, :root:not([data-theme='light']) .sticky-tab { filter: brightness(0.86); } }
 :root[data-theme='dark'] .sticky, :root[data-theme='dark'] .sticky-tab { filter: brightness(0.86); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .sticky.shaped { filter: brightness(0.86) var(--sk-shadow); } }
+:root[data-theme='dark'] .sticky.shaped { filter: brightness(0.86) var(--sk-shadow); }
 
 /* ---------- eklenti marketi ---------- */
 .market-filter { margin: 6px 0 18px; flex-wrap: wrap; }

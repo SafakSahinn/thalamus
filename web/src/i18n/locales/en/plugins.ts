@@ -34,6 +34,21 @@ export default {
     usage: 'Click a sticky note’s ⋯ button or right-click its header, then pick a pattern below the colors.',
     dataLabel: 'the pattern choices on your notes (the notes stay, back in plain colors)',
   },
+  stickyShape: {
+    name: 'Shaped note paper',
+    summary: 'Like the shaped Post-its from the stationery shop: sticky notes shaped like a car, a pistol, a flower, a house, a heart, a cloud, a cup or an arrow.',
+    description: {
+      p1: 'The paper itself is the shape: a car or a pistol seen from the side, a daisy, a house, a heart… You still pick the paper color.',
+      p2: 'You can put your text anywhere on the paper. Resizing keeps the shape’s proportions, and the text grows and shrinks with it. If you uninstall the plugin, shaped notes go back to rectangles; nothing is deleted.',
+    },
+    features: {
+      f1: '11 shapes: BMW M3 (E30), Colt 1911, daisy, house, heart, cloud, coffee cup and arrows in four directions',
+      f2: 'The Colt 1911 is drawn in its own colors: stainless steel frame, walnut grips',
+      f3: 'Click an empty spot on the paper to move your text there',
+    },
+    usage: 'Click a sticky note’s ⋯ button, then pick a shape below the colors. Pick the first square to go back to a rectangle.',
+    dataLabel: 'the shape choices on your notes (the notes stay, back as rectangles)',
+  },
   otd: {
     name: 'Newspaper: On this day',
     summary: '“On this day” events laid out like an old newspaper page on your home page.',

@@ -31,7 +31,7 @@ describe('hasPluginData', () => {
 
 describe('eklenti bağımlılıkları', () => {
   it('bir eklenti kaldırılınca ona bağlı olanlar da kalkar', () => {
-    expect(withoutPlugin(['sticky', 'stickyArt', 'otd'], 'sticky')).toEqual(['otd']);
+    expect(withoutPlugin(['sticky', 'stickyArt', 'stickyShape', 'otd'], 'sticky')).toEqual(['otd']);
     expect(withoutPlugin(['sticky', 'stickyArt'], 'stickyArt')).toEqual(['sticky']);
   });
 
@@ -39,5 +39,7 @@ describe('eklenti bağımlılıkları', () => {
     const plain = { id: 'a', text: '', color: 'yellow' as const, x: 0, y: 0, w: 200, h: 160 };
     expect(hasPluginData('stickyArt', s({ stickies: [plain] }))).toBe(false);
     expect(hasPluginData('stickyArt', s({ stickies: [{ ...plain, pattern: 'gece' }] }))).toBe(true);
+    expect(hasPluginData('stickyShape', s({ stickies: [plain] }))).toBe(false);
+    expect(hasPluginData('stickyShape', s({ stickies: [{ ...plain, shape: 'bulut' }] }))).toBe(true);
   });
 });

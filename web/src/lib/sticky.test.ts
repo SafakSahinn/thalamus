@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newSticky, paperClass, paperPatch, placeRect, stickyToNote, stripPatterns } from './sticky';
+import { newSticky, paperClass, paperPatch, placeRect, SHAPE_MIN_W, shapeOf, shapePatch, shapeRect, stickyToNote, stripPatterns, stripShapes } from './sticky';
+import { SHAPES } from './stickyShapes';
 
 describe('yapışkan notlar', () => {
   it('küçülen ekranda kâğıt içeri kıstırılır, boyut ekrana sığar', () => {
@@ -48,5 +49,41 @@ describe('desenli kâğıtlar', () => {
   it('verisiyle kaldırınca desen alanları silinir, gerisi kalır', () => {
     const s = { id: 'a', text: 'x', color: 'pink' as const, x: 0, y: 0, w: 200, h: 160, pattern: 'kiraz' as const };
     expect(stripPatterns([s])).toEqual([{ id: 'a', text: 'x', color: 'pink', x: 0, y: 0, w: 200, h: 160 }]);
+  });
+});
+
+describe('şekilli kâğıtlar', () => {
+  it('şekil seçilince desen kalkar, boyut şeklin oranına göre kurulur; dikdörtgene dönünce varsayılan boyut', () => {
+    expect(shapePatch('bmw')).toEqual({ shape: 'bmw', pattern: undefined, tx: undefined, ty: undefined, w: 340, h: 128 });
+    expect(shapePatch('rect')).toEqual({ shape: undefined, tx: undefined, ty: undefined, w: 220, h: 200 });
+  });
+
+  it('şekilli kâğıt oranını korur, ekrana sığar', () => {
+    const d = { w: 400, h: 200 };
+    expect(shapeRect({ x: 0, y: 0, w: 300 }, d, 1000, 800)).toEqual({ left: 0, top: 0, w: 300, h: 150 });
+    // dar ekran: genişlik ekrana iner, yükseklik orandan
+    expect(shapeRect({ x: 0.5, y: 0, w: 900 }, d, 600, 800)).toEqual({ left: 0, top: 0, w: 600, h: 300 });
+    // alçak ekran: yükseklik sığmazsa genişlik de küçülür
+    expect(shapeRect({ x: 0, y: 0, w: 900 }, d, 1000, 200)).toEqual({ left: 0, top: 0, w: 400, h: 200 });
+  });
+
+  it('şekil yalnız eklenti kuruluyken; bilinmeyen şekil dikdörtgen', () => {
+    expect(shapeOf({ shape: 'kalp' }, true)?.id).toBe('kalp');
+    expect(shapeOf({ shape: 'kalp' }, false)).toBeUndefined();
+    expect(shapeOf({ shape: 'eski' as never }, true)).toBeUndefined();
+  });
+
+  it('verisiyle kaldırınca şekil alanları silinir, gerisi kalır', () => {
+    const s = { id: 'a', text: 'x', color: 'pink' as const, x: 0, y: 0, w: 200, h: 160, shape: 'ev' as const, tx: 0.3, ty: 0.5 };
+    expect(stripShapes([s])).toEqual([{ id: 'a', text: 'x', color: 'pink', x: 0, y: 0, w: 200, h: 160 }]);
+  });
+
+  it('her şeklin geçerli boyutu, varsayılan yazı yeri ve en az bir yolu var', () => {
+    for (const d of SHAPES) {
+      expect(d.w > 0 && d.h > 0 && d.width >= SHAPE_MIN_W).toBe(true);
+      expect(d.tx >= 0 && d.tx < 1 && d.ty >= 0 && d.ty < 1).toBe(true);
+      expect(d.paths.length).toBeGreaterThan(0);
+      for (const p of d.paths) expect(p.d).not.toMatch(/NaN|undefined/);
+    }
   });
 });
