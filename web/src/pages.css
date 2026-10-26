@@ -197,7 +197,12 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
 .otd-first .otd-cols { flex: 1; min-height: 0; }
 .otd-first .otd-band { flex: none; }
 .otd-rest { position: absolute; inset: 0; }
-.otd-sheet .hidden { visibility: hidden; }
+/* 1. sayfa ile geri kalanı arasında da kayarak geçiş (diğer sayfalar otd-rest içinde yumuşak kaydırılır) */
+.otd-first, .otd-rest { transition: transform 0.45s ease, visibility 0s; }
+.otd-sheet .hidden { visibility: hidden; transition: transform 0.45s ease, visibility 0s 0.45s; }
+.otd-first.hidden { transform: translateX(calc(-100% - 24px)); }
+.otd-rest.hidden { transform: translateX(calc(100% + 24px)); }
+@media (prefers-reduced-motion: reduce) { .otd-first, .otd-rest, .otd-sheet .hidden { transition: none; } }
 .otd-cols { overflow: hidden; column-count: 3; column-gap: 24px; column-fill: auto; column-rule: 1px solid var(--rule); }
 .otd-cols > h4:not(:first-child) { break-before: column; }
 .otd a { color: inherit; text-decoration: none; }
