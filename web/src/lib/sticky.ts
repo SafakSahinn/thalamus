@@ -23,9 +23,21 @@ export interface Sticky {
   pattern?: StickyPattern;
   /** şekilli kâğıt ("Şekilli not kâğıtları" eklentisi); eklenti kurulu değilse yok sayılır, kâğıt dikdörtgen görünür */
   shape?: StickyShape;
-  /** şekilli kâğıtta yazının sol üst köşesi (kâğıda göre kesir); yoksa şeklin varsayılanı */
+  /** eski tek yazılı şekilli kâğıtta yazının yeri (kâğıda göre kesir); yerini `blocks` aldı, yalnız okunur */
   tx?: number;
   ty?: number;
+  /** şekilli kâğıttaki yazılar, her biri kendi yerinde; `text` bunların birleşimi olarak eşitlenir (sekme, nota çevirme, dikdörtgen) */
+  blocks?: StickyBlock[];
+  /** ekranda sabit mi (true) yoksa sayfayla birlikte mi kayar (false); yoksa Settings.stickyFixed */
+  fixed?: boolean;
+}
+
+/** Şekilli kâğıtta bir yazı: sol üst köşesi kâğıda göre kesir */
+export interface StickyBlock {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
 }
 
 const color = (id: StickyColor) => ({ id, get label() { return t(`study.sticky.colors.${id}`); } });
@@ -85,8 +97,27 @@ export const shapeOf = (s: Pick<Sticky, 'shape'>, enabled: boolean) => (enabled 
 /** Şekil seçimi ('rect' = dikdörtgen): desen kalkar, boyut şeklin oranına göre baştan kurulur, yazı varsayılan yerine döner */
 export function shapePatch(id: string): Partial<Sticky> {
   const d = shapeDef(id);
-  if (!d) return { shape: undefined, tx: undefined, ty: undefined, w: DEF_W, h: DEF_H };
-  return { shape: d.id, pattern: undefined, tx: undefined, ty: undefined, w: d.width, h: Math.round((d.width * d.h) / d.w) };
+  // yazılar tek yazıda birleşir (`text` zaten birleşim): yeni şekilde varsayılan yerinde başlar
+  const reset = { tx: undefined, ty: undefined, blocks: undefined };
+  if (!d) return { shape: undefined, ...reset, w: DEF_W, h: DEF_H };
+  return { shape: d.id, pattern: undefined, ...reset, w: d.width, h: Math.round((d.width * d.h) / d.w) };
+}
+
+/** Şekilli kâğıdın yazıları; eski kâğıtlarda tek yazı `text`'ten ve tx/ty'den (yoksa şeklin varsayılanı) kurulur */
+export const blocksOf = (s: Pick<Sticky, 'text' | 'tx' | 'ty' | 'blocks'>, d: Pick<ShapeDef, 'tx' | 'ty'>): StickyBlock[] =>
+  s.blocks?.length ? s.blocks : [{ id: 'b0', text: s.text, x: s.tx ?? d.tx, y: s.ty ?? d.ty }];
+
+/** Yazılar değişince kaydedilecek alanlar: boş olmayan yazılar alt alta `text` olur */
+export const blocksPatch = (blocks: StickyBlock[]): Partial<Sticky> => ({
+  blocks, tx: undefined, ty: undefined, text: blocks.map((b) => b.text).filter((v) => v.trim()).join('\n'),
+});
+
+/** Kâğıt ekranda sabit mi: kendi seçimi, yoksa ayarlardaki varsayılan (varsayılan: sabit) */
+export const isFixed = (s: Pick<Sticky, 'fixed'>, def: boolean | undefined) => s.fixed ?? def ?? true;
+
+/** Sabitlik değişince konum: kâğıt ekranda olduğu yerde kalsın (sayfayla kayan kâğıdın y'si sayfa başına göredir) */
+export function fixedPatch(s: Pick<Sticky, 'y'>, fixed: boolean, scrollY: number, vh: number): Partial<Sticky> {
+  return { fixed, y: fixed ? Math.max(0, s.y - scrollY / vh) : s.y + scrollY / vh };
 }
 
 /** Şekilli kâğıdın ekrandaki kutusu: en-boy oranı korunur, ekrana sığar */
@@ -101,7 +132,7 @@ export function shapeRect(s: Pick<Sticky, 'x' | 'y' | 'w'>, d: Pick<ShapeDef, 'w
 }
 
 /** Eklenti verisiyle kaldırılınca: şekil alanları silinir, kâğıtlar dikdörtgene döner */
-export const stripShapes = (list: Sticky[]) => list.map(({ shape: _s, tx: _x, ty: _y, ...s }) => s);
+export const stripShapes = (list: Sticky[]) => list.map(({ shape: _s, tx: _x, ty: _y, blocks: _b, ...s }) => s);
 
 /** Kâğıdın ekrandaki piksel kutusu: boyut ekrana sığar, konum kenardan taşmaz */
 export function placeRect(s: Pick<Sticky, 'x' | 'y' | 'w' | 'h'>, vw: number, vh: number) {

@@ -74,6 +74,9 @@ export default {
     hint: 'Ana sayfada boş bir yere sağ tıklayıp “Yapışkan not ekle” ile oluşturulur; Alt Y bu cihazda gizler / gösterir.',
     all: 'Tüm sayfalarda',
     home: 'Yalnız ana sayfada',
+    fixedHint: 'Sayfayı kaydırınca notlar ekranda sabit mi dursun, sayfayla birlikte mi kaysın? Her not kendi ⋯ menüsünden ayrıca seçilebilir.',
+    fixedOn: 'Ekranda sabit kalsın',
+    fixedOff: 'Sayfayla birlikte kaysın',
   },
   appearance: {
     title: 'Görünüm',

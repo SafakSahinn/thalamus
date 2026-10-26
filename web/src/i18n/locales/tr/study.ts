@@ -39,6 +39,8 @@ export default {
     menuShape: 'Renk, şekil ve diğer',
     menuAll: 'Renk, desen, şekil ve diğer',
     move: 'Taşı',
+    fixed: 'Ekranda sabit kalsın',
+    dragText: 'Sürükleyerek taşı, tıklayıp düzenle',
     minimize: 'Küçült',
     aria: 'Yapışkan not',
     resize: 'Boyutlandır',

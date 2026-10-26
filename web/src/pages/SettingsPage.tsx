@@ -284,6 +284,13 @@ export default function SettingsPage() {
               onClick={() => void saveSettings({ ...useStore.getState().settings, stickyScope: v })}>{t(`settings.sticky.${v}`)}</button>
           ))}
         </div>
+        <p className="muted small">{t('settings.sticky.fixedHint')}</p>
+        <div className="seg">
+          {([true, false] as const).map((v) => (
+            <button key={String(v)} className={(settings.stickyFixed ?? true) === v ? 'on' : ''}
+              onClick={() => void saveSettings({ ...useStore.getState().settings, stickyFixed: v })}>{t(v ? 'settings.sticky.fixedOn' : 'settings.sticky.fixedOff')}</button>
+          ))}
+        </div>
       </section>}
 
       {meter && <section>

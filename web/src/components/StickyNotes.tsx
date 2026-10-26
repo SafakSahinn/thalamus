@@ -2,16 +2,19 @@ import { localeTag, t } from '../i18n';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useInstalled } from '../lib/plugins';
 import { go } from '../lib/router';
-import { createNote, useStore } from '../lib/store';
+import { createNote, uid, useStore } from '../lib/store';
 import {
-  addSticky, COLORS, MIN_H, MIN_W, paperClass, paperPatch, patchSticky, PATTERNS, placeRect, raiseSticky, removeSticky,
-  setStickiesHidden, SHAPE_MIN_W, shapeOf, shapePatch, shapeRect, stickyToNote, useStickyUi, type Sticky,
+  addSticky, blocksOf, blocksPatch, COLORS, fixedPatch, isFixed, MIN_H, MIN_W, paperClass, paperPatch, patchSticky, PATTERNS, placeRect,
+  raiseSticky, removeSticky, setStickiesHidden, SHAPE_MIN_W, shapeOf, shapePatch, shapeRect, stickyToNote, useStickyUi,
+  type Sticky, type StickyBlock,
 } from '../lib/sticky';
 import { clipId, SHAPES, type ShapeDef } from '../lib/stickyShapes';
 import { openMenu, type MenuItem } from './ContextMenu';
 
 // Ekranın üstünde duran yapışkan kâğıtlar. Masaüstünde sürüklenir/boyutlanır; telefonda sağ altta küçük
 // renkli düğmeler olarak durur, dokununca ortada açılır. Ayarlardan yalnız ana sayfada görünmesi seçilebilir.
+// Kâğıt ekranda sabit durabilir ya da sayfayla birlikte kayabilir (Settings.stickyFixed, her kâğıt kendisi de seçer):
+// kayan kâğıdın y'si sayfanın başına göredir, ekrandaki yeri <main>'in kaydırma payı kadar yukarıdadır.
 
 const MOBILE = '(max-width: 600px)';
 
@@ -26,14 +29,34 @@ function useViewport() {
   return v;
 }
 
+/** Sayfanın kaydırılan alanı */
+const scroller = () => document.querySelector('main');
+
+/** <main>'in kaydırma payı; yalnız sayfayla kayan kâğıt varken dinlenir */
+function useScrollY(on: boolean) {
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    const m = scroller();
+    if (!on || !m) return;
+    let raf = 0;
+    const read = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setY(m.scrollTop)); };
+    read();
+    m.addEventListener('scroll', read, { passive: true });
+    return () => { cancelAnimationFrame(raf); m.removeEventListener('scroll', read); };
+  }, [on]);
+  return on ? y : 0;
+}
+
 export default function StickyNotes({ home }: { home: boolean }) {
   const list = useStore((s) => s.settings.stickies);
   const scope = useStore((s) => s.settings.stickyScope ?? 'all');
+  const fixedDef = useStore((s) => s.settings.stickyFixed);
   const hidden = useStickyUi((s) => s.hidden);
   const open = useStickyUi((s) => s.open);
   const art = useInstalled('stickyArt');
   const shapes = useInstalled('stickyShape');
   const { vw, vh, mobile } = useViewport();
+  const scrollY = useScrollY(!mobile && !!list?.some((s) => !isFixed(s, fixedDef)));
 
   // Alt Y: bu cihazda kâğıtları gizle / göster
   useEffect(() => {
@@ -64,7 +87,7 @@ export default function StickyNotes({ home }: { home: boolean }) {
             </button>
           ))}
         </div>
-        {cur && <Paper key={cur.id} s={cur} rect={mobileRect(cur, shapes, vw, vh)} vw={vw} vh={vh} z={1} art={art} shapes={shapes} mobile />}
+        {cur && <Paper key={cur.id} s={cur} rect={mobileRect(cur, shapes, vw, vh)} vw={vw} vh={vh} z={1} art={art} shapes={shapes} fixed scrollY={0} mobile />}
         {shapes && <ShapeClips />}
       </div>
     );
@@ -74,7 +97,11 @@ export default function StickyNotes({ home }: { home: boolean }) {
     <div className="sticky-layer">
       {stable.map((s) => {
         const d = shapeOf(s, shapes);
-        return <Paper key={s.id} s={s} rect={d ? shapeRect(s, d, vw, vh) : placeRect(s, vw, vh)} vw={vw} vh={vh} z={z(s.id)} art={art} shapes={shapes} />;
+        const fixed = isFixed(s, fixedDef);
+        const r = d ? shapeRect(s, d, vw, vh) : placeRect(s, vw, vh);
+        // sayfayla kayan kâğıt: dikeyde ekrana kıstırılmaz, sayfa kaydıkça yukarı gider
+        const rect = fixed ? r : { ...r, top: Math.max(0, s.y * vh) - scrollY };
+        return <Paper key={s.id} s={s} rect={rect} vw={vw} vh={vh} z={z(s.id)} art={art} shapes={shapes} fixed={fixed} scrollY={fixed ? 0 : scrollY} />;
       })}
       {shapes && <ShapeClips />}
     </div>
@@ -106,37 +133,33 @@ function ShapeClips() {
   );
 }
 
-function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: Rect; vw: number; vh: number; z: number; art: boolean; shapes: boolean; mobile?: boolean }) {
+function Paper({ s, rect, vw, vh, z, art, shapes, fixed, scrollY, mobile }: {
+  s: Sticky; rect: Rect; vw: number; vh: number; z: number; art: boolean; shapes: boolean; fixed: boolean; scrollY: number; mobile?: boolean;
+}) {
   const shape = shapeOf(s, shapes);
   const [text, setText] = useState(s.text);
+  const [blocks, setBlocks] = useState<StickyBlock[]>(() => (shape ? blocksOf(s, shape) : []));
+  /** yeni eklenen, imlecin konacağı yazı */
+  const [fresh, setFresh] = useState<string | null>(null);
   const [live, setLive] = useState<Rect | null>(null);
   const [sizing, setSizing] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
-  /** şekilli kâğıttaki yazı alanı: içerik kadar yer kaplasın diye contenteditable, içeriğini kendisi tutar */
-  const shapeText = useRef<HTMLDivElement>(null);
   const editing = useRef(false);
-  const pending = useRef<{ t: number; v: string } | null>(null);
-
-  const showText = (v: string) => {
-    const el = shapeText.current;
-    if (el && el.innerText !== v) el.textContent = v;
-  };
+  const pending = useRef<{ t: number; patch: Partial<Sticky> } | null>(null);
 
   // Başka cihazdan gelen değişiklik (yazmıyorken)
   useEffect(() => {
     if (!editing.current && !pending.current) {
       setText(s.text);
-      showText(s.text);
+      setBlocks(shape ? blocksOf(s, shape) : []);
     }
-  }, [s.text]);
-
-  // Dikdörtgenden şekle geçince yeni yazı alanı boş doğar
-  useLayoutEffect(() => showText(text), [shape?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.text, s.blocks, shape?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Yeni açılan kâğıda imleç
   useEffect(() => {
     if (useStickyUi.getState().focus === s.id) {
-      (area.current ?? shapeText.current)?.focus();
+      (area.current ?? root.current?.querySelector<HTMLElement>('.sticky-text'))?.focus();
       useStickyUi.setState({ focus: null });
     }
   }, [s.id]);
@@ -144,16 +167,28 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
   const flush = () => {
     if (!pending.current) return;
     clearTimeout(pending.current.t);
-    const v = pending.current.v;
+    const { patch } = pending.current;
     pending.current = null;
-    patchSticky(s.id, { text: v });
+    patchSticky(s.id, patch);
   };
   useEffect(() => flush, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** yazı değişikliklerini biriktirip yarım saniye sonra kaydeder */
+  const schedule = (patch: Partial<Sticky>) => {
+    if (pending.current) clearTimeout(pending.current.t);
+    pending.current = { patch: { ...pending.current?.patch, ...patch }, t: window.setTimeout(flush, 500) };
+  };
   const onText = (v: string) => {
     setText(v);
-    if (pending.current) clearTimeout(pending.current.t);
-    pending.current = { v, t: window.setTimeout(flush, 500) };
+    schedule({ text: v });
+  };
+  /** şekilli kâğıdın yazıları değişti; taşıma gibi tek seferlik değişiklikler hemen kaydedilir */
+  const onBlocks = (next: StickyBlock[], now = false) => {
+    const patch = blocksPatch(next);
+    setBlocks(next);
+    setText(patch.text ?? '');
+    schedule(patch);
+    if (now) flush();
   };
 
   // Sürükleme (başlık şeridi) ve boyutlandırma (sağ alt köşe): Pointer Events, bırakınca kaydet
@@ -184,7 +219,8 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', up);
-      if (cur !== rect) patchSticky(s.id, mode === 'move' ? { x: cur.left / vw, y: cur.top / vh } : { w: cur.w, h: cur.h });
+      // sayfayla kayan kâğıdın y'si sayfa başına göre
+      if (cur !== rect) patchSticky(s.id, mode === 'move' ? { x: cur.left / vw, y: (cur.top + scrollY) / vh } : { w: cur.w, h: cur.h });
       setLive(null);
       setSizing(false);
     };
@@ -193,18 +229,17 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
     el.addEventListener('pointercancel', up);
   };
 
-  // Şekilli kâğıtta boş bir yere tıklayınca yazı oraya taşınır, imleç yazının sonuna konur
-  const placeText = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = shapeText.current;
-    if (e.target !== e.currentTarget || e.button !== 0 || !el) return;
+  // Şekilli kâğıtta boş bir yere tıklayınca oraya yeni bir yazı eklenir
+  const addBlock = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget || e.button !== 0) return;
     e.preventDefault();
     const b = e.currentTarget.getBoundingClientRect();
-    const line = parseFloat(getComputedStyle(el).fontSize) * 0.7;
-    patchSticky(s.id, { tx: Math.min((e.clientX - b.left) / b.width, 0.9), ty: Math.max(0, (e.clientY - b.top - line) / b.height) });
-    el.focus();
-    const sel = getSelection();
-    sel?.selectAllChildren(el);
-    sel?.collapseToEnd();
+    const first = e.currentTarget.querySelector<HTMLElement>('.sticky-text');
+    const line = parseFloat(first ? getComputedStyle(first).fontSize : '14') * 0.7;
+    const id = uid();
+    // boş yazılar kaydedilmez: yazmaya başlayınca kaydolur; yazılmadan bırakılan boş yazılar burada düşer
+    setBlocks((l) => [...l.filter((x) => x.text.trim()), { id, text: '', x: Math.min((e.clientX - b.left) / b.width, 0.9), y: Math.max(0, (e.clientY - b.top - line) / b.height) }]);
+    setFresh(id);
   };
 
   const remove = () => {
@@ -226,6 +261,7 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
   const patterned = art && !shape && !!s.pattern;
   const addNext = () => addSticky(undefined, s.color, patterned ? s.pattern : undefined, shape?.id);
   const menu = (x: number, y: number) => {
+    flush();
     // desen seçilince şekilli kâğıt dikdörtgene döner (şeklin içi düz renk)
     const pick = (c: string) => patchSticky(s.id, { ...(shape && !COLORS.some((k) => k.id === c) ? shapePatch('rect') : {}), ...paperPatch(c) });
     const items: MenuItem[] = [{ key: 'colors', className: 'sticky-swatch', swatches: COLORS.map((c) => ({ id: c.id, label: c.label, on: !patterned && c.id === s.color })), pick }];
@@ -255,6 +291,9 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
     }
     items.push({ key: 's1', sep: true }, { key: 'new', icon: '＋', label: t('study.sticky.new'), run: addNext });
     if (text.trim()) items.push({ key: 'note', icon: '📄', label: t('study.sticky.toNote'), run: toNote });
+    if (!mobile) {
+      items.push({ key: 'fixed', icon: fixed ? '✓' : '', label: t('study.sticky.fixed'), run: () => patchSticky(s.id, fixedPatch(s, !fixed, scroller()?.scrollTop ?? 0, vh)) });
+    }
     items.push({ key: 's2', sep: true }, { key: 'del', icon: '🗑', label: t('common.delete'), danger: true, run: remove });
     openMenu(x, y, items);
   };
@@ -264,20 +303,28 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
   const r = live ?? rect;
 
   if (shape) {
-    const tx = s.tx ?? shape.tx;
-    const ty = s.ty ?? shape.ty;
     // yazı boyutu kâğıt genişliğinin yüzdesi (cqw): şeklin varsayılan genişliğinde 14.5px, kâğıtla birlikte büyür
     const style = { left: r.left, top: r.top, width: r.w, height: r.h, zIndex: z, '--fs': 1450 / shape.width } as React.CSSProperties;
     return (
-      <div className={`sticky shaped s-${shape.id} c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
+      <div ref={root} className={`sticky shaped s-${shape.id} c-${s.color} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
         onPointerDownCapture={() => raiseSticky(s.id)}>
-        <div className="sticky-shape" style={{ clipPath: `url(#${clipId(shape.id)})` }} onPointerDown={placeText}
+        <div className="sticky-shape" style={{ clipPath: `url(#${clipId(shape.id)})` }} onPointerDown={addBlock}
+          // fare tıklamasının varsayılanı (odağı alıp sayfada seçim başlatmak) yeni yazının odağını çalmasın
+          onMouseDown={(e) => { if (e.target === e.currentTarget) e.preventDefault(); }}
           onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
-          <div ref={shapeText} className="sticky-text" contentEditable="plaintext-only" role="textbox" aria-multiline aria-label={t('study.sticky.aria')}
-            spellCheck={false} style={{ left: `${tx * 100}%`, top: `${ty * 100}%`, maxWidth: `${(1 - tx) * 100}%` }}
-            onInput={(e) => onText(e.currentTarget.innerText)}
-            onFocus={() => { editing.current = true; }}
-            onBlur={() => { editing.current = false; flush(); }} />
+          {blocks.map((b) => (
+            <TextBlock key={b.id} b={b} autoFocus={b.id === fresh}
+              onInput={(v) => onBlocks(blocks.map((x) => (x.id === b.id ? { ...x, text: v } : x)))}
+              onMove={(x, y) => onBlocks(blocks.map((k) => (k.id === b.id ? { ...k, x, y } : k)), true)}
+              onFocus={() => { editing.current = true; }}
+              onBlur={(v) => {
+                editing.current = false;
+                if (fresh === b.id) setFresh(null);
+                // boş bırakılan yazı silinir (son yazı kalır)
+                if (!v.trim() && blocks.length > 1) onBlocks(blocks.filter((x) => x.id !== b.id));
+                flush();
+              }} />
+          ))}
         </div>
         {/* şeklin üstünde, fareyle gelince beliren küçük araç şeridi: boş yerinden sürüklenir */}
         <div className="sticky-tool" title={t('study.sticky.move')} onPointerDown={(e) => startDrag(e, 'move')}>
@@ -294,7 +341,7 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
 
   const style: React.CSSProperties = mobile ? { zIndex: z } : { left: r.left, top: r.top, width: r.w, height: r.h, zIndex: z };
   return (
-    <div className={`sticky ${paperClass(s, art)} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
+    <div ref={root} className={`sticky ${paperClass(s, art)} ${mobile ? 'mobile' : ''} ${live ? 'dragging' : ''} ${sizing ? 'sizing' : ''}`} style={style}
       onPointerDownCapture={() => raiseSticky(s.id)}>
       {/* kâğıt ayrı katmanda: kıvrık köşe gölgeleri (::before/::after) onun arkasında kalsın */}
       <div className="sticky-paper">
@@ -313,5 +360,97 @@ function Paper({ s, rect, vw, vh, z, art, shapes, mobile }: { s: Sticky; rect: R
         {!mobile && <div className="sticky-grip" title={t('study.sticky.resize')} onPointerDown={(e) => startDrag(e, 'size')} />}
       </div>
     </div>
+  );
+}
+
+/** İmleci tıklanan noktadaki harfin yanına koyar (bulunamazsa yazının sonuna) */
+function placeCaret(el: HTMLElement, x: number, y: number) {
+  const sel = getSelection();
+  if (!sel) return;
+  const doc = document as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+    caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  };
+  const range = document.createRange();
+  const pos = doc.caretPositionFromPoint?.(x, y);
+  const old = pos ? null : doc.caretRangeFromPoint?.(x, y);
+  if (pos && el.contains(pos.offsetNode)) range.setStart(pos.offsetNode, pos.offset);
+  else if (old && el.contains(old.startContainer)) range.setStart(old.startContainer, old.startOffset);
+  else {
+    range.selectNodeContents(el);
+    range.collapse(false);
+  }
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/**
+ * Şekilli kâğıttaki bir yazı: içerik kadar yer kaplar (contenteditable, içeriğini kendisi tutar).
+ * Düzenlenmiyorken sürüklenirse taşınır, tıklanırsa imleç tıklanan yere konur; düzenlenirken fare yazı seçer.
+ */
+function TextBlock({ b, autoFocus, onInput, onMove, onFocus, onBlur }: {
+  b: StickyBlock; autoFocus: boolean; onInput: (v: string) => void; onMove: (x: number, y: number) => void; onFocus: () => void; onBlur: (v: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+
+  // dışarıdan gelen metin (yazarken dokunma: imleç kaybolur)
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.innerText !== b.text) el.textContent = b.text;
+  }, [b.text]);
+
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus();
+  }, [autoFocus]);
+
+  const down = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (e.button !== 0 || document.activeElement === el) return;
+    e.preventDefault();
+    const paper = (el.parentElement as HTMLElement).getBoundingClientRect();
+    const start = { x: e.clientX, y: e.clientY };
+    let cur: { x: number; y: number } | null = null;
+    el.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - start.x;
+      const dy = ev.clientY - start.y;
+      // birkaç piksellik titreme tıklama sayılır
+      if (!cur && Math.hypot(dx, dy) < 4) return;
+      cur = {
+        x: Math.max(0, Math.min(b.x + dx / paper.width, 0.95)),
+        y: Math.max(0, Math.min(b.y + dy / paper.height, 0.95)),
+      };
+      setDrag(cur);
+    };
+    const up = (ev: PointerEvent) => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      setDrag(null);
+      if (cur) onMove(cur.x, cur.y);
+      else if (ev.type === 'pointerup') {
+        el.focus();
+        placeCaret(el, ev.clientX, ev.clientY);
+      }
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  };
+
+  const x = drag?.x ?? b.x;
+  const y = drag?.y ?? b.y;
+  return (
+    <div ref={ref} className={`sticky-text ${drag ? 'dragging' : ''}`} contentEditable="plaintext-only" role="textbox" aria-multiline
+      aria-label={t('study.sticky.aria')} title={t('study.sticky.dragText')} spellCheck={false}
+      style={{ left: `${x * 100}%`, top: `${y * 100}%`, maxWidth: `${(1 - x) * 100}%` }}
+      onPointerDown={down}
+      // düzenlenmiyorken fare tıklaması odak/seçim başlatmasın: tıklama mı sürükleme mi, bırakınca belli olur
+      onMouseDown={(e) => { if (document.activeElement !== e.currentTarget) e.preventDefault(); }}
+      onInput={(e) => onInput(e.currentTarget.innerText)}
+      onFocus={onFocus}
+      onBlur={(e) => onBlur(e.currentTarget.innerText)} />
   );
 }

@@ -376,6 +376,7 @@ body.focus-mode .writing-bar:hover { opacity: 1; }
   font: calc(var(--fs) * 1cqw)/1.45 'Segoe Print', 'Segoe UI', system-ui, sans-serif;
 }
 .sticky-text:focus { box-shadow: 0 0 0 1px rgb(0 0 0 / 15%); }
+.sticky-text.dragging { cursor: grabbing; opacity: 0.8; }
 .s-colt .sticky-text { font-weight: 700; text-shadow: 0 0 2px #eef0f2, 0 0 4px #eef0f2; }
 .sticky-tool {
   position: absolute; right: 0; top: -28px; display: flex; align-items: center; gap: 1px; padding: 2px; border-radius: 6px; cursor: move; touch-action: none;

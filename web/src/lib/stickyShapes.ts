@@ -62,7 +62,7 @@ function arrow(id: StickyShape, deg: 0 | 90 | 180 | 270): Omit<ShapeDef, 'label'
     return `${n(rx - 120 + w / 2)} ${n(ry - 70 + h / 2)}`;
   });
   // yazı okun gövdesinde başlar
-  const text = { 0: [0.06, 0.36], 180: [0.42, 0.36], 90: [0.25, 0.12], 270: [0.25, 0.45] }[deg];
+  const text = { 0: [0.06, 0.36], 180: [0.42, 0.36], 90: [0.33, 0.12], 270: [0.33, 0.45] }[deg];
   return { id, w, h, width: w, tx: text[0], ty: text[1], paths: [{ d: `M${pts.join(' L')} Z` }] };
 }
 

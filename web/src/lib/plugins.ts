@@ -106,8 +106,8 @@ export const withoutPlugin = (list: PluginId[], id: PluginId) =>
 // Eklentilerin ayarlarda bıraktığı veriler ("Verisiyle birlikte kaldır")
 const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Settings) => Settings }> = {
   sticky: {
-    has: (s) => !!s.stickies?.length || s.stickyScope !== undefined,
-    clear: ({ stickies: _a, stickyScope: _b, ...s }) => s,
+    has: (s) => !!s.stickies?.length || s.stickyScope !== undefined || s.stickyFixed !== undefined,
+    clear: ({ stickies: _a, stickyScope: _b, stickyFixed: _c, ...s }) => s,
   },
   stickyArt: {
     has: (s) => !!s.stickies?.some((x) => x.pattern),

@@ -40,6 +40,8 @@ export default {
     menuShape: 'Color, shape and more',
     menuAll: 'Color, pattern, shape and more',
     move: 'Move',
+    fixed: 'Stay fixed on screen',
+    dragText: 'Drag to move, click to edit',
     minimize: 'Minimize',
     aria: 'Sticky note',
     resize: 'Resize',

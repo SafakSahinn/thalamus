@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { newSticky, paperClass, paperPatch, placeRect, SHAPE_MIN_W, shapeOf, shapePatch, shapeRect, stickyToNote, stripPatterns, stripShapes } from './sticky';
+import {
+  blocksOf, blocksPatch, fixedPatch, isFixed, newSticky, paperClass, paperPatch, placeRect, SHAPE_MIN_W, shapeOf, shapePatch, shapeRect, stickyToNote,
+  stripPatterns, stripShapes,
+} from './sticky';
 import { SHAPES } from './stickyShapes';
 
 describe('yapışkan notlar', () => {
@@ -54,8 +57,8 @@ describe('desenli kâğıtlar', () => {
 
 describe('şekilli kâğıtlar', () => {
   it('şekil seçilince desen kalkar, boyut şeklin oranına göre kurulur; dikdörtgene dönünce varsayılan boyut', () => {
-    expect(shapePatch('bmw')).toEqual({ shape: 'bmw', pattern: undefined, tx: undefined, ty: undefined, w: 340, h: 128 });
-    expect(shapePatch('rect')).toEqual({ shape: undefined, tx: undefined, ty: undefined, w: 220, h: 200 });
+    expect(shapePatch('bmw')).toEqual({ shape: 'bmw', pattern: undefined, tx: undefined, ty: undefined, blocks: undefined, w: 340, h: 128 });
+    expect(shapePatch('rect')).toEqual({ shape: undefined, tx: undefined, ty: undefined, blocks: undefined, w: 220, h: 200 });
   });
 
   it('şekilli kâğıt oranını korur, ekrana sığar', () => {
@@ -74,7 +77,7 @@ describe('şekilli kâğıtlar', () => {
   });
 
   it('verisiyle kaldırınca şekil alanları silinir, gerisi kalır', () => {
-    const s = { id: 'a', text: 'x', color: 'pink' as const, x: 0, y: 0, w: 200, h: 160, shape: 'ev' as const, tx: 0.3, ty: 0.5 };
+    const s = { id: 'a', text: 'x', color: 'pink' as const, x: 0, y: 0, w: 200, h: 160, shape: 'ev' as const, tx: 0.3, ty: 0.5, blocks: [{ id: 'b', text: 'x', x: 0, y: 0 }] };
     expect(stripShapes([s])).toEqual([{ id: 'a', text: 'x', color: 'pink', x: 0, y: 0, w: 200, h: 160 }]);
   });
 
@@ -85,5 +88,40 @@ describe('şekilli kâğıtlar', () => {
       expect(d.paths.length).toBeGreaterThan(0);
       for (const p of d.paths) expect(p.d).not.toMatch(/NaN|undefined/);
     }
+  });
+});
+
+describe('şekilli kâğıtta birden fazla yazı', () => {
+  const d = { tx: 0.2, ty: 0.4 };
+  it('eski kâğıt tek yazı olarak açılır: yeri tx/ty ya da şeklin varsayılanı', () => {
+    expect(blocksOf({ text: 'a' }, d)).toEqual([{ id: 'b0', text: 'a', x: 0.2, y: 0.4 }]);
+    expect(blocksOf({ text: 'a', tx: 0.5, ty: 0.1 }, d)).toEqual([{ id: 'b0', text: 'a', x: 0.5, y: 0.1 }]);
+    const blocks = [{ id: 'x', text: 'b', x: 0, y: 0 }];
+    expect(blocksOf({ text: 'b', blocks }, d)).toBe(blocks);
+  });
+
+  it('kaydederken boş olmayan yazılar alt alta text olur, eski tx/ty silinir', () => {
+    const blocks = [{ id: '1', text: 'süt', x: 0, y: 0 }, { id: '2', text: '  ', x: 0.5, y: 0.5 }, { id: '3', text: 'ekmek', x: 0.1, y: 0.8 }];
+    expect(blocksPatch(blocks)).toEqual({ blocks, tx: undefined, ty: undefined, text: 'süt\nekmek' });
+  });
+});
+
+describe('ekranda sabit ya da sayfayla kayan kâğıt', () => {
+  it('kâğıdın kendi seçimi varsayılandan önce gelir; ikisi de yoksa sabit', () => {
+    expect(isFixed({}, undefined)).toBe(true);
+    expect(isFixed({}, false)).toBe(false);
+    expect(isFixed({ fixed: true }, false)).toBe(true);
+    expect(isFixed({ fixed: false }, true)).toBe(false);
+  });
+
+  it('sabitlik değişince kâğıt ekranda olduğu yerde kalır', () => {
+    // sayfa 400px kaymış, ekran 800px: ekranın %10'undaki kâğıt sayfa başından %60'tadır
+    const a = fixedPatch({ y: 0.1 }, false, 400, 800);
+    expect(a.fixed).toBe(false);
+    expect(a.y).toBeCloseTo(0.6);
+    const b = fixedPatch({ y: 0.6 }, true, 400, 800);
+    expect(b.fixed).toBe(true);
+    expect(b.y).toBeCloseTo(0.1);
+    expect(fixedPatch({ y: 0.2 }, true, 400, 800)).toEqual({ fixed: true, y: 0 });
   });
 });

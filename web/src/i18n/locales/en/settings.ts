@@ -76,6 +76,9 @@ export default {
     hint: 'Right-click an empty spot on the home page and choose “Add sticky note”; Alt Y hides / shows them on this device.',
     all: 'On every page',
     home: 'Only on the home page',
+    fixedHint: 'When you scroll a page, should notes stay fixed on screen or scroll with the page? Each note can also choose for itself from its ⋯ menu.',
+    fixedOn: 'Stay fixed on screen',
+    fixedOff: 'Scroll with the page',
   },
   appearance: {
     title: 'Appearance',
