@@ -25,7 +25,12 @@ export interface MeterSettings {
   hidden?: boolean;
   /** gadget her sayfada mı yoksa yalnız ana sayfada mı görünsün (varsayılan: her sayfada) */
   scope?: 'all' | 'home';
+  /** ekranda sabit mi (varsayılan) yoksa sayfayla birlikte mi kayar; kayıyorsa `y` sayfa başına göredir */
+  fixed?: boolean;
 }
+
+/** Konum kaydedilmemiş gadget'ın üstten uzaklığı (px) */
+export const METER_TOP = 64;
 
 export interface MeterData {
   /** true: Drive yok, tarayıcı depolaması gösteriliyor */
@@ -140,4 +145,18 @@ export const useMeterSettings = (): MeterSettings => useStore((s) => s.settings.
 export function patchMeter(patch: Partial<MeterSettings>) {
   const s = useStore.getState().settings;
   return saveSettings({ ...s, meter: { ...s.meter, ...patch } });
+}
+
+/** Sabitlik değişince `y`: gadget ekranda olduğu yerde kalsın. screenTop: gadget'ın ekrandaki üstü (px) */
+export function meterFixedPatch(fixed: boolean, screenTop: number, scrollY: number, vh: number): Partial<MeterSettings> {
+  return { fixed, y: Math.max(0, fixed ? screenTop : screenTop + scrollY) / vh };
+}
+
+/** Ekranda sabit kalma ayarını değiştir (gadget menüsü ve Ayarlar ortak) */
+export function setMeterFixed(fixed: boolean, scrollY: number) {
+  const s = meterSettings();
+  if ((s.fixed ?? true) === fixed) return;
+  const el = document.querySelector<HTMLElement>('.meter-gadget:not(.mobile)');
+  const saved = (s.y ?? METER_TOP / innerHeight) * innerHeight - (s.fixed === false ? scrollY : 0);
+  return patchMeter(meterFixedPatch(fixed, el ? el.getBoundingClientRect().top : saved, scrollY, innerHeight));
 }

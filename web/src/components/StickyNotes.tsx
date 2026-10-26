@@ -1,5 +1,6 @@
 import { localeTag, t } from '../i18n';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { scroller, useScrollY } from '../lib/pageScroll';
 import { useInstalled } from '../lib/plugins';
 import { go } from '../lib/router';
 import { createNote, uid, useStore } from '../lib/store';
@@ -27,24 +28,6 @@ function useViewport() {
     return () => removeEventListener('resize', on);
   }, []);
   return v;
-}
-
-/** Sayfanın kaydırılan alanı */
-const scroller = () => document.querySelector('main');
-
-/** <main>'in kaydırma payı; yalnız sayfayla kayan kâğıt varken dinlenir */
-function useScrollY(on: boolean) {
-  const [y, setY] = useState(0);
-  useEffect(() => {
-    const m = scroller();
-    if (!on || !m) return;
-    let raf = 0;
-    const read = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setY(m.scrollTop)); };
-    read();
-    m.addEventListener('scroll', read, { passive: true });
-    return () => { cancelAnimationFrame(raf); m.removeEventListener('scroll', read); };
-  }, [on]);
-  return on ? y : 0;
 }
 
 export default function StickyNotes({ home }: { home: boolean }) {

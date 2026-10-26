@@ -1,7 +1,8 @@
 import { t } from '../../i18n';
-import { patchMeter, SKINS, useMeterSettings, VIEWS } from '../../lib/driveMeter';
+import { patchMeter, setMeterFixed, SKINS, useMeterSettings, VIEWS } from '../../lib/driveMeter';
+import { pageScrollTop } from '../../lib/pageScroll';
 
-// Ayarlar > Depolama göstergesi: görünüm, kaplama, boy ve gadget'ın görünürlüğü
+// Ayarlar > Depolama göstergesi: görünüm, kaplama, boy, gadget'ın yeri, sabitliği ve görünürlüğü
 
 export default function MeterSettings() {
   const s = useMeterSettings();
@@ -29,6 +30,12 @@ export default function MeterSettings() {
         <div className="seg">
           <button className={s.scope !== 'home' ? 'on' : ''} onClick={() => void patchMeter({ scope: 'all' })}>{t('meter.settings.scopeAll')}</button>
           <button className={s.scope === 'home' ? 'on' : ''} onClick={() => void patchMeter({ scope: 'home' })}>{t('meter.settings.scopeHome')}</button>
+        </div>
+      ))}
+      {row(t('meter.settings.fixed'), (
+        <div className="seg">
+          <button className={s.fixed !== false ? 'on' : ''} onClick={() => void setMeterFixed(true, pageScrollTop())}>{t('meter.settings.fixedOn')}</button>
+          <button className={s.fixed === false ? 'on' : ''} onClick={() => void setMeterFixed(false, pageScrollTop())}>{t('meter.settings.fixedOff')}</button>
         </div>
       ))}
       {row(t('meter.settings.gadget'), (

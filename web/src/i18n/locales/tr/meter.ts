@@ -37,5 +37,8 @@ export default {
     scope: 'Nerede',
     scopeAll: 'Tüm ekranlarda',
     scopeHome: 'Yalnız ana sayfada',
+    fixed: 'Kaydırınca',
+    fixedOn: 'Ekranda sabit kalsın',
+    fixedOff: 'Sayfayla birlikte kaysın',
   },
 };

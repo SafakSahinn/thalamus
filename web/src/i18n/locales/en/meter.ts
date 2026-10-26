@@ -39,5 +39,8 @@ export default {
     scope: 'Where',
     scopeAll: 'On every screen',
     scopeHome: 'Only on the home page',
+    fixed: 'On scroll',
+    fixedOn: 'Stay fixed on screen',
+    fixedOff: 'Scroll with the page',
   },
 } satisfies Messages['meter'];
