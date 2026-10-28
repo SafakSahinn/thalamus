@@ -42,6 +42,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 // Eklentiler: kurulu değilse kodu hiç yüklenmez
 const StickyNotes = lazy(() => import('./components/StickyNotes'));
 const DriveMeter = lazy(() => import('./components/DriveMeter'));
+const ClockGadget = lazy(() => import('./components/clock/ClockGadget'));
 const Wallpaper = lazy(() => import('./components/Wallpaper'));
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
   const [drawer, setDrawer] = useState(false);
   const sticky = useInstalled('sticky');
   const meter = useInstalled('drivemeter');
+  const clock = useInstalled('clock');
   const wallpaper = useInstalled('wallpaper');
   // Dil değişince arayüz ağacı baştan kurulur (bu bileşenin etkileri yeniden çalışmaz)
   const locale = useLocale();
@@ -138,6 +140,7 @@ export default function App() {
       <QuickCapture />
       {sticky && <Suspense fallback={null}><StickyNotes home={route.name === 'home'} /></Suspense>}
       {meter && <Suspense fallback={null}><DriveMeter home={route.name === 'home'} /></Suspense>}
+      {clock && <Suspense fallback={null}><ClockGadget home={route.name === 'home'} /></Suspense>}
       <ContextMenu />
       <Shortcuts />
       <Peek />

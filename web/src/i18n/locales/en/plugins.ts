@@ -97,4 +97,21 @@ export default {
     usage: 'Once installed, previews appear in Settings > Appearance; just click one.',
     dataLabel: 'your background choice',
   },
+  clock: {
+    name: 'Clock',
+    summary: 'An analog clock that floats above the screen, with eight faces.',
+    description: {
+      p1: 'An analog clock that floats freely above the screen. Drag it anywhere, and choose whether it stays fixed on screen or scrolls with the page.',
+      p2: 'Pick from eight faces: classic chrome, night, wood, flower, Roman numerals, Aero glass, station and retro. You can give the clock a name, show another time zone and turn off the second hand.',
+    },
+    features: {
+      f1: '8 clock faces',
+      f2: 'Time zone choice and a name shown on the face',
+      f3: 'Second hand can be turned off',
+      f4: 'Can also be added to the home page as a widget',
+      f5: 'On a phone it becomes a small analog badge in the bottom-left corner',
+    },
+    usage: 'Once installed it appears on the right; drag it anywhere. Hover and use the ⚙ button to pick a face. Time zone and name are in Settings > Clock. Turn on the home page widget in Settings > Home page.',
+    dataLabel: 'your face, time zone and name choices, the gadget’s position and its place on the home page',
+  },
 } satisfies Messages['plugins'];

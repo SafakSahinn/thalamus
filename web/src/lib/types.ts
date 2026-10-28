@@ -422,6 +422,8 @@ export interface Settings {
   stickyFixed?: boolean;
   /** Depolama göstergesi: görünüm, kaplama, gadget konumu (bkz. driveMeter.ts) */
   meter?: import('./driveMeter').MeterSettings;
+  /** Saat eklentisi: kaplama, saat dilimi, ad, gadget konumu (bkz. clock.ts) */
+  clock?: import('./clock').ClockSettings;
   /** Arka plan eklentisinde seçili sahne/renk kimliği (bkz. wallpaper.ts); yoksa arka plan yok */
   wallpaper?: string;
   /** Marketten kurulan eklentiler (bkz. plugins.ts); hiç kaydedilmemişse o an kullanılanlar kurulu sayılır */

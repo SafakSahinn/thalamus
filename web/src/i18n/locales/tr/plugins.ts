@@ -95,4 +95,21 @@ export default {
     usage: 'Kurulunca Ayarlar > Görünüm’de önizlemeler çıkar; birine tıklaman yeterli.',
     dataLabel: 'arka plan seçimi',
   },
+  clock: {
+    name: 'Saat',
+    summary: 'Ekranın üstünde duran, sekiz kadran kaplamalı bir analog saat.',
+    description: {
+      p1: 'Ekranın üstünde serbest duran analog bir saat. İstediğin yere sürükleyebilir, sayfa kaydırıldığında ekranda sabit mi kalsın yoksa sayfayla birlikte mi kaysın seçebilirsin.',
+      p2: 'Sekiz kadran arasından seçim yapabilirsin: klasik krom, gece, ahşap, çiçek, Roma rakamlı, Aero cam, istasyon ve retro. Saate bir ad verebilir, başka bir saat dilimini gösterebilir, saniye ibresini kapatabilirsin.',
+    },
+    features: {
+      f1: '8 kadran kaplaması',
+      f2: 'Saat dilimi seçimi ve kadranın içinde görünen ad',
+      f3: 'Saniye ibresi açılıp kapatılabilir',
+      f4: 'İstersen ana sayfaya bileşen olarak da eklenir',
+      f5: 'Telefonda sol altta küçük bir analog rozet olur',
+    },
+    usage: 'Kurulunca sağ tarafta görünür; sürükleyerek taşıyabilirsin. Üzerine gelince çıkan ⚙ düğmesinden kaplamayı seçersin. Saat dilimi ve ad Ayarlar > Saat’te. Ana sayfa bileşenini Ayarlar > Ana sayfa’dan açabilirsin.',
+    dataLabel: 'kaplama, saat dilimi ve ad seçimleri, gadget’ın konumu ve ana sayfadaki yeri',
+  },
 };

@@ -14,6 +14,7 @@ export default {
     reading: 'Okuma hedefi',
     colls: 'Koleksiyonlar',
     otd: 'Gazete: Tarihte bugün',
+    clock: 'Saat',
     drivemeter: 'Depolama göstergesi',
   },
   addSticky: 'Yapışkan not ekle',

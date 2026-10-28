@@ -18,6 +18,7 @@ import { exportAllZip } from '../lib/exporter';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import { useInstalled } from '../lib/plugins';
 import MeterSettings from '../components/meter/MeterSettings';
+import ClockSettings from '../components/clock/ClockSettings';
 import WallpaperPicker from '../components/WallpaperPicker';
 import type { Note, Routine } from '../lib/types';
 
@@ -143,6 +144,7 @@ export default function SettingsPage() {
   const [lang, setLang] = useState<LocalePref>(getLocalePref());
   const sticky = useInstalled('sticky');
   const meter = useInstalled('drivemeter');
+  const clock = useInstalled('clock');
   const wallpaper = useInstalled('wallpaper');
   const [msg, setMsg] = useState('');
   const [zipBusy, setZipBusy] = useState<string | null>(null);
@@ -299,6 +301,12 @@ export default function SettingsPage() {
         <h3>{t('meter.title')}</h3>
         <p className="muted small">{t('meter.settings.hint')}</p>
         <MeterSettings />
+      </section>}
+
+      {clock && <section>
+        <h3>{t('clock.title')}</h3>
+        <p className="muted small">{t('clock.settings.hint')}</p>
+        <ClockSettings />
       </section>}
 
       <section>

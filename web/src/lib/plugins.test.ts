@@ -28,6 +28,9 @@ describe('hasPluginData', () => {
     expect(hasPluginData('otd', s({ homeLayout: [{ id: 'today', on: true }] }))).toBe(false);
     expect(hasPluginData('wallpaper', s({}))).toBe(false);
     expect(hasPluginData('wallpaper', s({ wallpaper: 'aero' }))).toBe(true);
+    expect(hasPluginData('clock', s({}))).toBe(false);
+    expect(hasPluginData('clock', s({ clock: { skin: 'wood' } }))).toBe(true);
+    expect(hasPluginData('clock', s({ homeLayout: [{ id: 'clock', on: true }] }))).toBe(true);
   });
 });
 

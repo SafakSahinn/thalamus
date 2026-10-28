@@ -18,12 +18,15 @@ import { editGoal, GoalBar } from './ReadingPage';
 import { readingStats } from '../lib/reading';
 import { addSticky } from '../lib/sticky';
 import { meterSettings, patchMeter } from '../lib/driveMeter';
+import { clockSettings, patchClock } from '../lib/clock';
 import { installedList, isInstalled, type PluginId } from '../lib/plugins';
 
 const OnThisDayLazy = lazy(() => import('../components/OnThisDay'));
 const OnThisDay = () => <Suspense fallback={null}><OnThisDayLazy /></Suspense>;
 const MeterWidgetLazy = lazy(() => import('../components/meter/MeterWidget'));
 const MeterWidget = () => <Suspense fallback={null}><MeterWidgetLazy /></Suspense>;
+const ClockWidgetLazy = lazy(() => import('../components/clock/ClockWidget'));
+const ClockWidget = () => <Suspense fallback={null}><ClockWidgetLazy /></Suspense>;
 
 // Ana sayfa: bileşenlerden oluşur; hangilerinin görüneceği ve sırası Ayarlar > Ana sayfa'dan seçilir
 // (ayarlar.homeLayout, Drive'da eşitlenir). Boş bileşenler kendini gizler.
@@ -64,6 +67,7 @@ const WIDGETS: Widget[] = [
   widget('otd', OnThisDay, { wide: true, plugin: 'otd' }),
   // varsayılan kapalı: eklenti asıl olarak serbest gadget hâliyle görünür
   widget('drivemeter', MeterWidget, { off: true, plugin: 'drivemeter' }),
+  widget('clock', ClockWidget, { off: true, plugin: 'clock' }),
 ];
 
 type Layout = { id: string; on: boolean }[];
@@ -86,6 +90,9 @@ export function homeContextMenu(e: React.MouseEvent) {
   // gizlenmiş depolama göstergesini geri getir (konumu sağ tıklanan yer olur)
   if (isInstalled('drivemeter') && meterSettings().hidden) {
     items.push({ key: 'meter', icon: '⏲', label: t('meter.show'), run: () => void patchMeter({ hidden: false, x: at.x / innerWidth, y: at.y / innerHeight }) });
+  }
+  if (isInstalled('clock') && clockSettings().hidden) {
+    items.push({ key: 'clock', icon: '🕒', label: t('clock.show'), run: () => void patchClock({ hidden: false, x: at.x / innerWidth, y: at.y / innerHeight }) });
   }
   if (!items.length) return;
   e.preventDefault();

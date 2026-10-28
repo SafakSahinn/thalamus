@@ -15,6 +15,7 @@ export default {
     reading: 'Reading goal',
     colls: 'Collections',
     otd: 'Newspaper: On this day',
+    clock: 'Clock',
     drivemeter: 'Storage meter',
   },
   addSticky: 'Add sticky note',

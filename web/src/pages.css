@@ -501,3 +501,20 @@ body.focus-mode .meter-gadget { display: none; }
 .meter-settings { display: grid; gap: 10px; }
 .meter-set-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .meter-set-row > span:first-child { min-width: 80px; }
+
+/* ---------- Saat (clock eklentisi) ---------- */
+.clock-gadget { position: fixed; z-index: 33; cursor: grab; user-select: none; touch-action: none; }
+.clock-gadget.dragging { cursor: grabbing; }
+.clock-gadget:hover .meter-tools, .clock-gadget:focus-within .meter-tools { opacity: 1; }
+.clock-gadget .clock-face { display: block; width: 140px; height: 140px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+.clock-gadget.mobile { left: 10px; bottom: 14px; cursor: default; }
+.clock-gadget.mobile .clock-face { width: 40px; height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+/* telefonda depolama rozeti de varsa saat onun üstüne çıkar */
+.meter-gadget.mobile ~ .clock-gadget.mobile { bottom: 52px; }
+body.focus-mode .clock-gadget { display: none; }
+.clock-widget-body { display: flex; justify-content: center; padding: 6px 0 4px; }
+.clock-widget-body .clock-face { width: 170px; height: 170px; }
+.clock-skins { display: flex; flex-wrap: wrap; gap: 6px; }
+.clock-skins button { width: 56px; height: 56px; padding: 4px; border-radius: 10px; border: 2px solid transparent; background: var(--panel); cursor: pointer; }
+.clock-skins button.on { border-color: var(--accent); }
+.clock-skins .clock-face { width: 100%; height: 100%; display: block; }

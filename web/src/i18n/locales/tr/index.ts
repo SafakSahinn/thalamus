@@ -16,6 +16,7 @@ import keys from './keys';
 import landing from './landing';
 import market from './market';
 import meter from './meter';
+import clock from './clock';
 import misc from './misc';
 import note from './note';
 import options from './options';
@@ -56,6 +57,7 @@ export default {
   landing,
   market,
   meter,
+  clock,
   misc,
   note,
   options,
