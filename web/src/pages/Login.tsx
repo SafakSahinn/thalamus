@@ -36,6 +36,7 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-card">
+        <a className="login-back small muted" href="#/">{t('pages.login.back')}</a>
         <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width={64} height={64} />
         <h1>Thalamus</h1>
         <p className="muted">{t('pages.login.tagline')}</p>

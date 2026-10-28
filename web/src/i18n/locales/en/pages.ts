@@ -2,6 +2,7 @@ import type { Messages } from '../../types';
 
 export default {
   login: {
+    back: '← Back to home',
     tagline: 'Your books, papers, courses and words; in one place and connected.',
     p1: 'Your notes are stored {drive}; they never reach our server.',
     p1Drive: 'in your own Google Drive',

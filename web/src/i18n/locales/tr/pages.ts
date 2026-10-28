@@ -1,6 +1,7 @@
 // Giriş, çöp kutusu, çalışma istatistikleri; yorumlar, tarih seçici, şablon düğmesi, emoji seçici
 export default {
   login: {
+    back: '← Tanıtım sayfası',
     tagline: 'Kitapların, makalelerin, derslerin ve kelimelerin; tek yerde ve birbirine bağlı.',
     p1: 'Notların {drive} saklanır; sunucumuza gelmez.',
     p1Drive: 'kendi Google Drive’ında',

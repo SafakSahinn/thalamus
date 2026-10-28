@@ -13,6 +13,7 @@ import fmt from './fmt';
 import home from './home';
 import importer from './importer';
 import keys from './keys';
+import landing from './landing';
 import market from './market';
 import meter from './meter';
 import misc from './misc';
@@ -52,6 +53,7 @@ export default {
   home,
   importer,
   keys,
+  landing,
   market,
   meter,
   misc,

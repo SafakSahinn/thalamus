@@ -38,6 +38,7 @@ const TrashPage = lazy(() => import('./pages/TrashPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const SharedPage = lazy(() => import('./pages/SharedPage'));
 const MarketPage = lazy(() => import('./pages/MarketPage'));
+const Landing = lazy(() => import('./pages/Landing'));
 // Eklentiler: kurulu değilse kodu hiç yüklenmez
 const StickyNotes = lazy(() => import('./components/StickyNotes'));
 const DriveMeter = lazy(() => import('./components/DriveMeter'));
@@ -47,7 +48,8 @@ export default function App() {
   const ready = useStore((s) => s.ready);
   // Koleksiyon/alan tanımları değişince bütün ağaç yeniden çizilsin (sayfa durumu korunur)
   useStore((s) => s.settings.types);
-  const route = parse(useHash());
+  const hash = useHash();
+  const route = parse(hash);
   const [drawer, setDrawer] = useState(false);
   const sticky = useInstalled('sticky');
   const meter = useInstalled('drivemeter');
@@ -63,6 +65,11 @@ export default function App() {
     if (cloud && account) void initLocal().then(startSync);
   }, [account]);
 
+  // Girişten sonra #/giris adresinde kalmasın
+  useEffect(() => {
+    if (account && route.name === 'login') history.replaceState(null, '', location.pathname + location.search);
+  }, [account, route.name]);
+
   // Uygulama içi hatırlatmalar (bildirimler açıksa)
   useEffect(() => startReminders(() => Object.values(useStore.getState().notes)), []);
   useEffect(() => watchTimer(), []);
@@ -76,11 +83,15 @@ export default function App() {
     return <Suspense key={locale} fallback={null}><LegalPage kind={route.kind} /></Suspense>;
   }
   if (cloud && account === undefined) return <div className="splash" />;
-  if (cloud && !account) return <Login key={locale} />;
+  if (cloud && !account) {
+    // Kök adreste tanıtım sayfası; derin bağlantılar (#/n/… gibi) doğrudan girişe
+    if (route.name === 'home' && /^#?\/?$/.test(hash)) return <Suspense key={locale} fallback={null}><Landing /></Suspense>;
+    return <Login key={locale} />;
+  }
 
   let page: React.ReactNode;
   switch (route.name) {
-    case 'home': page = <Home />; break;
+    case 'home': case 'login': page = <Home />; break;
     case 'note': page = <NotePage id={route.id} />; break;
     case 'collection': page = <CollectionPage type={route.type} edit={route.edit} />; break;
     case 'graph': page = <GraphPage />; break;

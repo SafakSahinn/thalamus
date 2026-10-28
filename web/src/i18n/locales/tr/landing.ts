@@ -1,0 +1,31 @@
+// Tanıtım (karşılama) sayfası: oturumsuz ziyaretçinin kökte gördüğü sayfa
+export default {
+  signIn: 'Giriş yap',
+  eyebrow: 'Kişisel bilgi atlası',
+  title: 'Okuduğun, öğrendiğin ve düşündüğün her şey; birbirine bağlı.',
+  lead: 'Thalamus kitaplarını, makalelerini, derslerini ve kelimelerini tek yerde toplar, aralarındaki bağlantıları görünür kılar. Notların kendi Google Drive’ında durur.',
+  more: 'Neler yapabilir?',
+  featuresTitle: 'Tek uygulamada okuma, not ve tekrar',
+  features: {
+    graph: { title: 'Bağlantılı notlar', text: 'Notları birbirine bağla; bağlantı haritasında hangi fikrin nereye çıktığını gör.' },
+    collections: { title: 'Koleksiyonlar', text: 'Kitaplar, makaleler, dersler, kelimeler: her biri kendi alanlarıyla; tablo, pano, galeri ya da takvim görünümünde.' },
+    pdf: { title: 'PDF okuyucu', text: 'PDF’i yükle; makale bilgisi, özet ve bölüm başlıkları kendiliğinden çıksın. Okurken vurgula, vurgular notuna eklensin.' },
+    review: { title: 'Tekrar ve çalışma', text: 'Aralıklı tekrarla öğrendiğini unutma; çalışma süreni ve okuma ilerlemeni takip et.' },
+    daily: { title: 'Günlük ve takvim', text: 'Her güne bir sayfa; tarihli notların ve hatırlatmaların takvimde.' },
+    offline: { title: 'Her cihazda, internetsiz de', text: 'Telefona ve bilgisayara uygulama gibi kur; çevrimdışı yazdıkların bağlanınca eşitlenir.' },
+  },
+  privacyTitle: 'Notların senin',
+  privacy: {
+    p1: 'Notların, dosyaların ve oturumun kendi Google Drive’ında saklanır; sunucumuza gelmez.',
+    p2: 'Bizde yalnızca e-posta adresin, adın ve giriş zamanların tutulur.',
+    p3: 'Kaynak kodu açık: GitHub’da herkes inceleyebilir.',
+    p4: 'Ücretsiz.',
+  },
+  marketTitle: 'Eklentilerle genişlet',
+  marketLead: 'İstediğin özelliği Market’ten kur, istemediğini kaldır. Kurmadığın eklentinin kodu hiç yüklenmez.',
+  ctaTitle: 'Başlamak için Google hesabın yeter.',
+  terms: 'Kullanım Koşulları',
+  privacyLink: 'Gizlilik',
+  source: 'Kaynak kodu',
+  language: 'Dil',
+};

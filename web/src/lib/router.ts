@@ -16,6 +16,7 @@ export type Route =
   | { name: 'settings' }
   | { name: 'import' }
   | { name: 'trash' }
+  | { name: 'login' }
   | { name: 'legal'; kind: 'privacy' | 'terms' }
   | { name: 'shared'; id: string };
 
@@ -37,6 +38,7 @@ export function parse(hash: string): Route {
     case 'trash': return { name: 'trash' };
     case 'market': return { name: 'market' };
     case 'p': return parts[1] ? { name: 'shared', id: parts[1] } : { name: 'home' };
+    case 'giris': return { name: 'login' };
     case 'gizlilik': return { name: 'legal', kind: 'privacy' };
     case 'kosullar': return { name: 'legal', kind: 'terms' };
     default: return { name: 'home' };
