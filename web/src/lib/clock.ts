@@ -2,12 +2,21 @@ import { useEffect, useState } from 'react';
 import { localeTag } from '../i18n';
 import { saveSettings, useStore } from './store';
 
-// "Saat" eklentisi (Windows 7 Saat gadget'ı gibi): analog kadran, 8 kaplama, saat dilimi, ad etiketi, saniye ibresi.
+// "Saat" eklentisi (Windows 7 Saat gadget'ı gibi): analog kadran, 16 kaplama, saat dilimi, ad etiketi, saniye ibresi.
+// Kaplamaların 8'i Windows 7 gadget'ının kendi görselleri (public/clocks/), 8'i bizim çizdiğimiz SVG'ler.
 // Gadget ekranda serbest durur (depolama göstergesiyle aynı davranış: sürükleme, sabit/kaymalı, gizleme);
 // istenirse ana sayfa bileşeni olarak da eklenir. Ayarlar Settings.clock'ta, Drive'a eşitlenir.
 
-export type ClockSkin = 'classic' | 'night' | 'wood' | 'flower' | 'roman' | 'aero' | 'station' | 'retro';
-export const CLOCK_SKINS: ClockSkin[] = ['classic', 'night', 'wood', 'flower', 'roman', 'aero', 'station', 'retro'];
+/** Windows 7 Saat gadget'ının 8 kadranı, gadget'taki sırasıyla */
+export type Win7Skin = 'trad' | 'system' | 'cronometer' | 'diner' | 'flower7' | 'modern' | 'square' | 'novelty';
+export type SvgSkin = 'classic' | 'night' | 'wood' | 'flower' | 'roman' | 'aero' | 'station' | 'retro';
+export type ClockSkin = Win7Skin | SvgSkin;
+export const WIN7_SKINS: Win7Skin[] = ['trad', 'system', 'cronometer', 'diner', 'flower7', 'modern', 'square', 'novelty'];
+export const SVG_SKINS: SvgSkin[] = ['classic', 'night', 'wood', 'flower', 'roman', 'aero', 'station', 'retro'];
+export const CLOCK_SKINS: ClockSkin[] = [...WIN7_SKINS, ...SVG_SKINS];
+/** varsayılan kaplama: orijinal gadget'ınki gibi geleneksel kadran */
+export const DEFAULT_SKIN: ClockSkin = 'trad';
+export const isWin7Skin = (k: ClockSkin): k is Win7Skin => (WIN7_SKINS as string[]).includes(k);
 
 export interface ClockSettings {
   skin?: ClockSkin;

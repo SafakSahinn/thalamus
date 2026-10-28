@@ -1,8 +1,8 @@
 import { t } from '../../i18n';
 import { useMemo } from 'react';
-import { CLOCK_SKINS, patchClock, setClockFixed, timeZones, tzLabel, useClockSettings } from '../../lib/clock';
+import { DEFAULT_SKIN, SVG_SKINS, WIN7_SKINS, patchClock, setClockFixed, timeZones, tzLabel, useClockSettings } from '../../lib/clock';
 import { pageScrollTop } from '../../lib/pageScroll';
-import ClockFace from './ClockFace';
+import { SkinPreview } from './Clock';
 
 // Ayarlar > Saat: kaplama (önizlemeli), ad, saat dilimi, saniye ibresi, gadget'ın yeri, sabitliği ve görünürlüğü
 
@@ -17,11 +17,15 @@ export default function ClockSettings() {
     <div className="meter-settings clock-settings">
       {row(t('clock.settings.skin'), (
         <div className="clock-skins">
-          {CLOCK_SKINS.map((k) => (
-            <button key={k} className={(s.skin ?? 'classic') === k ? 'on' : ''} title={t(`clock.skins.${k}`)} aria-label={t(`clock.skins.${k}`)}
-              onClick={() => void patchClock({ skin: k })}>
-              <ClockFace skin={k} hour={305} minute={60} second={210} seconds bare />
-            </button>
+          {[WIN7_SKINS, SVG_SKINS].map((group, i) => (
+            <div key={i} className="clock-skin-row">
+              {group.map((k) => (
+                <button key={k} className={(s.skin ?? DEFAULT_SKIN) === k ? 'on' : ''} title={t(`clock.skins.${k}`)} aria-label={t(`clock.skins.${k}`)}
+                  onClick={() => void patchClock({ skin: k })}>
+                  <SkinPreview skin={k} />
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       ))}

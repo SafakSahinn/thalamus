@@ -1,7 +1,8 @@
 import { useId } from 'react';
-import type { ClockSkin } from '../../lib/clock';
+import { isWin7Skin, type ClockSkin, type SvgSkin } from '../../lib/clock';
+import Win7Face from './Win7Face';
 
-// Windows 7 Saat gadget'ının 8 kadranından esinli SVG çizimler (kendi çizimimiz, görsel kopyalanmadı).
+// Kendi çizdiğimiz 8 SVG kadran (orijinal Win7 kadranları Win7Face.tsx'te).
 // Hepsi 200×200'lük kutuda, merkez (100,100). Kaplama: çerçeve + yüz + işaretler + ibre biçimi/renkleri.
 
 const C = 100;
@@ -56,7 +57,7 @@ function numerals(o: { r: number; color: string; size: number; font: string; wei
 const SERIF = 'Georgia, "Times New Roman", serif';
 const SANS = '"Segoe UI", system-ui, sans-serif';
 
-const SKINS: Record<ClockSkin, Skin> = {
+const SKINS: Record<SvgSkin, Skin> = {
   // Win7'nin varsayılanı gibi: krom çerçeve, beyaz yüz, siyah çizgiler, kırmızı saniye
   classic: {
     hands: { hour: '#1d1f22', minute: '#1d1f22', second: '#d8231b', shape: 'taper', cap: '#1d1f22' },
@@ -272,7 +273,12 @@ interface Props {
   bare?: boolean;
 }
 
+/** Kaplamaya göre orijinal Win7 görselleri ya da bizim SVG çizimimiz */
 export default function ClockFace(p: Props) {
+  return isWin7Skin(p.skin) ? <Win7Face {...p} skin={p.skin} /> : <SvgFace {...p} skin={p.skin} />;
+}
+
+function SvgFace(p: Props & { skin: SvgSkin }) {
   const id = useId().replace(/:/g, '');
   const sk = SKINS[p.skin] ?? SKINS.classic;
   const h = sk.hands;

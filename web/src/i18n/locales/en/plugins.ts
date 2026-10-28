@@ -99,13 +99,13 @@ export default {
   },
   clock: {
     name: 'Clock',
-    summary: 'An analog clock that floats above the screen, with eight faces.',
+    summary: 'An analog clock that floats above the screen, with Windows 7 faces.',
     description: {
       p1: 'An analog clock that floats freely above the screen. Drag it anywhere, and choose whether it stays fixed on screen or scrolls with the page.',
-      p2: 'Pick from eight faces: classic chrome, night, wood, flower, Roman numerals, Aero glass, station and retro. You can give the clock a name, show another time zone and turn off the second hand.',
+      p2: 'Pick from sixteen faces: the eight original faces of the Windows 7 Clock gadget and eight new ones (classic chrome, night, wood, flower, Roman numerals, Aero glass, station, retro). You can give the clock a name, show another time zone and turn off the second hand.',
     },
     features: {
-      f1: '8 clock faces',
+      f1: 'The 8 original Windows 7 faces plus 8 new ones',
       f2: 'Time zone choice and a name shown on the face',
       f3: 'Second hand can be turned off',
       f4: 'Can also be added to the home page as a widget',

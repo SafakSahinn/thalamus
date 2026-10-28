@@ -97,13 +97,13 @@ export default {
   },
   clock: {
     name: 'Saat',
-    summary: 'Ekranın üstünde duran, sekiz kadran kaplamalı bir analog saat.',
+    summary: 'Ekranın üstünde duran, Windows 7 kadranlı bir analog saat.',
     description: {
       p1: 'Ekranın üstünde serbest duran analog bir saat. İstediğin yere sürükleyebilir, sayfa kaydırıldığında ekranda sabit mi kalsın yoksa sayfayla birlikte mi kaysın seçebilirsin.',
-      p2: 'Sekiz kadran arasından seçim yapabilirsin: klasik krom, gece, ahşap, çiçek, Roma rakamlı, Aero cam, istasyon ve retro. Saate bir ad verebilir, başka bir saat dilimini gösterebilir, saniye ibresini kapatabilirsin.',
+      p2: 'On altı kadran arasından seçim yapabilirsin: Windows 7 Saat gadget’ının sekiz orijinal kadranı ve sekiz yeni kadran (klasik krom, gece, ahşap, çiçek, Roma rakamlı, Aero cam, istasyon, retro). Saate bir ad verebilir, başka bir saat dilimini gösterebilir, saniye ibresini kapatabilirsin.',
     },
     features: {
-      f1: '8 kadran kaplaması',
+      f1: 'Windows 7’nin 8 orijinal kadranı ve 8 yeni kadran',
       f2: 'Saat dilimi seçimi ve kadranın içinde görünen ad',
       f3: 'Saniye ibresi açılıp kapatılabilir',
       f4: 'İstersen ana sayfaya bileşen olarak da eklenir',
