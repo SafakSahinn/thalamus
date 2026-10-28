@@ -81,13 +81,13 @@ export default {
   },
   wallpaper: {
     name: 'Arka plan',
-    summary: 'Gmail temaları gibi, uygulamanın arkasına bir sahne ya da renk koyar.',
+    summary: 'Uygulamanın arkasına bir sahne ya da renk koyar.',
     description: {
       p1: 'Seçtiğin sahne ekranın arkasına yerleşir; kenar çubuğu buzlu cam gibi, sayfa da yarı saydam bir kart gibi üstünde durur.',
-      p2: 'Kendi çizdiğimiz yedi sahne (piksel gökyüzü, Windows 7 havasında Aero, çöl, dağlar, okyanus, yıldızlı gece, orman) ve sekiz renk/gradyan arasından seçebilirsin.',
+      p2: 'Sekiz sahne (piksel gökyüzü, Windows 7, Aero, çöl, dağlar, okyanus, yıldızlı gece, orman) ve sekiz renk/gradyan arasından seçebilirsin.',
     },
     features: {
-      f1: '7 sahne, 5 gradyan ve 3 düz renk',
+      f1: '8 sahne, 5 gradyan ve 3 düz renk',
       f2: 'Koyu temada sahne kısılır, yazılar okunur kalır',
       f3: 'Seçimin bütün cihazlarına eşitlenir',
       f4: 'Telefonda da çalışır',

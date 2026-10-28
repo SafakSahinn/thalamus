@@ -89,7 +89,8 @@ export default {
     none: 'Yok',
     names: {
       pixel: 'Piksel gökyüzü',
-      aero: 'Aero (Windows 7)',
+      win7: 'Windows 7',
+      aero: 'Aero',
       dunes: 'Çöl',
       mountains: 'Dağlar',
       ocean: 'Okyanus',

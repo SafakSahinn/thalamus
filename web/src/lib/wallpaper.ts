@@ -1,12 +1,12 @@
 import { saveSettings, useStore } from './store';
 
-// "Arka plan" eklentisi (Gmail temaları gibi): uygulamanın arkasına hazır bir sahne ya da renk konur,
-// kenar çubuğu ve sayfa yarı saydam olur. Görsel yükleme yok; sahneler public/wallpapers/*.svg altında,
+// "Arka plan" eklentisi: uygulamanın arkasına hazır bir sahne ya da renk konur,
+// kenar çubuğu ve sayfa yarı saydam olur. Görsel yükleme yok; sahneler public/wallpapers/ altında (çoğu kendi çizdiğimiz SVG),
 // renkler CSS ile. Seçim Settings.wallpaper'da, Drive'a eşitlenir. Koyu temada sahne kısılır.
 
 export type WallKind = 'scene' | 'color';
 export type WallId =
-  | 'pixel' | 'aero' | 'dunes' | 'mountains' | 'ocean' | 'night' | 'forest'
+  | 'pixel' | 'win7' | 'aero' | 'dunes' | 'mountains' | 'ocean' | 'night' | 'forest'
   | 'peach' | 'mint' | 'lavender' | 'sky' | 'graphite' | 'sand' | 'sage' | 'slate';
 
 export interface Wall {
@@ -18,11 +18,12 @@ export interface Wall {
   dark?: boolean;
 }
 
-const scene = (id: WallId, dark = false): Wall => ({ id, kind: 'scene', dark, css: `url(${import.meta.env.BASE_URL}wallpapers/${id}.svg) center / cover no-repeat` });
+const scene = (id: WallId, dark = false, ext = 'svg'): Wall => ({ id, kind: 'scene', dark, css: `url(${import.meta.env.BASE_URL}wallpapers/${id}.${ext}) center / cover no-repeat` });
 const color = (id: WallId, css: string, dark = false): Wall => ({ id, kind: 'color', css, dark });
 
 export const WALLS: Wall[] = [
   scene('pixel'),
+  scene('win7', true, 'webp'),
   scene('aero', true),
   scene('dunes'),
   scene('mountains'),

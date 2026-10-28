@@ -91,7 +91,8 @@ export default {
     none: 'None',
     names: {
       pixel: 'Pixel sky',
-      aero: 'Aero (Windows 7)',
+      win7: 'Windows 7',
+      aero: 'Aero',
       dunes: 'Desert',
       mountains: 'Mountains',
       ocean: 'Ocean',
