@@ -26,6 +26,8 @@ export interface ClockSettings {
   label?: string;
   /** saniye ibresi (varsayılan: açık) */
   seconds?: boolean;
+  /** gadget'ın boyu (varsayılan: büyük) */
+  size?: 'large' | 'small';
   /** serbest gadget'ın sol üst köşesi, ekranın kesri */
   x?: number;
   y?: number;
@@ -36,6 +38,9 @@ export interface ClockSettings {
   /** ekranda sabit mi (varsayılan) yoksa sayfayla birlikte mi kayar; kayıyorsa `y` sayfa başına göredir */
   fixed?: boolean;
 }
+
+/** Gadget'ın genişliği (px): Win7 kadranları kendi boyunda (130) keskin, SVG'ler biraz büyük */
+export const clockSize = (s: ClockSettings) => (s.size === 'small' ? 86 : isWin7Skin(s.skin ?? DEFAULT_SKIN) ? 130 : 140);
 
 /** Konum kaydedilmemiş gadget'ın üstten uzaklığı (px); depolama göstergesinin altında dursun */
 export const CLOCK_TOP = 270;

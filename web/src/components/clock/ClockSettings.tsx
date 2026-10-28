@@ -41,6 +41,7 @@ export default function ClockSettings() {
         </select>
       ))}
       {row(t('clock.settings.seconds'), seg(s.seconds ?? true, [[true, t('clock.settings.on')], [false, t('clock.settings.off')]], (v) => void patchClock({ seconds: v })))}
+      {row(t('clock.settings.size'), seg<'large' | 'small'>(s.size ?? 'large', [['large', t('clock.larger')], ['small', t('clock.smaller')]], (v) => void patchClock({ size: v })))}
       {row(t('clock.settings.scope'), seg<'all' | 'home'>(s.scope ?? 'all', [['all', t('clock.settings.scopeAll')], ['home', t('clock.settings.scopeHome')]], (v) => void patchClock({ scope: v })))}
       {row(t('clock.settings.fixed'), seg(s.fixed ?? true, [[true, t('clock.settings.fixedOn')], [false, t('clock.settings.fixedOff')]], (v) => void setClockFixed(v, pageScrollTop())))}
       {row(t('clock.settings.gadget'), seg(!!s.hidden, [[false, t('clock.settings.visible')], [true, t('clock.settings.hidden')]], (v) => void patchClock({ hidden: v })))}

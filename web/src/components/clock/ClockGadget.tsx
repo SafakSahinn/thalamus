@@ -1,6 +1,6 @@
 import { t } from '../../i18n';
 import { useEffect, useState } from 'react';
-import { CLOCK_TOP, patchClock, setClockFixed, useClockSettings } from '../../lib/clock';
+import { CLOCK_TOP, clockSize, patchClock, setClockFixed, useClockSettings } from '../../lib/clock';
 import { pageScrollTop, useScrollY } from '../../lib/pageScroll';
 import { openMenu } from '../ContextMenu';
 import Clock, { clockMenuItems } from './Clock';
@@ -12,8 +12,6 @@ import Clock, { clockMenuItems } from './Clock';
 const MOBILE = '(max-width: 600px)';
 /** sağdaki düğme sütununun genişliği (px) */
 const TOOLS = 26;
-/** gadget'ın kendisi (px) */
-const SIZE = 140;
 
 function useMobile() {
   const [m, setM] = useState(() => matchMedia(MOBILE).matches);
@@ -51,6 +49,7 @@ export default function ClockGadget({ home }: { home: boolean }) {
     );
   }
 
+  const SIZE = clockSize(s);
   const clamp = (left: number, top: number) => ({
     left: Math.max(0, Math.min(left, vp.vw - SIZE - TOOLS)),
     top: Math.max(0, Math.min(top, vp.vh - SIZE)),
@@ -103,9 +102,12 @@ export default function ClockGadget({ home }: { home: boolean }) {
   return (
     <div className={`clock-gadget ${live ? 'dragging' : ''}`} style={style}
       onPointerDown={onDown} onContextMenu={(e) => { e.preventDefault(); menu(e.clientX, e.clientY); }}>
-      <Clock s={s} />
+      <div style={{ width: SIZE, height: SIZE }}><Clock s={s} /></div>
       <div className="meter-tools">
         <button title={t('clock.hide')} onClick={hide}>×</button>
+        <button title={s.size === 'small' ? t('clock.larger') : t('clock.smaller')} onClick={() => void patchClock({ size: s.size === 'small' ? 'large' : 'small' })}>
+          {s.size === 'small' ? '⤢' : '⤡'}
+        </button>
         <button title={t('clock.options')} onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); menu(b.right + 2, b.top); }}>⚙</button>
       </div>
     </div>

@@ -4,6 +4,8 @@ export default {
   options: 'Seçenekler',
   hide: 'Saati gizle',
   show: 'Saati göster',
+  larger: 'Büyük boy',
+  smaller: 'Küçük boy',
   skins: {
     trad: 'Windows 7: Geleneksel',
     system: 'Windows 7: Sistem',
@@ -29,6 +31,7 @@ export default {
     labelHint: 'Örn. İstanbul',
     tz: 'Saat dilimi',
     tzLocal: 'Bu cihazın saati',
+    size: 'Boy',
     seconds: 'Saniye ibresi',
     on: 'Göster',
     off: 'Gizle',

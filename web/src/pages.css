@@ -506,7 +506,7 @@ body.focus-mode .meter-gadget { display: none; }
 .clock-gadget { position: fixed; z-index: 33; cursor: grab; user-select: none; touch-action: none; }
 .clock-gadget.dragging { cursor: grabbing; }
 .clock-gadget:hover .meter-tools, .clock-gadget:focus-within .meter-tools { opacity: 1; }
-.clock-gadget .clock-face { display: block; width: 140px; height: 140px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+.clock-gadget .clock-face { display: block; width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
 .clock-gadget.mobile { left: 10px; bottom: 14px; cursor: default; }
 .clock-gadget.mobile .clock-face { width: 40px; height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
 /* telefonda depolama rozeti de varsa saat onun üstüne çıkar */
@@ -523,5 +523,3 @@ body.focus-mode .clock-gadget { display: none; }
 .clock-swatch:hover { background: var(--panel); }
 .clock-swatch.on { outline: 2px solid var(--accent); outline-offset: 0; }
 .clock-swatch .clock-face { width: 100%; height: 100%; display: block; }
-/* orijinal Win7 kadranları kendi boyutunda (130px) keskin görünür */
-.clock-gadget .clock-face.w7c { width: 130px; height: 130px; }

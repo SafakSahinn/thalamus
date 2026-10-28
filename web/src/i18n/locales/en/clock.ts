@@ -6,6 +6,8 @@ export default {
   options: 'Options',
   hide: 'Hide clock',
   show: 'Show clock',
+  larger: 'Larger size',
+  smaller: 'Smaller size',
   skins: {
     trad: 'Windows 7: Traditional',
     system: 'Windows 7: System',
@@ -31,6 +33,7 @@ export default {
     labelHint: 'e.g. London',
     tz: 'Time zone',
     tzLocal: 'This device’s time',
+    size: 'Size',
     seconds: 'Second hand',
     on: 'Show',
     off: 'Hide',
