@@ -26,6 +26,8 @@ describe('hasPluginData', () => {
     expect(hasPluginData('sticky', s({ stickyScope: 'home' }))).toBe(true);
     expect(hasPluginData('otd', s({ otdLang: 'en' }))).toBe(true);
     expect(hasPluginData('otd', s({ homeLayout: [{ id: 'today', on: true }] }))).toBe(false);
+    expect(hasPluginData('wallpaper', s({}))).toBe(false);
+    expect(hasPluginData('wallpaper', s({ wallpaper: 'aero' }))).toBe(true);
   });
 });
 

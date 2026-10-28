@@ -7,7 +7,7 @@ import type { Settings } from './types';
 // Katalog şimdilik yalnız bizim yayınladığımız yerleşik eklentilerden oluşur (kodla birlikte gelir).
 // Kurulu listesi Settings.installed'da tutulur ve Drive'a eşitlenir. Kaldırmak veriyi silmez, yalnız gizler.
 
-export type PluginId = 'sticky' | 'stickyArt' | 'stickyShape' | 'otd' | 'drivemeter';
+export type PluginId = 'sticky' | 'stickyArt' | 'stickyShape' | 'otd' | 'drivemeter' | 'wallpaper';
 export type PluginCategory = 'home' | 'tool';
 
 export interface Plugin {
@@ -53,6 +53,7 @@ export const PLUGINS: Plugin[] = [
   plugin({ id: 'stickyShape', icon: '❤', category: 'tool', author: 'Thalamus', requires: ['sticky'] }),
   plugin({ id: 'otd', icon: '📰', category: 'home', author: 'Thalamus' }),
   plugin({ id: 'drivemeter', icon: '⏲', category: 'tool', author: 'Thalamus' }),
+  plugin({ id: 'wallpaper', icon: '🏞', category: 'tool', author: 'Thalamus' }),
 ];
 
 /** Tanıtım görselleri dile göre: public/plugins/<id>.<dil>.webp; o dilde yoksa kaynak dildeki kullanılır */
@@ -124,6 +125,10 @@ const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Setting
   drivemeter: {
     has: (s) => s.meter !== undefined || !!s.homeLayout?.some((x) => x.id === 'drivemeter'),
     clear: ({ meter: _a, ...s }) => ({ ...s, homeLayout: s.homeLayout?.filter((x) => x.id !== 'drivemeter') }),
+  },
+  wallpaper: {
+    has: (s) => s.wallpaper !== undefined,
+    clear: ({ wallpaper: _a, ...s }) => s,
   },
 };
 

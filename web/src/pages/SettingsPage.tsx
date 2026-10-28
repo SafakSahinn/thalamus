@@ -18,6 +18,7 @@ import { exportAllZip } from '../lib/exporter';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import { useInstalled } from '../lib/plugins';
 import MeterSettings from '../components/meter/MeterSettings';
+import WallpaperPicker from '../components/WallpaperPicker';
 import type { Note, Routine } from '../lib/types';
 
 function Routines() {
@@ -142,6 +143,7 @@ export default function SettingsPage() {
   const [lang, setLang] = useState<LocalePref>(getLocalePref());
   const sticky = useInstalled('sticky');
   const meter = useInstalled('drivemeter');
+  const wallpaper = useInstalled('wallpaper');
   const [msg, setMsg] = useState('');
   const [zipBusy, setZipBusy] = useState<string | null>(null);
   const exportZip = async () => {
@@ -308,6 +310,10 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+        {wallpaper && <>
+          <p className="muted small">{t('settings.wallpaper.hint')}</p>
+          <WallpaperPicker />
+        </>}
       </section>
 
       <section>

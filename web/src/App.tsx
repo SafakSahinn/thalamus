@@ -42,6 +42,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 // Eklentiler: kurulu değilse kodu hiç yüklenmez
 const StickyNotes = lazy(() => import('./components/StickyNotes'));
 const DriveMeter = lazy(() => import('./components/DriveMeter'));
+const Wallpaper = lazy(() => import('./components/Wallpaper'));
 
 export default function App() {
   const account = useStore((s) => s.account);
@@ -53,6 +54,7 @@ export default function App() {
   const [drawer, setDrawer] = useState(false);
   const sticky = useInstalled('sticky');
   const meter = useInstalled('drivemeter');
+  const wallpaper = useInstalled('wallpaper');
   // Dil değişince arayüz ağacı baştan kurulur (bu bileşenin etkileri yeniden çalışmaz)
   const locale = useLocale();
 
@@ -112,6 +114,7 @@ export default function App() {
   return (
     <Fragment key={locale}>
     <div className={`app ${drawer ? 'drawer-open' : ''}`}>
+      {wallpaper && <Suspense fallback={null}><Wallpaper /></Suspense>}
       <Sidebar route={route} onNav={() => setDrawer(false)} />
       <div className="scrim" onClick={() => setDrawer(false)} />
       <main onContextMenu={route.name === 'home' ? homeContextMenu : undefined}>

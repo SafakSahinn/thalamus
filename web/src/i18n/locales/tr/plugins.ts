@@ -79,4 +79,20 @@ export default {
     usage: 'Kurulunca sağ üstte görünür; sürükleyerek taşıyabilirsin. Üzerine gelince çıkan ⚙ düğmesinden görünümü seçersin. Ana sayfa bileşenini Ayarlar > Ana sayfa’dan açabilirsin.',
     dataLabel: 'görünüm seçimleri, gadget’ın konumu ve ana sayfadaki yeri',
   },
+  wallpaper: {
+    name: 'Arka plan',
+    summary: 'Gmail temaları gibi, uygulamanın arkasına bir sahne ya da renk koyar.',
+    description: {
+      p1: 'Seçtiğin sahne ekranın arkasına yerleşir; kenar çubuğu buzlu cam gibi, sayfa da yarı saydam bir kart gibi üstünde durur.',
+      p2: 'Kendi çizdiğimiz yedi sahne (piksel gökyüzü, Windows 7 havasında Aero, çöl, dağlar, okyanus, yıldızlı gece, orman) ve sekiz renk/gradyan arasından seçebilirsin.',
+    },
+    features: {
+      f1: '7 sahne, 5 gradyan ve 3 düz renk',
+      f2: 'Koyu temada sahne kısılır, yazılar okunur kalır',
+      f3: 'Seçimin bütün cihazlarına eşitlenir',
+      f4: 'Telefonda da çalışır',
+    },
+    usage: 'Kurulunca Ayarlar > Görünüm’de önizlemeler çıkar; birine tıklaman yeterli.',
+    dataLabel: 'arka plan seçimi',
+  },
 };

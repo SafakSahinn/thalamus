@@ -81,4 +81,20 @@ export default {
     usage: 'Once installed it appears in the top right; drag it anywhere. Hover and use the ⚙ button to pick a view. Turn on the home page widget in Settings > Home page.',
     dataLabel: 'your view choices, the gadget’s position and its place on the home page',
   },
+  wallpaper: {
+    name: 'Background',
+    summary: 'Like Gmail themes: puts a scene or a colour behind the app.',
+    description: {
+      p1: 'The scene you pick sits behind the screen; the sidebar turns to frosted glass and the page floats above it as a translucent card.',
+      p2: 'Choose from seven scenes we drew ourselves (pixel sky, a Windows 7-style Aero, desert, mountains, ocean, starry night, forest) and eight colours/gradients.',
+    },
+    features: {
+      f1: '7 scenes, 5 gradients and 3 solid colours',
+      f2: 'Scenes dim in dark theme so text stays readable',
+      f3: 'Your choice syncs to all your devices',
+      f4: 'Works on phones too',
+    },
+    usage: 'Once installed, previews appear in Settings > Appearance; just click one.',
+    dataLabel: 'your background choice',
+  },
 } satisfies Messages['plugins'];
