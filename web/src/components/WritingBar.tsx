@@ -7,7 +7,7 @@ import type { Note } from '../lib/types';
 import { promptText } from './Prompt';
 
 // Yazma modu: notun altında sabit sayaç (kelime, karakter, okuma süresi, bu oturumda yazılan),
-// isteğe bağlı kelime hedefi + ilerleme çubuğu (props.__goal) ve dikkat dağıtan her şeyi gizleyen odak modu.
+// isteğe bağlı kelime hedefi + ilerleme halkası (props.__goal) ve dikkat dağıtan her şeyi gizleyen odak modu.
 
 export const useFocus = create<{ on: boolean }>(() => ({ on: false }));
 
@@ -58,18 +58,30 @@ export default function WritingBar({ note }: { note: Note }) {
   };
 
   const pct = goal ? Math.min(100, (stats.words / goal) * 100) : 0;
+  const R = 6.5;
+  const C = 2 * Math.PI * R;
   return (
     <div className={`writing-bar ${focus ? 'focus' : ''}`}>
-      {goal > 0 && <div className={`wb-progress ${reached ? 'done' : ''}`}><span style={{ width: `${pct}%` }} /></div>}
-      <div className="wb-row">
-        <span><b>{fmtNum(stats.words)}</b>{goal > 0 && <span className="muted"> / {fmtNum(goal)}</span>} {t('writing.bar.words')}</span>
-        <span className="muted">{t('writing.bar.chars', { count: fmtNum(stats.chars) })}</span>
-        <span className="muted">{t('writing.bar.reading', { count: stats.minutes })}</span>
-        {session !== 0 && <span className={session > 0 ? 'wb-plus' : 'muted'}>{t('writing.bar.session', { count: `${session > 0 ? '+' : ''}${fmtNum(session)}` })}</span>}
-        {celebrated && <span className="wb-plus">{t('writing.bar.reached')}</span>}
-        <span className="spacer" />
-        <button className="linkbtn" onClick={() => void editGoal()}>🎯 {goal ? fmtNumber(pct / 100, { style: 'percent', maximumFractionDigits: 0 }) : t('writing.bar.setGoal')}</button>
-        <button className="linkbtn" title={t('writing.bar.focusTitle')} onClick={() => setFocus(!focus)}>{focus ? t('writing.bar.exitFocus') : t('writing.bar.focus')}</button>
+      <div className="wb-pill">
+        <span className="wb-stat"><b>{fmtNum(stats.words)}</b>{goal > 0 && <span>/ {fmtNum(goal)}</span>} {t('writing.bar.words')}</span>
+        <span className="wb-stat wb-extra">{t('writing.bar.chars', { count: fmtNum(stats.chars) })}</span>
+        <span className="wb-stat wb-extra">{t('writing.bar.reading', { count: stats.minutes })}</span>
+        {session !== 0 && <span className={`wb-chip ${session > 0 ? 'plus' : 'minus'}`}>{t('writing.bar.session', { count: `${session > 0 ? '+' : ''}${fmtNum(session)}` })}</span>}
+        {celebrated && <span className="wb-chip plus">{t('writing.bar.reached')}</span>}
+        <button className="wb-btn" onClick={() => void editGoal()}>
+          {goal > 0 ? (
+            <>
+              <svg className={`wb-ring ${reached ? 'done' : ''}`} viewBox="0 0 16 16" aria-hidden>
+                <circle className="track" cx="8" cy="8" r={R} />
+                <circle className="val" cx="8" cy="8" r={R} strokeDasharray={`${(pct / 100) * C} ${C}`} />
+              </svg>
+              {fmtNumber(pct / 100, { style: 'percent', maximumFractionDigits: 0 })}
+            </>
+          ) : (
+            <>🎯 {t('writing.bar.setGoal')}</>
+          )}
+        </button>
+        <button className={`wb-btn ${focus ? 'on' : ''}`} title={t('writing.bar.focusTitle')} onClick={() => setFocus(!focus)}>{focus ? t('writing.bar.exitFocus') : t('writing.bar.focus')}</button>
       </div>
     </div>
   );
