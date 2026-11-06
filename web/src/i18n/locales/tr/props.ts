@@ -22,6 +22,7 @@ export default {
     saving: 'Görsel indirilip kaydediliyor…',
     pick: 'Seçtiğin görsel kapak olur',
     bookFill: '; yazar ve sayfa sayısı boşsa onlar da doldurulur',
+    movieFill: '; yönetmen ve yıl boşsa onlar da doldurulur',
     searching: 'Aranıyor…',
     none: 'Sonuç bulunamadı. Adı farklı yazmayı dene.',
   },

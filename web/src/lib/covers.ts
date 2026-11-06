@@ -10,6 +10,8 @@ export interface CoverHit {
   authors?: string[];
   pages?: number;
   year?: number;
+  /** Wikipedia sonucunun Wikidata kimliği (film/dizi ayrıntıları için) */
+  qid?: string;
 }
 
 const https = (u: string) => u.replace(/^http:\/\//, 'https://');
@@ -60,20 +62,47 @@ export async function searchBookCovers(q: string): Promise<CoverHit[]> {
 }
 
 async function wiki(lang: string, q: string): Promise<CoverHit[]> {
-  const u = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=10&prop=pageimages|description&piprop=thumbnail&pithumbsize=600&pilicense=any&format=json&origin=*`;
+  const u = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=10&prop=pageimages|description|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=600&pilicense=any&format=json&origin=*`;
   const r = await fetch(u);
   if (!r.ok) return [];
-  const d = (await r.json()) as { query?: { pages?: Record<string, { title: string; index: number; description?: string; thumbnail?: { source: string } }> } };
+  const d = (await r.json()) as { query?: { pages?: Record<string, { title: string; index: number; description?: string; thumbnail?: { source: string }; pageprops?: { wikibase_item?: string } }> } };
   return Object.values(d.query?.pages ?? {})
     .sort((x, y) => x.index - y.index)
     .filter((p) => p.thumbnail)
-    .map((p) => ({ url: p.thumbnail!.source, title: p.title, sub: p.description, year: Number(p.description?.match(/\b(19|20)\d{2}\b/)?.[0]) || undefined }));
+    .map((p) => ({ url: p.thumbnail!.source, title: p.title, sub: p.description, year: Number(p.description?.match(/\b(19|20)\d{2}\b/)?.[0]) || undefined, qid: p.pageprops?.wikibase_item }));
 }
 
 export async function searchPosters(q: string): Promise<CoverHit[]> {
   const [en, tr] = await Promise.all([wiki('en', `${q} film`).catch(() => []), wiki('tr', `${q} film`).catch(() => [])]);
   const seen = new Set<string>();
   return [...en, ...tr].filter((h) => !seen.has(h.url) && seen.add(h.url));
+}
+
+// Wikidata "televizyon dizisi", "animasyon dizisi", "mini dizi", "web dizisi"
+const SERIES = new Set(['Q5398426', 'Q581714', 'Q1259759', 'Q526877']);
+type Claim = { mainsnak: { datavalue?: { value: { id?: string; time?: string } } } };
+const wd = async <T,>(params: string): Promise<T> => {
+  const r = await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&origin=*&${params}`);
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json() as Promise<T>;
+};
+
+/** Film/dizinin yılı ve yönetmen(ler)i Wikidata'dan: dizide yaratıcı, yayın tarihi yoksa başlangıç tarihi. */
+export async function movieDetails(qid: string): Promise<{ year?: number; directors: string[] }> {
+  const d = await wd<{ entities: Record<string, { claims?: Record<string, Claim[]> }> }>(`ids=${qid}&props=claims`);
+  const c = d.entities[qid]?.claims ?? {};
+  const vals = (p: string) => (c[p] ?? []).map((x) => x.mainsnak.datavalue?.value).filter((v) => v !== undefined);
+  const years = [...vals('P577'), ...vals('P580')].map((v) => Number(v.time?.match(/^[+-]?(\d{4})/)?.[1])).filter((y) => y > 0);
+  // Dizilerde P57 her bölümün yönetmenini sayar; orada yaratıcı (P170) asıl kişidir
+  const series = vals('P31').some((v) => v.id && SERIES.has(v.id));
+  const [first, second] = series ? ['P170', 'P57'] : ['P57', 'P170'];
+  const ids = [...new Set((vals(first).length ? vals(first) : vals(second)).map((v) => v.id).filter((x): x is string => !!x))].slice(0, 3);
+  let directors: string[] = [];
+  if (ids.length) {
+    const l = await wd<{ entities: Record<string, { labels?: Record<string, { value: string }> }> }>(`ids=${ids.join('|')}&props=labels&languages=tr|en&languagefallback=1`);
+    directors = ids.map((id) => l.entities[id]?.labels?.tr?.value ?? l.entities[id]?.labels?.en?.value).filter((x): x is string => !!x);
+  }
+  return { year: years.length ? Math.min(...years) : undefined, directors };
 }
 
 /** Görseli indirir: önce doğrudan, izin yoksa (Google Books) sunucudaki kapak aracısı üzerinden. */

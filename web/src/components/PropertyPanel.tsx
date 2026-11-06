@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { propValue, showValue } from '../lib/compute';
 import { relTime } from '../lib/format';
 import { googleCalendarUrl, icsFile } from '../lib/upcoming';
-import { fetchImageBlob, getCoverMode, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
+import { fetchImageBlob, getCoverMode, movieDetails, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
 
 /** Kapak görselini indirip Drive'a (ya da cihaza) kaydeder; dönen değer gd:// veya local:// adresidir. */
 async function saveCover(url: string, title: string): Promise<string> {
@@ -288,7 +288,15 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
       const ids = h.authors.slice(0, 3).map((a) => (findByTitle(alive, a, 'person') ?? createNote('person', a)).id);
       setProp(note.id, 'author', ids);
     }
-    if (!isBook && h.year && !cur.props.year) setProp(note.id, 'year', h.year);
+    if (!isBook) {
+      const info = h.qid ? await movieDetails(h.qid).catch(() => null) : null;
+      const year = info?.year ?? h.year;
+      if (year && !cur.props.year) setProp(note.id, 'year', year);
+      if (info?.directors.length && !relationIds(cur.props.director).length) {
+        const { alive } = indexOf(useStore.getState().notes);
+        setProp(note.id, 'director', info.directors.map((a) => (findByTitle(alive, a, 'person') ?? createNote('person', a)).id));
+      }
+    }
     onClose();
   };
   return (
@@ -297,7 +305,7 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
         <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? t('props.finder.bookQ') : t('props.finder.movieQ')} />
         <button type="button" className="btn small" onClick={() => void run(q)}>{t('props.finder.search')}</button>
       </div>
-      <p className="muted small">{isBook ? t('props.finder.bookSrc') : t('props.finder.movieSrc')} {saving ? t('props.finder.saving') : t('props.finder.pick')}{isBook ? t('props.finder.bookFill') : ''}.</p>
+      <p className="muted small">{isBook ? t('props.finder.bookSrc') : t('props.finder.movieSrc')} {saving ? t('props.finder.saving') : t('props.finder.pick')}{isBook ? t('props.finder.bookFill') : t('props.finder.movieFill')}.</p>
       {err && <p className="err small">{err}</p>}
       {hits === null ? (
         <p className="muted small">{t('props.finder.searching')}</p>

@@ -23,6 +23,7 @@ export default {
     saving: 'Downloading and saving the image…',
     pick: 'The image you pick becomes the cover',
     bookFill: '; author and page count are filled in too if empty',
+    movieFill: '; director and year are filled in too if empty',
     searching: 'Searching…',
     none: 'No results. Try spelling the title differently.',
   },
