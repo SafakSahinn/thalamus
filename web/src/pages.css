@@ -5,9 +5,17 @@
 .page-banner {
   height: 200px; margin: 0 -48px 0; background-size: cover; background-position: center; position: relative;
 }
-.banner-change { position: absolute; right: 16px; bottom: 12px; opacity: 0; background: var(--bg); }
-.page-banner:hover .banner-change { opacity: 1; }
-@media (hover: none) { .banner-change { opacity: 0.9; } }
+.banner-tools { position: absolute; right: 16px; bottom: 12px; display: flex; gap: 6px; }
+.banner-tools .btn { background: var(--bg); }
+.banner-tools.hover { opacity: 0; transition: opacity 0.15s; }
+.page-banner:hover .banner-tools.hover { opacity: 1; }
+@media (hover: none) { .banner-tools.hover { opacity: 0.9; } }
+.page-banner.repositioning { cursor: grab; touch-action: none; user-select: none; }
+.page-banner.repositioning:active { cursor: grabbing; }
+.banner-hint {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  padding: 6px 14px; border-radius: 999px; font-size: 13px; color: #fff; background: rgba(0, 0, 0, 0.55);
+}
 .page-icon-wrap { position: relative; display: inline-block; }
 .has-banner .page-icon-wrap { margin-top: -42px; }
 .page-icon { font-size: 64px; line-height: 1.1; border: none; background: none; cursor: pointer; padding: 4px; border-radius: 8px; }

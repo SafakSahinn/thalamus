@@ -84,6 +84,48 @@ function BannerPicker({ note, onClose }: { note: Note; onClose: () => void }) {
   );
 }
 
+/** Kapak görselinin dikey konumu (props.__bannerY, %): Notion'daki "Konumu ayarla" gibi fareyle sürüklenir */
+function useBannerDrag(note: Note, ref: React.RefObject<HTMLDivElement | null>, url: string | undefined) {
+  const saved = typeof note.props.__bannerY === 'number' ? (note.props.__bannerY as number) : 50;
+  const [y, setY] = useState<number | null>(null); // düzenlerken geçici değer
+  const ratio = useRef(0); // görselin yükseklik / genişlik oranı
+  useEffect(() => {
+    setY(null);
+    ratio.current = 0;
+    if (!url) return;
+    const img = new Image();
+    img.onload = () => (ratio.current = img.naturalHeight / img.naturalWidth);
+    img.src = url;
+  }, [url, note.id]);
+  const down = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (y === null || e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
+    const box = ref.current!.getBoundingClientRect();
+    // "cover" ölçeğinde görselin kutudan taşan yüksekliği; konum yüzdesi bu taşmanın yüzdesidir
+    const over = Math.max(box.width * ratio.current, box.height) - box.height;
+    if (over <= 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const start = { py: e.clientY, y };
+    const move = (ev: PointerEvent) => setY(Math.min(100, Math.max(0, start.y - ((ev.clientY - start.py) / over) * 100)));
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return {
+    editing: y !== null,
+    pos: y ?? saved,
+    start: () => setY(saved),
+    save: () => {
+      if (y !== null) setProp(note.id, '__bannerY', Math.round(y * 10) / 10 === 50 ? undefined : Math.round(y * 10) / 10);
+      setY(null);
+    },
+    cancel: () => setY(null),
+    down,
+  };
+}
+
 /** Notion tarzı sayfa üst kısmı: kapak görseli + büyük simge + "Simge ekle / Kapak ekle" */
 export default function PageDecor({ note }: { note: Note }) {
   const [iconPick, setIconPick] = useState(false);
@@ -91,12 +133,33 @@ export default function PageDecor({ note }: { note: Note }) {
   const banner = note.props.banner as string | undefined;
   const icon = note.props.icon as string | undefined;
   const style = useBannerStyle(banner);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const image = style && 'backgroundImage' in style ? style.backgroundImage?.slice(5, -2) : undefined;
+  const drag = useBannerDrag(note, bannerRef, image);
 
   return (
     <div className={`page-decor ${banner ? 'has-banner' : ''}`}>
       {style && (
-        <div className="page-banner" style={style}>
-          <button type="button" className="btn small banner-change" onClick={() => setBannerPick(true)}>{t('reading.decor.change')}</button>
+        <div
+          ref={bannerRef}
+          className={`page-banner ${drag.editing ? 'repositioning' : ''}`}
+          style={image ? { ...style, backgroundPosition: `center ${drag.pos}%` } : style}
+          onPointerDown={drag.down}
+        >
+          {drag.editing ? (
+            <>
+              <span className="banner-hint">{t('reading.decor.dragHint')}</span>
+              <div className="banner-tools">
+                <button type="button" className="btn small" onClick={drag.save}>{t('reading.decor.savePos')}</button>
+                <button type="button" className="btn small ghost" onClick={drag.cancel}>{t('common.cancel')}</button>
+              </div>
+            </>
+          ) : (
+            <div className="banner-tools hover">
+              {image && <button type="button" className="btn small" onClick={drag.start}>{t('reading.decor.reposition')}</button>}
+              <button type="button" className="btn small" onClick={() => setBannerPick(true)}>{t('reading.decor.change')}</button>
+            </div>
+          )}
         </div>
       )}
       {icon && (
