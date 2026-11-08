@@ -61,6 +61,7 @@ export default {
       finished: 'Finished',
       prequel: 'Previous game',
       cover: 'Cover image (link)',
+      screenshots: 'Screenshots',
     },
     backs: { prequel: 'Sequel' },
   },

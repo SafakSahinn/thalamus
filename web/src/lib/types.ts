@@ -144,6 +144,8 @@ const BUILTIN_DEFS: BuiltinDef[] = [
       { key: 'finished', kind: 'date', table: true },
       { key: 'prequel', kind: 'relation', target: ['game'], single: true },
       { key: 'cover', kind: 'url' },
+      // Not sayfasında alan listesinde değil, ayrı galeri olarak gösterilir (components/Screenshots.tsx)
+      { key: 'screenshots', kind: 'files' },
       words, topics,
     ],
   },

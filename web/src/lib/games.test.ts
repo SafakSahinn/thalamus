@@ -41,6 +41,18 @@ describe('Video Oyunları eklentisi: koleksiyon tipi', () => {
     expect(hasPluginData('games', s({ views: { game: [] } }), {})).toBe(true);
   });
 
+  it('ekran görüntüleri bir dosyalar alanı; alan listesinde değil galeride gösterilir', async () => {
+    const { isGalleryProp, shrinkImage } = await import('../components/Screenshots');
+    expect(TYPE_MAP.game.props.find((p) => p.key === 'screenshots')?.kind).toBe('files');
+    expect(isGalleryProp('game', 'screenshots')).toBe(true);
+    expect(isGalleryProp('book', 'screenshots')).toBe(false);
+    // Küçük dosya ve GIF olduğu gibi kalır
+    const small = new File([new Uint8Array(10)], 'a.png', { type: 'image/png' });
+    expect((await shrinkImage(small)).blob).toBe(small);
+    const gif = new File([new Uint8Array(300_000)], 'b.gif', { type: 'image/gif' });
+    expect(await shrinkImage(gif)).toEqual({ blob: gif, name: 'b.gif' });
+  });
+
   it('Oynanıyor → Başlama, Bitti → Bitiş tarihi', () => {
     expect(readingStamp('game', { status: 'Oynanacak' }, { status: 'Oynanıyor' }, '2026-11-08')).toEqual({ started: '2026-11-08' });
     expect(readingStamp('game', { status: 'Oynanıyor' }, { status: 'Bitti', started: '2026-11-01' }, '2026-11-08')).toEqual({ finished: '2026-11-08' });

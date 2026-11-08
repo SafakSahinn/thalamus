@@ -17,6 +17,7 @@ import { fillFromPdf, pdfFillMessage } from '../lib/paperImport';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
 import { createNote, indexOf, resolveFileUrl, runButton, setProp, updateNote, uploadFile, useIndex, useStore } from '../lib/store';
+import { isGalleryProp } from './Screenshots';
 import { fileRefs, optionLabel, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
 
 /** Seçenek rengi: Durum alanında gruba göre (yapılacak gri, sürüyor mavi, bitti yeşil), diğerlerinde ada göre */
@@ -583,8 +584,10 @@ export default function PropertyPanel({ note }: { note: Note }) {
     const v = d.back ? propValue(note, d, notes) : note.props[d.key];
     return v === undefined || v === '' || (Array.isArray(v) && !v.length);
   };
-  const hidden = ty.props.filter((d) => isEmpty(d) && !alwaysShow(note, d));
-  const visible = ty.props.filter((d) => showEmpty || !hidden.includes(d));
+  // Galeri alanları (ör. oyun ekran görüntüleri) alan listesinin altında ayrı bölüm olarak çizilir
+  const listed = ty.props.filter((d) => !isGalleryProp(note.type, d.key));
+  const hidden = listed.filter((d) => isEmpty(d) && !alwaysShow(note, d));
+  const visible = listed.filter((d) => showEmpty || !hidden.includes(d));
   return (
     <div className="props" data-tour="props">
       {visible.map((d) => (

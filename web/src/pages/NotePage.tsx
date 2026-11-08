@@ -9,6 +9,7 @@ import { TimerButton } from '../components/StudyTimer';
 import WritingBar from '../components/WritingBar';
 import PageDecor, { noteIcon } from '../components/PageDecor';
 import PropertyPanel, { NoteChip } from '../components/PropertyPanel';
+import Screenshots from '../components/Screenshots';
 import NoteEditor from '../editor/Editor';
 import { displayTitle, relTime } from '../lib/format';
 import { openComments as showComments, type Comment } from '../lib/comments';
@@ -284,6 +285,7 @@ export default function NotePage({ id }: { id: string }) {
       <fieldset className="lockset" disabled={locked}>
         <PropertyPanel note={note} />
       </fieldset>
+      <Screenshots note={note} locked={locked} />
       {!locked && !note.content && !isTemplate(note) && note.type !== 'daily' && <TemplateStarter note={note} />}
 
       <NoteEditor

@@ -60,6 +60,7 @@ export default {
       finished: 'Bitiş',
       prequel: 'Önceki oyun',
       cover: 'Kapak görseli (bağlantı)',
+      screenshots: 'Ekran görüntüleri',
     },
     backs: { prequel: 'Devam oyunu' },
   },
