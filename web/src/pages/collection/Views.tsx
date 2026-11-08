@@ -212,7 +212,7 @@ export function CardsView({ ty, rows, view }: ViewProps) {
     <div className="cards">
       {rows.map((n) => (
         <a key={n.id} className="card" href={`#/n/${n.id}`} onClick={peekClick(n.id)}>
-          {ty.cover && <Cover src={n.props[ty.cover] as string | undefined} icon={noteIcon(n)} />}
+          {ty.cover && <div className="card-cover"><Cover src={n.props[ty.cover] as string | undefined} icon={noteIcon(n)} /></div>}
           <div className="card-body">
             <div className="card-title">{!ty.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
             {cols.map((c) => (n.props[c.key] !== undefined || ['formula', 'rollup'].includes(c.kind) ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}

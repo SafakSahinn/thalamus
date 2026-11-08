@@ -359,7 +359,18 @@ h1.title.static { margin: 4px 0 14px; }
 .dbtable .tname { font-weight: 500; min-width: 180px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
 .card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background: var(--bg); }
+.card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
 .card:hover { box-shadow: var(--shadow); }
+/* Kapaklı galeri: fare gelince kart hafifçe yükselir, kapak çerçevesinin içinde yakınlaşır */
+.card-cover { overflow: hidden; }
+.card-cover .cover { transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.card:has(.card-cover):hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18); }
+.card:hover .card-cover .cover:not(.empty) { transform: scale(1.08); }
+@media (prefers-reduced-motion: reduce) {
+  .card, .card-cover .cover { transition: none; }
+  .card:has(.card-cover):hover { transform: none; }
+  .card:hover .card-cover .cover:not(.empty) { transform: none; }
+}
 .cover { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: var(--panel); }
 .cover.empty { display: grid; place-items: center; font-size: 42px; }
 .card-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
