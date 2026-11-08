@@ -4,7 +4,7 @@ import { onLocaleChange, t, tOr, tSource } from '../i18n';
 // "relation" alanları diğer notlara bağlantıdır ve grafikte kenar olarak görünür.
 
 export type BuiltinTypeId =
-  | 'book' | 'paper' | 'movie' | 'talk' | 'course' | 'lab' | 'conference' | 'event' | 'note'
+  | 'book' | 'paper' | 'movie' | 'game' | 'talk' | 'course' | 'lab' | 'conference' | 'event' | 'note'
   | 'word' | 'person' | 'concept' | 'daily';
 
 /** Hazır tipler ya da kullanıcı koleksiyonları ("c_…") */
@@ -129,6 +129,25 @@ const BUILTIN_DEFS: BuiltinDef[] = [
     ],
   },
   {
+    // Video Oyunları eklentisi kuruluysa görünür (bkz. PLUGIN_TYPES)
+    id: 'game', icon: '🎮', color: '#6d4ad9', cover: 'cover',
+    props: [
+      { key: 'platform', kind: 'multiselect', options: ['PC', 'Mac', 'Linux', 'PlayStation 5', 'PlayStation 4', 'PlayStation 3', 'PlayStation 2', 'PlayStation', 'PSP', 'PS Vita', 'Xbox Series X/S', 'Xbox One', 'Xbox 360', 'Xbox', 'Nintendo Switch 2', 'Nintendo Switch', 'Wii U', 'Wii', 'Nintendo 3DS', 'Nintendo DS', 'Mobil'], table: true },
+      { key: 'genre', kind: 'multiselect', options: ['Aksiyon', 'Macera', 'Rol yapma (RPG)', 'Strateji', 'Nişancı', 'Simülasyon', 'Spor', 'Yarış', 'Bulmaca', 'Platform', 'Korku', 'Dövüş', 'Gizlilik', 'Hayatta kalma', 'Açık dünya', 'Roguelike', 'Sandbox'], table: true },
+      { key: 'developer', kind: 'text', table: true },
+      { key: 'publisher', kind: 'text' },
+      { key: 'year', kind: 'number', table: true },
+      { key: 'status', kind: 'select', options: ['Oynanacak', 'Oynanıyor', 'Bitti', 'Yarım bıraktım'], table: true },
+      { key: 'rating', kind: 'rating', table: true },
+      { key: 'hours', kind: 'number' },
+      { key: 'started', kind: 'date' },
+      { key: 'finished', kind: 'date', table: true },
+      { key: 'prequel', kind: 'relation', target: ['game'], single: true },
+      { key: 'cover', kind: 'url' },
+      words, topics,
+    ],
+  },
+  {
     id: 'talk', icon: '🎙️', color: '#8a55d4', sort: 'date',
     props: [
       { key: 'speakers', kind: 'relation', target: ['person'], table: true },
@@ -239,7 +258,10 @@ function localizeBuiltins(): TypeDef[] {
     ...d,
     label: tOr(`types.${d.id}.label`, d.id),
     plural: tOr(`types.${d.id}.plural`, d.id),
-    props: d.props.map((p) => ({ ...p, label: tOr(propLabelKey(d.id, p.key), p.key) })),
+    props: d.props.map((p) => {
+      const back = tOr(`types.${d.id}.backs.${p.key}`, '');
+      return { ...p, label: tOr(propLabelKey(d.id, p.key), p.key), ...(back ? { backLabel: back } : {}) };
+    }),
   }));
 }
 
@@ -312,15 +334,27 @@ function withBacks(types: TypeDef[]): TypeDef[] {
   });
 }
 
+/**
+ * Eklentiyle gelen hazır tipler: eklenti kurulu değilken listelerde (kenar çubuğu, Yeni menüsü, palet, takvim…) görünmez.
+ * TYPE_MAP'te yine durur; böylece var olan notlar bağlantılardan açılabilir, veri silinmez.
+ */
+export const PLUGIN_TYPES: Record<string, string> = { game: 'games' };
+let installedPlugins: readonly string[] = [];
+const typeEnabled = (id: string) => !PLUGIN_TYPES[id] || installedPlugins.includes(PLUGIN_TYPES[id]);
+/** Tip listelerde görünüyor mu (eklenti tipi ise eklentisi kurulu mu) */
+export const isTypeEnabled = typeEnabled;
+
 /** Güncel tip listesi (hazır + kullanıcı). ES modül canlı bağlaması sayesinde her yerde güncel kalır. */
-export let TYPES: TypeDef[] = withBacks(BUILTIN_TYPES);
-export let TYPE_MAP: Record<string, TypeDef> = Object.fromEntries(TYPES.map((t) => [t.id, t]));
+export let TYPE_MAP: Record<string, TypeDef> = Object.fromEntries(withBacks(BUILTIN_TYPES).map((t) => [t.id, t]));
+export let TYPES: TypeDef[] = Object.values(TYPE_MAP).filter((t) => typeEnabled(t.id));
 let typeSettings: TypeSettings = EMPTY_TYPE_SETTINGS;
 
-export function applyTypeSettings(ts: TypeSettings | undefined) {
+export function applyTypeSettings(ts: TypeSettings | undefined, installed: readonly string[] = installedPlugins) {
   typeSettings = ts ?? EMPTY_TYPE_SETTINGS;
-  TYPES = withBacks([...BUILTIN_TYPES.map((t) => applyOverrides(t, typeSettings, false)), ...typeSettings.custom.map((t) => applyOverrides(t, typeSettings, false))]);
-  TYPE_MAP = Object.fromEntries(TYPES.map((t) => [t.id, t]));
+  installedPlugins = installed;
+  const all = withBacks([...BUILTIN_TYPES.map((t) => applyOverrides(t, typeSettings, false)), ...typeSettings.custom.map((t) => applyOverrides(t, typeSettings, false))]);
+  TYPE_MAP = Object.fromEntries(all.map((t) => [t.id, t]));
+  TYPES = all.filter((t) => typeEnabled(t.id));
 }
 
 // Dil değişince hazır tiplerin adları yeniden kurulur

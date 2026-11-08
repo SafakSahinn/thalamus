@@ -1,5 +1,5 @@
 export default {
-  category: { home: 'Ana sayfa bileşeni', tool: 'Araç' },
+  category: { home: 'Ana sayfa bileşeni', tool: 'Araç', collection: 'Koleksiyon' },
   sticky: {
     name: 'Yapışkan notlar',
     summary: 'Ekranın üstünde duran, Windows 7 tarzı renkli not kâğıtları.',
@@ -111,5 +111,21 @@ export default {
     },
     usage: 'Kurulunca sağ tarafta görünür; sürükleyerek taşıyabilirsin. Üzerine gelince çıkan ⚙ düğmesinden kaplamayı seçersin. Saat dilimi ve ad Ayarlar > Saat’te. Ana sayfa bileşenini Ayarlar > Ana sayfa’dan açabilirsin.',
     dataLabel: 'kaplama, saat dilimi ve ad seçimleri, gadget’ın konumu ve ana sayfadaki yeri',
+  },
+  games: {
+    name: 'Video Oyunları',
+    summary: 'Kitaplar ve Filmler gibi bir oyun koleksiyonu: oynadıklarını, oynamak istediklerini ve bıraktıklarını tek yerde tut.',
+    description: {
+      p1: 'Kenar çubuğuna Kitaplar ve Filmler gibi bir “Video Oyunları” koleksiyonu ekler. Her oyun bir nottur: kapak, platform, tür, geliştirici, yıl, durum, puan ve oynama süresi alanları vardır; altına izlenimlerini, ipuçlarını ya da hikâye notlarını yazabilirsin.',
+      p2: 'Kapak arayıcı oyunu Wikipedia’da bulur; kapağı seçince yıl, geliştirici, yayıncı, platformlar ve türler Wikidata’dan kendiliğinden dolar. Eklentiyi kaldırırsan koleksiyon gizlenir, oyun notların silinmez; yeniden kurunca hepsi yerinde olur.',
+    },
+    features: {
+      f1: 'Kapak arayıcı: kapak, yıl, geliştirici, yayıncı, platform ve tür otomatik dolar',
+      f2: 'Durum: Oynanacak, Oynanıyor, Bitti, Yarım bıraktım; başlama ve bitiş tarihi kendiliğinden yazılır',
+      f3: 'Önceki oyun / devam oyunu bağlantısıyla seriler',
+      f4: 'Galeri, tablo, pano ve takvim görünümleri, süzgeç ve sıralama',
+    },
+    usage: 'Kurulunca kenar çubuğunda “Video Oyunları” görünür. Yeni bir oyun ekle, Kapak alanındaki “🔍 Kapak bul” düğmesine basıp oyunu seç.',
+    dataLabel: 'tüm oyun notların (çöp kutusuna taşınır) ve koleksiyonun görünüm/alan ayarları',
   },
 };

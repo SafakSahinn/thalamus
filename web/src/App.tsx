@@ -48,8 +48,9 @@ const Wallpaper = lazy(() => import('./components/Wallpaper'));
 export default function App() {
   const account = useStore((s) => s.account);
   const ready = useStore((s) => s.ready);
-  // Koleksiyon/alan tanımları değişince bütün ağaç yeniden çizilsin (sayfa durumu korunur)
+  // Koleksiyon/alan tanımları ya da kurulu eklentiler (koleksiyon eklentileri tip ekler) değişince bütün ağaç yeniden çizilsin (sayfa durumu korunur)
   useStore((s) => s.settings.types);
+  useStore((s) => s.settings.installed);
   const hash = useHash();
   const route = parse(hash);
   const [drawer, setDrawer] = useState(false);

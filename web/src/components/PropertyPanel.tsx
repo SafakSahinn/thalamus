@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { propValue, showValue } from '../lib/compute';
 import { relTime } from '../lib/format';
 import { googleCalendarUrl, icsFile } from '../lib/upcoming';
-import { fetchImageBlob, getCoverMode, movieDetails, searchBookCovers, searchPosters, type CoverHit } from '../lib/covers';
+import { fetchImageBlob, gameDetails, getCoverMode, movieDetails, searchBookCovers, searchGames, searchPosters, type CoverHit } from '../lib/covers';
 
 /** Kapak görselini indirip Drive'a (ya da cihaza) kaydeder; dönen değer gd:// veya local:// adresidir. */
 async function saveCover(url: string, title: string): Promise<string> {
@@ -239,10 +239,16 @@ function WordList({ note, def }: { note: Note; def: PropDef }) {
   );
 }
 
-/** Kitap kapağı / film afişi arama penceresi */
+/** Kapak arayıcısı olan tipler */
+const FINDER_TYPES = ['book', 'movie', 'game'];
+const hasFinder = (type: string) => FINDER_TYPES.includes(type);
+
+/** Kitap kapağı / film afişi / oyun kapağı arama penceresi */
 function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
   const notes = useStore((s) => s.notes);
   const isBook = note.type === 'book';
+  const isGame = note.type === 'game';
+  const kind = isBook ? 'book' : isGame ? 'game' : 'movie';
   const people = relationIds(note.props[isBook ? 'author' : 'director']).map((id) => notes[id]?.title).filter(Boolean);
   const [q, setQ] = useState([note.title, ...(isBook ? people : [])].join(' ').trim());
   const [hits, setHits] = useState<CoverHit[] | null>(null);
@@ -254,7 +260,7 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
     setHits(null);
     setErr('');
     try {
-      setHits(await (isBook ? searchBookCovers(query) : searchPosters(query)));
+      setHits(await (isBook ? searchBookCovers(query) : isGame ? searchGames(query) : searchPosters(query)));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setHits([]);
@@ -290,7 +296,22 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
       const ids = h.authors.slice(0, 3).map((a) => (findByTitle(alive, a, 'person') ?? createNote('person', a)).id);
       setProp(note.id, 'author', ids);
     }
-    if (!isBook) {
+    if (isGame) {
+      const info = h.qid ? await gameDetails(h.qid).catch(() => null) : null;
+      const year = info?.year ?? h.year;
+      const p = useStore.getState().notes[note.id].props;
+      const empty = (k: string) => p[k] === undefined || p[k] === '' || (Array.isArray(p[k]) && !(p[k] as unknown[]).length);
+      if (year && empty('year')) setProp(note.id, 'year', year);
+      if (info?.developers.length && empty('developer')) setProp(note.id, 'developer', info.developers.join(', '));
+      if (info?.publishers.length && empty('publisher')) setProp(note.id, 'publisher', info.publishers.join(', '));
+      if (info?.platforms.length && empty('platform')) setProp(note.id, 'platform', info.platforms);
+      if (info?.genres.length && empty('genre')) setProp(note.id, 'genre', info.genres);
+      // Önceki oyun koleksiyonda varsa bağlanır (yoksa yeni not açılmaz)
+      if (info?.prequel && empty('prequel')) {
+        const prev = findByTitle(indexOf(useStore.getState().notes).alive, info.prequel, 'game');
+        if (prev && prev.id !== note.id) setProp(note.id, 'prequel', [prev.id]);
+      }
+    } else if (!isBook) {
       const info = h.qid ? await movieDetails(h.qid).catch(() => null) : null;
       const year = info?.year ?? h.year;
       if (year && !cur.props.year) setProp(note.id, 'year', year);
@@ -304,10 +325,10 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
   return (
     <div className="cover-finder" ref={ref}>
       <div className="row">
-        <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={isBook ? t('props.finder.bookQ') : t('props.finder.movieQ')} />
+        <input className="grow" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void run(q)} placeholder={t(`props.finder.${kind}Q`)} />
         <button type="button" className="btn small" onClick={() => void run(q)}>{t('props.finder.search')}</button>
       </div>
-      <p className="muted small">{isBook ? t('props.finder.bookSrc') : t('props.finder.movieSrc')} {saving ? t('props.finder.saving') : t('props.finder.pick')}{isBook ? t('props.finder.bookFill') : t('props.finder.movieFill')}.</p>
+      <p className="muted small">{t(`props.finder.${kind}Src`)} {saving ? t('props.finder.saving') : t('props.finder.pick')}{t(`props.finder.${kind}Fill`)}.</p>
       {err && <p className="err small">{err}</p>}
       {hits === null ? (
         <p className="muted small">{t('props.finder.searching')}</p>
@@ -337,7 +358,7 @@ function CoverThumb({ src }: { src: string }) {
 
 function UrlInput({ note, def }: { note: Note; def: PropDef }) {
   const [finder, setFinder] = useState(false);
-  const canFind = def.key === 'cover' && (note.type === 'book' || note.type === 'movie');
+  const canFind = def.key === 'cover' && hasFinder(note.type);
   const [saveErr, setSaveErr] = useState('');
   const [pdfMsg, setPdfMsg] = useState('');
   const [reading, setReading] = useState(false);
@@ -403,7 +424,7 @@ function UrlInput({ note, def }: { note: Note; def: PropDef }) {
       )}
       {saveErr && <span className="err small">{saveErr}</span>}
       {pdfMsg && <span className="muted small">✓ {pdfMsg}</span>}
-      {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'book' ? t('props.findCover') : t('props.findPoster')}</button>}
+      {canFind && <button className="btn small ghost" onClick={() => setFinder(!finder)}>🔍 {note.type === 'movie' ? t('props.findPoster') : t('props.findCover')}</button>}
       {finder && <CoverFinder note={note} onClose={() => setFinder(false)} />}
     </div>
   );
@@ -585,8 +606,9 @@ export default function PropertyPanel({ note }: { note: Note }) {
 /** Yeni notta önemli alanlar boş olsa da görünsün */
 function alwaysShow(note: Note, d: PropDef) {
   if (d.kind === 'relation' && d.target?.[0] === 'word') return true;
-  if (d.key === 'cover' && (note.type === 'book' || note.type === 'movie')) return true;
+  if (d.key === 'cover' && hasFinder(note.type)) return true;
   // PDF yüklenince bilgiler kendiliğinden dolar; bu yüzden makalede hep görünür
   if (d.key === 'pdf' && note.type === 'paper') return true;
+  if (note.type === 'game' && ['platform', 'developer'].includes(d.key)) return true;
   return ['status', 'author', 'authors', 'meaning', 'language', 'kind', 'speakers', 'definition', 'course', 'date', 'year'].includes(d.key);
 }

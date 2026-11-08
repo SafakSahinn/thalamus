@@ -4,13 +4,13 @@
 
 import { relationIds, type Note } from './types';
 
-/** Durum değişikliğine göre otomatik tarih: Okunuyor → Başlama, Bitti → Bitiş, makale Okundu → okunma tarihi */
+/** Durum değişikliğine göre otomatik tarih: Okunuyor/Oynanıyor → Başlama, Bitti → Bitiş, makale Okundu → okunma tarihi */
 export function readingStamp(type: string, old: Record<string, unknown> | null, next: Record<string, unknown>, today: string) {
   const changed = (old?.status ?? null) !== (next.status ?? null);
   if (!changed) return null;
   const p: Record<string, unknown> = {};
-  if (type === 'book') {
-    if (next.status === 'Okunuyor' && !next.started) p.started = today;
+  if (type === 'book' || type === 'game') {
+    if (next.status === (type === 'book' ? 'Okunuyor' : 'Oynanıyor') && !next.started) p.started = today;
     if (next.status === 'Bitti' && !next.finished) {
       p.finished = today;
       if (!next.started) p.started = today;

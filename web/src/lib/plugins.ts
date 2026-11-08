@@ -1,14 +1,15 @@
 import { getLocale, SOURCE_LOCALE, t, tList, type Locale } from '../i18n';
 import { stripPatterns, stripShapes } from './sticky';
-import { saveSettings, useStore } from './store';
-import type { Settings } from './types';
+import { deleteNote, saveSettings, useStore } from './store';
+import type { Note, Settings } from './types';
 
 // Eklenti marketi: çekirdek dışındaki özellikler varsayılan olarak kurulu gelmez, Market sayfasından kurulur.
 // Katalog şimdilik yalnız bizim yayınladığımız yerleşik eklentilerden oluşur (kodla birlikte gelir).
 // Kurulu listesi Settings.installed'da tutulur ve Drive'a eşitlenir. Kaldırmak veriyi silmez, yalnız gizler.
 
-export type PluginId = 'sticky' | 'stickyArt' | 'stickyShape' | 'otd' | 'drivemeter' | 'wallpaper' | 'clock';
-export type PluginCategory = 'home' | 'tool';
+export type PluginId = 'sticky' | 'stickyArt' | 'stickyShape' | 'otd' | 'drivemeter' | 'wallpaper' | 'clock' | 'games';
+/** collection: kurulunca yeni bir koleksiyon tipi ekler (bkz. types.ts PLUGIN_TYPES) */
+export type PluginCategory = 'home' | 'tool' | 'collection';
 
 export interface Plugin {
   id: PluginId;
@@ -31,7 +32,7 @@ export interface Plugin {
   readonly dataLabel: string;
 }
 
-export const CATEGORIES: PluginCategory[] = ['home', 'tool'];
+export const CATEGORIES: PluginCategory[] = ['home', 'tool', 'collection'];
 export const categoryLabel = (c: PluginCategory) => t(`plugins.category.${c}`);
 
 function plugin(base: Pick<Plugin, 'id' | 'icon' | 'category' | 'author' | 'requires'>): Plugin {
@@ -55,6 +56,7 @@ export const PLUGINS: Plugin[] = [
   plugin({ id: 'drivemeter', icon: '⏲', category: 'tool', author: 'Thalamus' }),
   plugin({ id: 'wallpaper', icon: '🏞', category: 'tool', author: 'Thalamus' }),
   plugin({ id: 'clock', icon: '🕒', category: 'tool', author: 'Thalamus' }),
+  plugin({ id: 'games', icon: '🎮', category: 'collection', author: 'Thalamus' }),
 ];
 
 /** Tanıtım görselleri dile göre: public/plugins/<id>.<dil>.webp; o dilde yoksa kaynak dildeki kullanılır */
@@ -105,8 +107,28 @@ export function uninstallPlugin(id: PluginId) {
 export const withoutPlugin = (list: PluginId[], id: PluginId) =>
   list.filter((x) => x !== id && !pluginOf(x)?.requires?.includes(id));
 
-// Eklentilerin ayarlarda bıraktığı veriler ("Verisiyle birlikte kaldır")
-const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Settings) => Settings }> = {
+/** Koleksiyon eklentisinin tipine ait ayarlar (görünümler, alan değişiklikleri, otomasyonlar, varsayılan şablon) */
+const typeSettingsOf = (s: Settings, type: string) =>
+  !!(s.views?.[type] || s.types?.overrides[type] || s.types?.extra[type] || s.automations?.[type] || s.defaultTemplates?.[type]);
+function clearTypeSettings(s: Settings, type: string): Settings {
+  const drop = <T,>(r: Record<string, T> | undefined) => {
+    if (!r || !(type in r)) return r;
+    const { [type]: _, ...rest } = r;
+    return rest;
+  };
+  return {
+    ...s,
+    views: drop(s.views),
+    automations: drop(s.automations),
+    defaultTemplates: drop(s.defaultTemplates),
+    types: s.types && { ...s.types, overrides: drop(s.types.overrides)!, extra: drop(s.types.extra)! },
+  };
+}
+const hasNotesOf = (notes: Record<string, Note> | undefined, type: string) =>
+  !!notes && Object.values(notes).some((n) => n.type === type && !n.deleted_at);
+
+// Eklentilerin bıraktığı veriler ("Verisiyle birlikte kaldır"): ayarlar ve koleksiyon eklentilerinde notlar
+const DATA: Record<PluginId, { has: (s: Settings, notes?: Record<string, Note>) => boolean; clear: (s: Settings) => Settings; type?: string }> = {
   sticky: {
     has: (s) => !!s.stickies?.length || s.stickyScope !== undefined || s.stickyFixed !== undefined,
     clear: ({ stickies: _a, stickyScope: _b, stickyFixed: _c, ...s }) => s,
@@ -135,12 +157,17 @@ const DATA: Record<PluginId, { has: (s: Settings) => boolean; clear: (s: Setting
     has: (s) => s.clock !== undefined || !!s.homeLayout?.some((x) => x.id === 'clock'),
     clear: ({ clock: _a, ...s }) => ({ ...s, homeLayout: s.homeLayout?.filter((x) => x.id !== 'clock') }),
   },
+  games: {
+    type: 'game',
+    has: (s, notes) => typeSettingsOf(s, 'game') || hasNotesOf(notes, 'game'),
+    clear: (s) => clearTypeSettings(s, 'game'),
+  },
 };
 
-export const hasPluginData = (id: PluginId, s: Settings) => DATA[id].has(s);
+export const hasPluginData = (id: PluginId, s: Settings, notes?: Record<string, Note>) => DATA[id].has(s, notes);
 
 export function usePluginData(id: PluginId) {
-  return useStore((s) => DATA[id].has(s.settings));
+  return useStore((s) => DATA[id].has(s.settings, s.notes));
 }
 
 /** Eklentiyi kaldırır ve ayarlarda bıraktığı verileri de siler (geri alınamaz) */
@@ -148,5 +175,8 @@ export function purgePlugin(id: PluginId) {
   const s = useStore.getState().settings;
   if (id === 'sticky') try { localStorage.removeItem('stickyHidden'); } catch { /* yok say */ }
   if (id === 'drivemeter') try { localStorage.removeItem('driveMeter'); } catch { /* yok say */ }
+  // Koleksiyon eklentisi: o tipteki notlar çöp kutusuna taşınır (30 gün içinde geri alınabilir)
+  const type = DATA[id].type;
+  if (type) for (const n of Object.values(useStore.getState().notes)) if (n.type === type && !n.deleted_at) deleteNote(n.id);
   return saveSettings({ ...DATA[id].clear(s), installed: withoutPlugin(installedList(s), id) });
 }

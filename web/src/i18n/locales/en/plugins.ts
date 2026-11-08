@@ -1,7 +1,7 @@
 import type { Messages } from '../../types';
 
 export default {
-  category: { home: 'Home widget', tool: 'Tool' },
+  category: { home: 'Home widget', tool: 'Tool', collection: 'Collection' },
   sticky: {
     name: 'Sticky notes',
     summary: 'Colorful Windows 7-style notes that float above the screen.',
@@ -113,5 +113,21 @@ export default {
     },
     usage: 'Once installed it appears on the right; drag it anywhere. Hover and use the ⚙ button to pick a face. Time zone and name are in Settings > Clock. Turn on the home page widget in Settings > Home page.',
     dataLabel: 'your face, time zone and name choices, the gadget’s position and its place on the home page',
+  },
+  games: {
+    name: 'Video Games',
+    summary: 'A game collection like Books and Movies: keep what you played, want to play and dropped in one place.',
+    description: {
+      p1: 'Adds a “Video Games” collection to the sidebar, like Books and Movies. Each game is a note with cover, platform, genre, developer, year, status, rating and hours played fields; below them you can write your impressions, tips or story notes.',
+      p2: 'The cover finder looks the game up on Wikipedia; once you pick a cover, the year, developer, publisher, platforms and genres are filled in from Wikidata. If you uninstall the plugin the collection is hidden but your game notes are kept; reinstall it and everything is back.',
+    },
+    features: {
+      f1: 'Cover finder: cover, year, developer, publisher, platform and genre are filled in automatically',
+      f2: 'Status: To play, Playing, Finished, Abandoned; start and finish dates are stamped for you',
+      f3: 'Series through previous game / sequel links',
+      f4: 'Gallery, table, board and calendar views with filters and sorting',
+    },
+    usage: 'Once installed, “Video Games” appears in the sidebar. Add a new game, press “🔍 Find cover” in the Cover field and pick the game.',
+    dataLabel: 'all your game notes (moved to the trash) and the collection’s view/field settings',
   },
 } satisfies Messages['plugins'];

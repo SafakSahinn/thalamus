@@ -1,4 +1,4 @@
-// Kitap kapağı ve film afişi arama (anahtar gerektirmeyen açık servisler) ve görseli indirme.
+// Kitap kapağı, film afişi ve oyun kapağı arama (anahtar gerektirmeyen açık servisler) ve görseli indirme.
 
 import { t } from '../i18n';
 import { cloud, fnUrl } from './google';
@@ -99,10 +99,111 @@ export async function movieDetails(qid: string): Promise<{ year?: number; direct
   const ids = [...new Set((vals(first).length ? vals(first) : vals(second)).map((v) => v.id).filter((x): x is string => !!x))].slice(0, 3);
   let directors: string[] = [];
   if (ids.length) {
-    const l = await wd<{ entities: Record<string, { labels?: Record<string, { value: string }> }> }>(`ids=${ids.join('|')}&props=labels&languages=tr|en&languagefallback=1`);
-    directors = ids.map((id) => l.entities[id]?.labels?.tr?.value ?? l.entities[id]?.labels?.en?.value).filter((x): x is string => !!x);
+    const l = await wd<{ entities: Record<string, { labels?: Record<string, { value: string }> }> }>(`ids=${ids.join('|')}&props=labels&languages=tr|en|mul&languagefallback=1`);
+    directors = ids.map((id) => { const lb = l.entities[id]?.labels; return lb?.tr?.value ?? lb?.en?.value ?? lb?.mul?.value; }).filter((x): x is string => !!x);
   }
   return { year: years.length ? Math.min(...years) : undefined, directors };
+}
+
+/** Oyun kapağı: Vikipedi'de oyun maddelerinin bilgi kutusu görseli çoğunlukla kutu kapağıdır. */
+export async function searchGames(q: string): Promise<CoverHit[]> {
+  const [en, tr] = await Promise.all([wiki('en', `${q} video game`).catch(() => []), wiki('tr', `${q} video oyunu`).catch(() => [])]);
+  const seen = new Set<string>();
+  return [...en, ...tr].filter((h) => !seen.has(h.url) && seen.add(h.url));
+}
+
+// Wikidata platform/tür adlarını (İngilizce) koleksiyondaki hazır seçeneklere eşler; eşlenemeyen atlanır.
+const PLATFORMS: [RegExp, string][] = [
+  [/windows|ms-dos|^pc\b|personal computer|steam/i, 'PC'],
+  [/mac ?os|macintosh/i, 'Mac'],
+  [/linux|steamos/i, 'Linux'],
+  [/playstation 5/i, 'PlayStation 5'],
+  [/playstation 4/i, 'PlayStation 4'],
+  [/playstation 3/i, 'PlayStation 3'],
+  [/playstation 2/i, 'PlayStation 2'],
+  [/playstation portable/i, 'PSP'],
+  [/playstation vita/i, 'PS Vita'],
+  [/^playstation$/i, 'PlayStation'],
+  [/xbox series/i, 'Xbox Series X/S'],
+  [/xbox one/i, 'Xbox One'],
+  [/xbox 360/i, 'Xbox 360'],
+  [/^xbox$/i, 'Xbox'],
+  [/switch 2/i, 'Nintendo Switch 2'],
+  [/nintendo switch/i, 'Nintendo Switch'],
+  [/wii u/i, 'Wii U'],
+  [/^wii$/i, 'Wii'],
+  [/3ds/i, 'Nintendo 3DS'],
+  [/nintendo ds/i, 'Nintendo DS'],
+  [/\bios\b|ipados|android|mobile/i, 'Mobil'],
+];
+const GENRES: [RegExp, string[]][] = [
+  [/action-adventure|action adventure/i, ['Aksiyon', 'Macera']],
+  [/role-playing|rpg/i, ['Rol yapma (RPG)']],
+  [/shoot/i, ['Nişancı']],
+  [/strategy|4x|tower defense/i, ['Strateji']],
+  [/simulat|management|life sim/i, ['Simülasyon']],
+  [/sports?\b|football|soccer|basketball/i, ['Spor']],
+  [/racing|driving/i, ['Yarış']],
+  [/puzzle/i, ['Bulmaca']],
+  [/platform/i, ['Platform']],
+  [/horror/i, ['Korku']],
+  [/fighting|beat 'em up|hack and slash/i, ['Dövüş']],
+  [/stealth/i, ['Gizlilik']],
+  [/survival/i, ['Hayatta kalma']],
+  [/open world/i, ['Açık dünya']],
+  [/rogue/i, ['Roguelike']],
+  [/sandbox/i, ['Sandbox']],
+  [/adventure/i, ['Macera']],
+  [/action/i, ['Aksiyon']],
+];
+const mapLabels = (labels: string[], table: [RegExp, string | string[]][]) => {
+  const out = new Set<string>();
+  for (const l of labels) {
+    const hit = table.find(([re]) => re.test(l));
+    if (hit) for (const v of ([] as string[]).concat(hit[1])) out.add(v);
+  }
+  return [...out];
+};
+
+export interface GameInfo {
+  year?: number;
+  developers: string[];
+  publishers: string[];
+  platforms: string[];
+  genres: string[];
+  /** Önceki oyunun adı (P155 "şundan sonra gelir") */
+  prequel?: string;
+}
+
+/** Oyunun yılı, geliştiricisi, yayıncısı, platformları, türleri ve önceki oyunu Wikidata'dan. */
+export async function gameDetails(qid: string): Promise<GameInfo> {
+  const d = await wd<{ entities: Record<string, { claims?: Record<string, Claim[]> }> }>(`ids=${qid}&props=claims`);
+  const c = d.entities[qid]?.claims ?? {};
+  const vals = (p: string) => (c[p] ?? []).map((x) => x.mainsnak.datavalue?.value).filter((v) => v !== undefined);
+  const ids = (p: string, n = 12) => [...new Set(vals(p).map((v) => v.id).filter((x): x is string => !!x))].slice(0, n);
+  const years = vals('P577').map((v) => Number(v.time?.match(/^[+-]?(\d{4})/)?.[1])).filter((y) => y > 0);
+  const dev = ids('P178', 3), pub = ids('P123', 3), plat = ids('P400', 30), gen = ids('P136', 12), pre = ids('P155', 1);
+  const all = [...new Set([...dev, ...pub, ...plat, ...gen, ...pre])];
+  // Platform ve tür eşlemesi İngilizce adlarla yapılır; stüdyo ve oyun adları Türkçe varsa Türkçe.
+  // Wikidata birçok özel adı (PlayStation 4, Nintendo Switch…) yalnız dil bağımsız "mul" etiketinde tutar.
+  const labels: Record<string, { tr?: string; en?: string }> = {};
+  for (let i = 0; i < all.length; i += 50) {
+    const l = await wd<{ entities: Record<string, { labels?: Record<string, { value: string }> }> }>(`ids=${all.slice(i, i + 50).join('|')}&props=labels&languages=en|tr|mul`);
+    for (const [id, e] of Object.entries(l.entities)) {
+      const mul = e.labels?.mul?.value;
+      labels[id] = { tr: e.labels?.tr?.value ?? mul, en: e.labels?.en?.value ?? mul };
+    }
+  }
+  const name = (id: string) => labels[id]?.tr ?? labels[id]?.en;
+  const en = (list: string[]) => list.map((id) => labels[id]?.en).filter((x): x is string => !!x);
+  return {
+    year: years.length ? Math.min(...years) : undefined,
+    developers: dev.map(name).filter((x): x is string => !!x),
+    publishers: pub.map(name).filter((x): x is string => !!x),
+    platforms: mapLabels(en(plat), PLATFORMS),
+    genres: mapLabels(en(gen), GENRES),
+    prequel: pre[0] ? name(pre[0]) : undefined,
+  };
 }
 
 /** Görseli indirir: önce doğrudan, izin yoksa (Google Books) sunucudaki kapak aracısı üzerinden. */

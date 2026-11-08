@@ -47,7 +47,7 @@ export const useStore = create<State>(() => ({
 
 // Koleksiyon tanımları ayarlarla değişir (bu cihazda ya da başka cihazdan gelince)
 useStore.subscribe((s, prev) => {
-  if (s.settings.types !== prev.settings.types) applyTypeSettings(s.settings.types);
+  if (s.settings.types !== prev.settings.types || s.settings.installed !== prev.settings.installed) applyTypeSettings(s.settings.types, s.settings.installed ?? []);
 });
 
 const set = useStore.setState;
