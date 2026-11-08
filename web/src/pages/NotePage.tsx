@@ -271,6 +271,10 @@ export default function NotePage({ id }: { id: string }) {
           data-tour="title"
           readOnly={locked}
           defaultValue={note.title}
+          ref={(el) => {
+            // Başlık dışarıdan değişince (ör. kapak bulucu doldurdu) kutuya da yansısın; yazarken dokunma
+            if (el && el !== document.activeElement && el.value !== note.title) el.value = note.title;
+          }}
           placeholder={t('note.title')}
           autoFocus={!note.title}
           onChange={(e) => updateNote(note.id, { title: e.target.value })}

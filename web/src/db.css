@@ -238,6 +238,12 @@ tr:hover .open-btn, .open-btn:focus { opacity: 1; }
   box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; animation: peek-in 0.15s ease-out;
 }
 @keyframes peek-in { from { transform: translateX(40px); opacity: 0; } }
+.peek.closing { animation: peek-out 0.22s ease-in forwards; pointer-events: none; }
+@keyframes peek-out { to { transform: translateX(100%); } }
+.peek-scrim { animation: scrim-in 0.15s ease-out; }
+.peek-scrim.closing { animation: scrim-out 0.22s ease-in forwards; pointer-events: none; }
+@keyframes scrim-in { from { opacity: 0; } }
+@keyframes scrim-out { to { opacity: 0; } }
 .peek-bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--border); padding-top: max(6px, env(safe-area-inset-top)); }
 .peek-body { flex: 1; overflow-y: auto; }
 .peek-body .page { padding: 12px 40px 80px; max-width: none; }

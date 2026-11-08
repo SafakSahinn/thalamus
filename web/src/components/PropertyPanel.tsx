@@ -16,7 +16,7 @@ import { displayTitle, optionHue, noteIcon } from '../lib/format';
 import { fillFromPdf, pdfFillMessage } from '../lib/paperImport';
 import { noteHref } from '../lib/router';
 import { findByTitle, searchNotes } from '../lib/search';
-import { createNote, indexOf, resolveFileUrl, runButton, setProp, uploadFile, useIndex, useStore } from '../lib/store';
+import { createNote, indexOf, resolveFileUrl, runButton, setProp, updateNote, uploadFile, useIndex, useStore } from '../lib/store';
 import { fileRefs, optionLabel, relationIds, typeOf, TYPE_MAP, uidText, type FileRef, type Note, type PropDef } from '../lib/types';
 
 /** Seçenek rengi: Durum alanında gruba göre (yapılacak gri, sürüyor mavi, bitti yeşil), diğerlerinde ada göre */
@@ -282,6 +282,8 @@ function CoverFinder({ note, onClose }: { note: Note; onClose: () => void }) {
     setProp(note.id, 'cover', cover);
     // Boş alanları da doldur
     const cur = useStore.getState().notes[note.id];
+    // Başlık boşsa bulunan kitabın/filmin adı yazılır (Vikipedi'nin "(film, 2010)" eki atılır)
+    if (!cur.title.trim() && h.title) updateNote(note.id, { title: isBook ? h.title : h.title.replace(/\s*\([^)]*\)$/, '') });
     if (isBook && h.pages && !cur.props.pages) setProp(note.id, 'pages', h.pages);
     if (isBook && h.authors?.length && !relationIds(cur.props.author).length) {
       const { alive } = indexOf(useStore.getState().notes);

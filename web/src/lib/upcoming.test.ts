@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Note } from './types';
-import { icsFile, upcoming, whenText } from './upcoming';
+import { googleCalendarUrl, icsFile, upcoming, whenText } from './upcoming';
 
 const mk = (id: string, type: string, title: string, props: Record<string, unknown>): Note => ({
   id, type, title, props, content: null, text: '', links: [], pinned: false, created_at: '', updated_at: '', deleted_at: null,
@@ -26,5 +26,16 @@ describe('yaklaşan tarihler', () => {
     expect(ics).toContain('DTEND;VALUE=DATE:20261021');
     expect(ics).toContain('SUMMARY:ICASSP — Son başvuru');
     expect(ics).toContain('TRIGGER:-P1D');
+  });
+  it('Google Takvim bağlantısı saat, yer ve alanları taşır', () => {
+    const ev = mk('e', 'event', 'Seminer', { date: '2026-11-10', time: '14.30', location: 'B-201' });
+    const all = Object.fromEntries([...notes, ev].map((n) => [n.id, n]));
+    const url = new URL(googleCalendarUrl(ev, { key: 'date', label: 'Tarih', kind: 'date' }, '2026-11-10', all));
+    expect(url.searchParams.get('text')).toBe('Seminer');
+    expect(url.searchParams.get('dates')).toBe('20261110T143000/20261110T153000');
+    expect(url.searchParams.get('location')).toBe('B-201');
+    const conf = new URL(googleCalendarUrl(notes[0], { key: 'deadline', label: 'Son başvuru', kind: 'date' }, '2026-10-20', all));
+    expect(conf.searchParams.get('details')).toContain('Başvuracağım');
+    expect(conf.searchParams.get('dates')).toBe('20261020/20261021');
   });
 });
