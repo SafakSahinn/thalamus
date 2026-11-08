@@ -214,6 +214,20 @@ export function setProp(id: string, key: string, value: unknown) {
   if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) delete props[key];
   else props[key] = value;
   updateNote(id, { props });
+  fillPersonRoles(old, key, value);
+}
+
+/** Kitaba yazar, filme yönetmen olarak yeni eklenen kişinin Unvan alanı boşsa doldurulur */
+const AUTO_ROLE: Record<string, 'author' | 'director'> = { 'book.author': 'author', 'movie.director': 'director' };
+function fillPersonRoles(old: Note, key: string, value: unknown) {
+  const role = AUTO_ROLE[`${old.type}.${key}`];
+  if (!role) return;
+  const before = new Set(relationIds(old.props[key]));
+  for (const pid of relationIds(value)) {
+    const p = get().notes[pid];
+    if (before.has(pid) || !p || p.type !== 'person' || (typeof p.props.role === 'string' && p.props.role.trim())) continue;
+    updateNote(pid, { props: { ...p.props, role: t(`types.autoRole.${role}`) } });
+  }
 }
 
 function nextUid(type: string, key: string): number {

@@ -151,5 +151,7 @@ export default {
   },
   statusGroups: { todo: 'To do', doing: 'In progress', done: 'Done' },
   backLabel: '{label} (back)',
+  // Kitaba yazar / filme yönetmen olarak eklenen kişinin boş Unvan alanına yazılır
+  autoRole: { author: 'Author', director: 'Director' },
   routines: { read: 'Read a book', paper: 'Read a paper', sport: 'Exercise', study: 'Studied' },
 } satisfies Messages['types'];

@@ -150,5 +150,7 @@ export default {
   },
   statusGroups: { todo: 'Yapılacak', doing: 'Sürüyor', done: 'Bitti' },
   backLabel: '{label} (geri)',
+  // Kitaba yazar / filme yönetmen olarak eklenen kişinin boş Unvan alanına yazılır
+  autoRole: { author: 'Yazar', director: 'Yönetmen' },
   routines: { read: 'Kitap okudum', paper: 'Makale okudum', sport: 'Spor', study: 'Ders çalıştım' },
 };
