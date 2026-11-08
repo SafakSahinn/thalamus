@@ -114,9 +114,9 @@ export default {
   },
   games: {
     name: 'Video Oyunları',
-    summary: 'Kitaplar ve Filmler gibi bir oyun koleksiyonu: oynadıklarını, oynamak istediklerini ve bıraktıklarını tek yerde tut.',
+    summary: 'Oynadığın, oynamak istediğin ve yarım bıraktığın oyunları kapaklarıyla birlikte tek bir koleksiyonda tut.',
     description: {
-      p1: 'Kenar çubuğuna Kitaplar ve Filmler gibi bir “Video Oyunları” koleksiyonu ekler. Her oyun bir nottur: kapak, platform, tür, geliştirici, yıl, durum, puan ve oynama süresi alanları vardır; altına izlenimlerini, ipuçlarını ya da hikâye notlarını yazabilirsin.',
+      p1: 'Kenar çubuğuna bir “Video Oyunları” koleksiyonu ekler. Her oyun bir nottur: kapak, platform, tür, geliştirici, yıl, durum, puan ve oynama süresi alanları vardır; altına izlenimlerini, ipuçlarını ya da hikâye notlarını yazabilirsin.',
       p2: 'Kapak arayıcı oyunu Wikipedia’da bulur; kapağı seçince yıl, geliştirici, yayıncı, platformlar ve türler Wikidata’dan kendiliğinden dolar. Eklentiyi kaldırırsan koleksiyon gizlenir, oyun notların silinmez; yeniden kurunca hepsi yerinde olur.',
     },
     features: {

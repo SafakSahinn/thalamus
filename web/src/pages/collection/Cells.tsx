@@ -60,10 +60,21 @@ export function EditCell({ note, def }: { note: Note; def: PropDef }) {
   );
 }
 
-export function Cover({ src, icon }: { src?: string; icon: string }) {
+/**
+ * Kapak görseli. fit: kapak kırpılmadan kutuya tam sığar, oranı kutudan farklıysa kalan boşluğu
+ * aynı görselin bulanık hâli doldurur (galeri). fit yoksa kutuyu doldurur (pano şeridi).
+ */
+export function Cover({ src, icon, fit }: { src?: string; icon: string; fit?: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (src) resolveFileUrl(src).then(setUrl, () => setUrl(null));
   }, [src]);
-  return url ? <img className="cover" src={url} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <div className="cover empty">{icon}</div>;
+  if (!url) return <div className="cover empty">{icon}</div>;
+  if (!fit) return <img className="cover" src={url} alt="" loading="lazy" referrerPolicy="no-referrer" />;
+  return (
+    <div className="cover cover-fit">
+      <img className="cover-bg" src={url} alt="" aria-hidden="true" loading="lazy" referrerPolicy="no-referrer" />
+      <img className="cover-img" src={url} alt="" loading="lazy" referrerPolicy="no-referrer" />
+    </div>
+  );
 }

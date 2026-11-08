@@ -209,10 +209,10 @@ export function CardsView({ ty, rows, view }: ViewProps) {
   const hidden = new Set(view.hidden ?? ty.props.filter((p) => !p.table).map((p) => p.key));
   const cols = ty.props.filter((p) => !hidden.has(p.key) && p.key !== ty.cover).slice(0, 4);
   return (
-    <div className="cards">
+    <div className={`cards cards-${ty.id}`}>
       {rows.map((n) => (
         <a key={n.id} className="card" href={`#/n/${n.id}`} onClick={peekClick(n.id)}>
-          {ty.cover && <div className="card-cover"><Cover src={n.props[ty.cover] as string | undefined} icon={noteIcon(n)} /></div>}
+          {ty.cover && <div className="card-cover"><Cover src={n.props[ty.cover] as string | undefined} icon={noteIcon(n)} fit /></div>}
           <div className="card-body">
             <div className="card-title">{!ty.cover && <span>{noteIcon(n)} </span>}{displayTitle(n)}</div>
             {cols.map((c) => (n.props[c.key] !== undefined || ['formula', 'rollup'].includes(c.kind) ? <div key={c.key} className="card-prop"><Cell note={n} def={c} /></div> : null))}

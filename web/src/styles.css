@@ -364,8 +364,14 @@ h1.title.static { margin: 4px 0 14px; }
 /* Kapaklı galeri: fare gelince kart hafifçe yükselir, kapak çerçevesinin içinde yakınlaşır */
 .card-cover { overflow: hidden; }
 .card-cover .cover { transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
+/* Kapak kırpılmadan tam sığar; oranı farklıysa kenarları aynı görselin bulanık hâli doldurur */
+.cover-fit { position: relative; overflow: hidden; }
+.cover-fit .cover-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(16px) brightness(0.8) saturate(1.2); transform: scale(1.2); }
+.cover-fit .cover-img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Oyun kutuları 2:3'ten geniş (çoğu 3:4 ile 4:5 arası) */
+.cards-game .cover { aspect-ratio: 3 / 4; }
 .card:has(.card-cover):hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18); }
-.card:hover .card-cover .cover:not(.empty) { transform: scale(1.08); }
+.card:hover .card-cover .cover:not(.empty) { transform: scale(1.05); }
 @media (prefers-reduced-motion: reduce) {
   .card, .card-cover .cover { transition: none; }
   .card:has(.card-cover):hover { transform: none; }

@@ -55,7 +55,7 @@
 .cf-item img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 3px; background: var(--panel); }
 .cf-item span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .urlinput { position: relative; flex-wrap: wrap; }
-.cover-thumb { width: 34px; height: 48px; object-fit: cover; border-radius: 3px; border: 1px solid var(--border); }
+.cover-thumb { width: 34px; height: 48px; object-fit: contain; background: var(--panel); border-radius: 3px; border: 1px solid var(--border); }
 
 /* Kenar çubuğu sayfa ağacı */
 .tree-row { display: flex; align-items: center; }

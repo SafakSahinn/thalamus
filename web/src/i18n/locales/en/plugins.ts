@@ -116,9 +116,9 @@ export default {
   },
   games: {
     name: 'Video Games',
-    summary: 'A game collection like Books and Movies: keep what you played, want to play and dropped in one place.',
+    summary: 'Keep the games you played, want to play and dropped in one collection, with their covers.',
     description: {
-      p1: 'Adds a “Video Games” collection to the sidebar, like Books and Movies. Each game is a note with cover, platform, genre, developer, year, status, rating and hours played fields; below them you can write your impressions, tips or story notes.',
+      p1: 'Adds a “Video Games” collection to the sidebar. Each game is a note with cover, platform, genre, developer, year, status, rating and hours played fields; below them you can write your impressions, tips or story notes.',
       p2: 'The cover finder looks the game up on Wikipedia; once you pick a cover, the year, developer, publisher, platforms and genres are filled in from Wikidata. If you uninstall the plugin the collection is hidden but your game notes are kept; reinstall it and everything is back.',
     },
     features: {
