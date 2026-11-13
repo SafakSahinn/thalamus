@@ -33,6 +33,10 @@ export interface DriveApi {
   uploadBlob(parent: string, name: string, blob: Blob): Promise<string>;
   readBlob(id: string): Promise<Blob>;
   remove(id: string): Promise<void>;
+  /** Klasördeki dosyalar ve oluşturulma zamanları (kullanılmayan ekleri temizlemek için) */
+  listCreated?(parent: string): Promise<{ id: string; createdTime: string }[]>;
+  /** Dosyayı Drive çöp kutusuna taşır (30 gün içinde geri alınabilir) */
+  trash?(id: string): Promise<void>;
   /** Herkese açık paylaşım: "bağlantıya sahip olan görebilir" */
   setPublic?(id: string, on: boolean): Promise<void>;
   /** Dosyanın Drive'da tutulan eski sürümleri */
@@ -178,6 +182,26 @@ export const drive: DriveApi = {
 
   async remove(id) {
     await req(`${API}/files/${id}`, { method: 'DELETE' });
+  },
+
+  async listCreated(parent) {
+    const out: { id: string; createdTime: string }[] = [];
+    let page = '';
+    do {
+      const r = await req(`${API}/files?q=${q(`'${parent}' in parents and trashed=false`)}&pageSize=1000&fields=nextPageToken,files(id,createdTime)&spaces=drive${page ? `&pageToken=${page}` : ''}`);
+      const d = (await r.json()) as { files: { id: string; createdTime: string }[]; nextPageToken?: string };
+      out.push(...d.files);
+      page = d.nextPageToken ?? '';
+    } while (page);
+    return out;
+  },
+
+  async trash(id) {
+    await req(`${API}/files/${id}?fields=id`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trashed: true }),
+    });
   },
 
   async setPublic(id, on) {

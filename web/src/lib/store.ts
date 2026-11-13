@@ -6,6 +6,7 @@ import { accessToken, callFn, cloud as cloudConfigured, loadAuth, removeSessionF
 import { deviceVersions, dropHistory, snapshot, type Version } from './history';
 import { buildBacklinks, computeLinks, plainText, setSyncedSource } from './links';
 import { actionValue, runRules } from './automations';
+import { planCleanup, referencedFiles, type FileCandidate } from './fileRefs';
 import { readingStamp } from './reading';
 import { applyTypeSettings, DEFAULT_SETTINGS, isBackKey, relationIds, typeOf, type Note, type Settings, type TypeId } from './types';
 
@@ -61,7 +62,14 @@ export async function initLocal() {
   const settings = (await getMeta<Settings>('settings')) ?? DEFAULT_SETTINGS;
   set({ notes: Object.fromEntries(all.map((n) => [n.id, n])), settings, ready: true });
   void refreshPending();
+  // Bulutsuz kullanımda yalnız bu cihazdaki ekler temizlenir (bulutta eşitlemeden sonra çalışır)
+  if (!cloud && !localGcTimer) {
+    const run = () => void cleanupFiles().catch(() => undefined);
+    setTimeout(run, 60_000);
+    localGcTimer = setInterval(run, FILE_GC_EVERY);
+  }
 }
+let localGcTimer: ReturnType<typeof setInterval> | undefined;
 
 /** Açılışta kayıtlı Google oturumunu yükler. */
 export async function initAuth() {
@@ -677,6 +685,7 @@ export function syncNow(): Promise<void> {
       await push();
       set({ sync: { ...get().sync, status: 'idle', last: now(), error: undefined } });
       afterSync.forEach((fn) => fn());
+      void cleanupFiles().catch(() => undefined);
     } catch (e) {
       onSyncError(e);
     } finally {
@@ -842,3 +851,71 @@ window.addEventListener('beforeunload', () => void writePending());
 
 // Senkron blok içerikleri bağlantı ve arama metni hesabına katılsın
 setSyncedSource((sid) => useStore.getState().settings.synced?.[sid]?.content ?? null);
+
+// ---------- kullanılmayan eklerin temizliği ----------
+//
+// Bir görsel/dosya uygulamadan kaldırılınca (alan, editör bloğu, kapak, not kalıcı silinince) Drive'daki
+// dosyası kendiliğinden silinmez; aynı dosya kopyalanmış başka bir notta da geçebilir. Bu yüzden eşitlemeden
+// sonra bütün notlar taranır: hiçbir notta (çöptekiler dahil) ve ayarlarda geçmeyen ekler, en az
+// FILE_GRACE boyunca kullanılmaz kalırsa Drive çöp kutusuna taşınır (30 gün içinde geri alınabilir) ve
+// bu cihazdaki kopyası silinir. "Sadece bu cihazda" (local://) ekler de aynı kuralla temizlenir.
+
+const FILE_GRACE = 15 * 60_000;
+const FILE_GC_EVERY = 10 * 60_000;
+let fileGcAt = 0;
+let fileGcRunning = false;
+
+export async function cleanupFiles(force = false): Promise<string[]> {
+  if (fileGcRunning || (!force && Date.now() - fileGcAt < FILE_GC_EVERY)) return [];
+  if (!get().ready) return [];
+  fileGcRunning = true;
+  fileGcAt = Date.now();
+  try {
+    await writePending();
+    const d = await db();
+    const blobKeys = (await d.getAllKeys('blobs')).map(String);
+    const cands: FileCandidate[] = blobKeys.filter((k) => k.startsWith('local:')).map((key) => ({ key }));
+    // Drive tarafı yalnız bütün yerel değişiklikler gönderilmişken (başka cihazın notları da çekilmişken) taranır
+    let driveIds: Set<string> | null = null;
+    if (cloud && get().account && api.listCreated && api.trash && navigator.onLine && (await d.count('outbox')) === 0 && (await getMeta<string>('changesToken'))) {
+      const f = await getFolders();
+      const files = await api.listCreated(f.files);
+      driveIds = new Set(files.map((x) => x.id));
+      for (const x of files) cands.push({ key: `gd:${x.id}`, createdMs: Date.parse(x.createdTime) || 0 });
+    }
+    const st = get();
+    const refs = referencedFiles(Object.values(st.notes), st.settings);
+    const since = (await getMeta<Record<string, number>>('fileOrphans')) ?? {};
+    const plan = planCleanup(cands, refs, since, Date.now(), FILE_GRACE);
+    const removed: string[] = [];
+    for (const key of plan.remove) {
+      if (key.startsWith('gd:')) {
+        try {
+          await api.trash!(key.slice(3));
+        } catch (e) {
+          // Bu sefer olmadıysa sonraki temizlikte yeniden denensin (bekleme süresi baştan başlamasın)
+          if (!isNotFound(e)) {
+            plan.since[key] = since[key] ?? Date.now();
+            continue;
+          }
+        }
+      }
+      await d.delete('blobs', key);
+      removed.push(key);
+    }
+    // Drive'da artık olmayan ve kullanılmayan dosyaların bu cihazdaki önbelleği
+    if (driveIds) {
+      for (const k of blobKeys) {
+        if (k.startsWith('gd:') && !driveIds.has(k.slice(3)) && !refs.has(k)) await d.delete('blobs', k);
+      }
+    }
+    for (const k of removed) {
+      const [scheme, id] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
+      for (const src of [...urls.keys()]) if (src.startsWith(`${scheme}://${id}`)) urls.delete(src);
+    }
+    await setMeta('fileOrphans', plan.since);
+    return removed;
+  } finally {
+    fileGcRunning = false;
+  }
+}

@@ -5,7 +5,8 @@ import { NotFoundError, type DFile, type DriveApi, type Folders } from './drive'
 
 // Aynı kullanıcının Drive'ını taklit eden bellek içi Drive. Birden çok "cihaz" aynı örneği paylaşır.
 class FakeDrive implements DriveApi {
-  files = new Map<string, { parent: string; name: string; props: Record<string, string>; data: unknown; folder?: boolean }>();
+  files = new Map<string, { parent: string; name: string; props: Record<string, string>; data: unknown; folder?: boolean; created?: number }>();
+  trashed: string[] = [];
   log: string[] = [];
   reads = 0;
   private n = 0;
@@ -65,7 +66,7 @@ class FakeDrive implements DriveApi {
   }
   async uploadBlob(parent: string, name: string, blob: Blob) {
     const id = this.newId();
-    this.files.set(id, { parent, name, props: { thalamus: 'file' }, data: blob });
+    this.files.set(id, { parent, name, props: { thalamus: 'file' }, data: blob, created: Date.now() });
     this.touch(id);
     return id;
   }
@@ -81,6 +82,15 @@ class FakeDrive implements DriveApi {
       this.touch(x);
     };
     drop(id);
+  }
+  async listCreated(parent: string) {
+    return [...this.files].filter(([, f]) => f.parent === parent && !f.folder).map(([id, f]) => ({ id, createdTime: new Date(f.created ?? 0).toISOString() }));
+  }
+  async trash(id: string) {
+    if (!this.files.has(id)) throw new NotFoundError('yok');
+    this.files.delete(id);
+    this.trashed.push(id);
+    this.touch(id);
   }
   noteFiles() {
     return [...this.files.values()].filter((f) => f.props.thalamus === 'note');
@@ -231,5 +241,38 @@ describe('Drive eşitlemesi (iki cihaz, sahte Drive)', () => {
     await A.syncNow(); // yeniden kurar ve her şeyi gönderir
     expect(A.useStore.getState().sync.error).toBeUndefined();
     expect(drive.noteFiles().length).toBe(Object.keys(notesOf(A)).length);
+  });
+});
+
+describe('Kullanılmayan eklerin temizliği', () => {
+  it('kaldırılan görsel bekleme süresinden sonra Drive çöpüne taşınır; kopyada ya da çöpteki notta geçen kalır', async () => {
+    const A = await device();
+    await A.syncNow();
+    await tick(20);
+    const up = async (name: string) => A.uploadFile(new Blob([name], { type: 'image/png' }), name);
+    const [gone, copied, trashedRef] = [await up('a.png'), await up('b.png'), await up('c.png')];
+    const idOf = (src: string) => src.slice(5).split('#')[0];
+    const n1 = A.createNote('game', 'Oyun', { screenshots: [{ src: gone, name: 'a.png' }, { src: copied, name: 'b.png' }] });
+    A.createNote('note', 'Kopya', { files: [{ src: copied, name: 'b.png' }] });
+    const n3 = A.createNote('note', 'Çöpe atılacak', { cover: trashedRef });
+    A.deleteNote(n3.id);
+    A.setProp(n1.id, 'screenshots', [{ src: copied, name: 'b.png' }]);
+    await A.writePending();
+    await A.syncNow();
+    await tick(20);
+
+    const t0 = Date.now();
+    const now = vi.spyOn(Date, 'now');
+    try {
+      now.mockReturnValue(t0 + 16 * 60_000); // yükleme 15 dk'dan eski; kullanılmaz ilk kez şimdi görülüyor
+      expect(await A.cleanupFiles(true)).toEqual([]);
+      now.mockReturnValue(t0 + 32 * 60_000);
+      expect(await A.cleanupFiles(true)).toEqual([`gd:${idOf(gone)}`]);
+    } finally {
+      now.mockRestore();
+    }
+    expect(drive.trashed).toContain(idOf(gone));
+    expect(drive.files.has(idOf(copied))).toBe(true);
+    expect(drive.files.has(idOf(trashedRef))).toBe(true);
   });
 });
